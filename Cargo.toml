@@ -1,0 +1,11 @@
+[package]
+name = "cmb"
+version = "0.1.0"
+authors = ["suquiya <22910980+suquiya@users.noreply.github.com>"]
+description = "CMB(Combu) is yet another mini cli framework. (WIP, implementing)"
+edition = "2018"
+license="BSD-3-Clause"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]

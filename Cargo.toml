@@ -1,8 +1,8 @@
 [package]
-name = "cmb"
-version = "0.0.2"
+name = "combu"
+version = "0.0.1"
 authors = ["suquiya <22910980+suquiya@users.noreply.github.com>"]
-description = "CMB(Combu) is yet another mini cli framework. (WIP, implementing)"
+description = "Combu is yet another mini cli framework. (WIP, implementing)"
 edition = "2018"
 license="BSD-3-Clause"
 repository="https://github.com/suquiya/combu"

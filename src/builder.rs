@@ -1,7 +1,7 @@
 use crate::Action;
 use crate::Flag;
 
-pub struct Root {
+pub struct Command {
     pub name: String,
     pub description: Option<String>,
     pub usage: String,

@@ -1,10 +1,11 @@
 mod action;
-mod command;
+mod app;
+pub mod command;
 mod context;
 mod flag;
-mod root;
 
 pub use action::Action;
+pub use app::App;
 pub use command::Command;
 pub use context::Context;
 pub use flag::Flag;

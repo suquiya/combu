@@ -5,7 +5,6 @@ mod context;
 mod flag;
 
 pub use action::Action;
-pub use app::App;
 pub use command::Command;
 pub use context::Context;
 pub use flag::Flag;

@@ -35,48 +35,43 @@ impl Command {
 }
 
 impl Command {
-    fn name<T: Into<String>>(mut self, name: T) -> Command {
+    pub fn name<T: Into<String>>(mut self, name: T) -> Command {
         self.name = name.into();
         self
     }
-}
-impl Command {
-    fn usage<T: Into<String>>(mut self, usage: T) -> Command {
+
+    pub fn usage<T: Into<String>>(mut self, usage: T) -> Command {
         self.usage = usage.into();
         self
     }
-}
-impl Command {
-    fn action(mut self, action: Action) -> Self {
+
+    pub fn action(mut self, action: Action) -> Self {
         self.action = Some(action);
         self
     }
-}
-impl Command {
-    fn local_flag(mut self, flag: Flag) -> Self {
+
+    pub fn local_flag(mut self, flag: Flag) -> Self {
+        self
+    }
+
+    pub fn common_flag(mut self, flag: Flag) -> Self {
         self
     }
 }
 
 impl Command {
-    fn common_flag(mut self, flag: Flag) -> Self {
-        self
-    }
-}
-
-impl Command {
-    fn desctiption<T: Into<String>>(mut self, description: T) -> Self {
+    pub fn desctiption<T: Into<String>>(mut self, description: T) -> Self {
         self
     }
 }
 impl Command {
-    fn version<T: Into<String>>(mut self, version: T) -> Self {
+    pub fn version<T: Into<String>>(mut self, version: T) -> Self {
         self.version = Some(version.into());
         self
     }
 }
 impl Command {
-    fn sub_command(mut self, sub_command: Command) -> Self {
+    pub fn sub_command(mut self, sub_command: Command) -> Self {
         self
     }
 }

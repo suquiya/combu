@@ -2,34 +2,6 @@ use crate::{Action, Actionable};
 //use crate::Context;
 use crate::Flag;
 
-pub trait Usage {
-    fn usage<T: Into<String>>(self, usage: T) -> Self;
-}
-
-pub trait Name {
-    fn name<T: Into<String>>(self, name: T) -> Self;
-}
-
-pub trait LocalFlag {
-    fn local_flag(self, flag: Flag) -> Self;
-}
-
-pub trait CommonFlag {
-    fn common_flag(self, flag: Flag) -> Self;
-}
-
-pub trait SubCommand {
-    fn sub_command(self, sub_command: Command) -> Self;
-}
-
-pub trait Description {
-    fn desctiption<T: Into<String>>(self, description: T) -> Self;
-}
-
-pub trait Version {
-    fn version<T: Into<String>>(self, description: T) -> Self;
-}
-
 pub struct Command {
     pub name: String,
     pub desctiption: Option<String>,
@@ -61,8 +33,6 @@ impl Command {
         Command::default()
     }
 }
-
-pub trait Cmd: Name + Actionable {}
 
 impl Name for Command {
     fn name<T: Into<String>>(mut self, name: T) -> Command {

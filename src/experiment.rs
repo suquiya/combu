@@ -42,6 +42,53 @@ pub trait CommonFlag {
     fn common_flag(self, flag: Flag) -> Self;
 }
 
+impl Name for Command {
+    fn name<T: Into<String>>(mut self, name: T) -> Command {
+        self.name = name.into();
+        self
+    }
+}
+impl Usage for Command {
+    fn usage<T: Into<String>>(mut self, usage: T) -> Command {
+        self.usage = usage.into();
+        self
+    }
+}
+impl Actionable for Command {
+    fn action(mut self, action: Action) -> Self {
+        self.action = Some(action);
+        self
+    }
+}
+impl LocalFlag for Command {
+    fn local_flag(mut self, flag: Flag) -> Self {
+        self
+    }
+}
+
+impl CommonFlag for Command {
+    fn common_flag(mut self, flag: Flag) -> Self {
+        self
+    }
+}
+
+impl Description for Command {
+    fn desctiption<T: Into<String>>(mut self, description: T) -> Self {
+        self
+    }
+}
+impl Version for Command {
+    fn version<T: Into<String>>(mut self, version: T) -> Self {
+        self.version = Some(version.into());
+        self
+    }
+}
+impl SubCommand for Command {
+    fn sub_command(mut self, sub_command: Command) -> Self {
+        self
+    }
+}
+
 /*pub trait SubCommand {
     fn sub_command(self, sub_command: Command) -> Self;
 }*/

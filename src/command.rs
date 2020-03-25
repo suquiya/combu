@@ -34,48 +34,48 @@ impl Command {
     }
 }
 
-impl Name for Command {
+impl Command {
     fn name<T: Into<String>>(mut self, name: T) -> Command {
         self.name = name.into();
         self
     }
 }
-impl Usage for Command {
+impl Command {
     fn usage<T: Into<String>>(mut self, usage: T) -> Command {
         self.usage = usage.into();
         self
     }
 }
-impl Actionable for Command {
+impl Command {
     fn action(mut self, action: Action) -> Self {
         self.action = Some(action);
         self
     }
 }
-impl LocalFlag for Command {
+impl Command {
     fn local_flag(mut self, flag: Flag) -> Self {
         self
     }
 }
 
-impl CommonFlag for Command {
+impl Command {
     fn common_flag(mut self, flag: Flag) -> Self {
         self
     }
 }
 
-impl Description for Command {
+impl Command {
     fn desctiption<T: Into<String>>(mut self, description: T) -> Self {
         self
     }
 }
-impl Version for Command {
+impl Command {
     fn version<T: Into<String>>(mut self, version: T) -> Self {
         self.version = Some(version.into());
         self
     }
 }
-impl SubCommand for Command {
+impl Command {
     fn sub_command(mut self, sub_command: Command) -> Self {
         self
     }

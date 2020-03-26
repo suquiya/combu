@@ -32,9 +32,7 @@ impl Command {
     pub fn new() -> Command {
         Command::default()
     }
-}
 
-impl Command {
     pub fn name<T: Into<String>>(mut self, name: T) -> Command {
         self.name = name.into();
         self
@@ -57,20 +55,16 @@ impl Command {
     pub fn common_flag(mut self, flag: Flag) -> Self {
         self
     }
-}
 
-impl Command {
     pub fn desctiption<T: Into<String>>(mut self, description: T) -> Self {
         self
     }
-}
-impl Command {
+
     pub fn version<T: Into<String>>(mut self, version: T) -> Self {
         self.version = Some(version.into());
         self
     }
-}
-impl Command {
+
     pub fn sub_command(mut self, sub_command: Command) -> Self {
         self
     }

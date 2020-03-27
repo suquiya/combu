@@ -1,5 +1,6 @@
-use crate::{Action, Actionable};
+use crate::Action;
 //use crate::Context;
+use crate::utils::Vector;
 use crate::Flag;
 
 pub struct Command {
@@ -7,10 +8,10 @@ pub struct Command {
     pub desctiption: Option<String>,
     pub usage: String,
     pub action: Option<Action>,
-    pub l_flags: Option<Vec<Flag>>,
-    pub common_flags: Option<Vec<Flag>>,
+    pub l_flags: Vector<Flag>,
+    pub common_flags: Vector<Flag>,
     pub version: Option<String>,
-    pub sub: Option<Vec<Command>>,
+    pub sub: Vector<Command>,
 }
 
 impl Default for Command {
@@ -20,9 +21,9 @@ impl Default for Command {
             desctiption: None,
             usage: String::default(),
             action: None,
-            l_flags: None,
-            common_flags: None,
-            sub: None,
+            l_flags: Vector::default(),
+            common_flags: Vector::default(),
+            sub: Vector::default(),
             version: None,
         }
     }
@@ -49,14 +50,17 @@ impl Command {
     }
 
     pub fn local_flag(mut self, flag: Flag) -> Self {
+        self.l_flags.push(flag);
         self
     }
 
     pub fn common_flag(mut self, flag: Flag) -> Self {
+        self.common_flags.push(flag);
         self
     }
 
     pub fn desctiption<T: Into<String>>(mut self, description: T) -> Self {
+        self.desctiption = Some(description.into());
         self
     }
 
@@ -66,6 +70,7 @@ impl Command {
     }
 
     pub fn sub_command(mut self, sub_command: Command) -> Self {
+        self.sub.push(sub_command);
         self
     }
 }

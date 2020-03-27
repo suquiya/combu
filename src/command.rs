@@ -1,11 +1,11 @@
 use crate::Action;
 //use crate::Context;
-use crate::utils::Vector;
 use crate::Flag;
+use crate::OptVector as Vector;
 
 pub struct Command {
     pub name: String,
-    pub desctiption: Option<String>,
+    pub description: Option<String>,
     pub usage: String,
     pub action: Option<Action>,
     pub l_flags: Vector<Flag>,
@@ -18,7 +18,7 @@ impl Default for Command {
     fn default() -> Self {
         Command {
             name: String::default(),
-            desctiption: None,
+            description: None,
             usage: String::default(),
             action: None,
             l_flags: Vector::default(),
@@ -31,9 +31,42 @@ impl Default for Command {
 
 impl Command {
     pub fn new() -> Command {
-        Command::default()
+        Command::build_new(
+            String::default(),
+            None,
+            String::default(),
+            None,
+            Vector::default(),
+            Vector::default(),
+            None,
+            Vector::default(),
+        )
     }
 
+    pub fn build_new(
+        name: String,
+        description: Option<String>,
+        usage: String,
+        action: Option<Action>,
+        l_flags: Vector<Flag>,
+        common_flags: Vector<Flag>,
+        version: Option<String>,
+        sub: Vector<Command>,
+    ) -> Command {
+        Command {
+            name,
+            description,
+            usage,
+            action,
+            l_flags,
+            common_flags,
+            version,
+            sub,
+        }
+    }
+}
+
+impl Command {
     pub fn name<T: Into<String>>(mut self, name: T) -> Command {
         self.name = name.into();
         self
@@ -60,7 +93,7 @@ impl Command {
     }
 
     pub fn desctiption<T: Into<String>>(mut self, description: T) -> Self {
-        self.desctiption = Some(description.into());
+        self.description = Some(description.into());
         self
     }
 

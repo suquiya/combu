@@ -1,7 +1,7 @@
 use crate::Action;
 //use crate::Context;
 use crate::Flag;
-use crate::OptVector as Vector;
+use crate::Vector;
 
 pub struct Command {
     pub name: String,

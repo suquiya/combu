@@ -61,7 +61,7 @@ impl Command {
         self.run(std::env::args().collect(), None);
     }
 
-    pub fn run(self, args: Vec<String>, state: Option<Context>) {}
+    pub fn run(self, args: Vec<String>, c: Option<Context>) {}
 
     pub fn name<T: Into<String>>(mut self, name: T) -> Command {
         self.name = name.into();

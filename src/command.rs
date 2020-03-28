@@ -1,5 +1,6 @@
 use crate::Action;
-//use crate::Context;
+
+use crate::Context;
 use crate::Flag;
 use crate::Vector;
 
@@ -31,16 +32,7 @@ impl Default for Command {
 
 impl Command {
     pub fn new() -> Command {
-        Command::build_new(
-            String::default(),
-            None,
-            String::default(),
-            None,
-            Vector::default(),
-            Vector::default(),
-            None,
-            Vector::default(),
-        )
+        Command::default()
     }
 
     pub fn build_new(
@@ -64,9 +56,13 @@ impl Command {
             sub,
         }
     }
-}
 
-impl Command {
+    pub fn run_with_auto_arg_collect(self) {
+        self.run(std::env::args().collect(), None);
+    }
+
+    pub fn run(self, args: Vec<String>, state: Option<Context>) {}
+
     pub fn name<T: Into<String>>(mut self, name: T) -> Command {
         self.name = name.into();
         self

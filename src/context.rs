@@ -1,3 +1,7 @@
+use crate::Flag;
+
 pub struct Context {
-    pub args: Vec<String>,
+    pub common_flag: Vec<Flag>,
 }
+
+impl Context {}

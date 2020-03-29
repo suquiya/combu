@@ -13,6 +13,7 @@ pub struct Command {
     pub common_flags: Vector<Flag>,
     pub version: Option<String>,
     pub sub: Vector<Command>,
+    pub opt_props: Vector<(String, String)>,
 }
 
 impl Default for Command {
@@ -26,6 +27,7 @@ impl Default for Command {
             common_flags: Vector::default(),
             sub: Vector::default(),
             version: None,
+            opt_props: Vector::default(),
         }
     }
 }
@@ -44,6 +46,7 @@ impl Command {
         common_flags: Vector<Flag>,
         version: Option<String>,
         sub: Vector<Command>,
+        opt_props: Vector<(String, String)>,
     ) -> Command {
         Command {
             name,
@@ -54,6 +57,7 @@ impl Command {
             common_flags,
             version,
             sub,
+            opt_props,
         }
     }
 
@@ -61,7 +65,25 @@ impl Command {
         self.run(std::env::args().collect(), None);
     }
 
-    pub fn run(self, args: Vec<String>, c: Option<Context>) {}
+    pub fn single_run(self, args: Vec<String>) {
+        match self.action {
+            Some(action) => {
+                action(&Context::new(args));
+            }
+            None => {
+                self.show_help();
+            }
+        }
+    }
+
+    pub fn show_help(self) {}
+
+    pub fn run(self, args: Vec<String>, c: Option<Context>) {
+        match c {
+            None => {}
+            Some(mut c) => {}
+        }
+    }
 
     pub fn name<T: Into<String>>(mut self, name: T) -> Command {
         self.name = name.into();
@@ -100,6 +122,11 @@ impl Command {
 
     pub fn sub_command(mut self, sub_command: Command) -> Self {
         self.sub.push(sub_command);
+        self
+    }
+
+    pub fn add_opt_prop(mut self, opt_prop: (String, String)) -> Self {
+        self.opt_props.push(opt_prop);
         self
     }
 }

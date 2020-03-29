@@ -15,10 +15,13 @@ impl<T> Vector<T> {
             Vector(Some(ref mut v)) => (*v).push(push),
         }
     }
-    pub fn none(self) -> bool {
+    pub fn is_none(&self) -> bool {
         match self {
             Vector(None) => false,
             Vector(Some(_)) => true,
         }
+    }
+    pub fn none(&mut self) {
+        (*self) = Vector(None);
     }
 }

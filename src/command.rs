@@ -13,8 +13,10 @@ pub struct Command {
     pub common_flags: Vector<Flag>,
     pub version: Option<String>,
     pub sub: Vector<Command>,
-    pub opt_props: Vector<(String, String)>,
+    pub opt_props: Vector<KeyValuePair>,
 }
+
+pub type KeyValuePair = (String, String);
 
 impl Default for Command {
     fn default() -> Self {
@@ -125,7 +127,7 @@ impl Command {
         self
     }
 
-    pub fn add_opt_prop(mut self, opt_prop: (String, String)) -> Self {
+    pub fn add_opt_prop(mut self, opt_prop: KeyValuePair) -> Self {
         self.opt_props.push(opt_prop);
         self
     }

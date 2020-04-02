@@ -21,24 +21,6 @@ pub struct Command {
 
 pub type KeyValuePair = (String, String);
 
-/*impl Default for Command {
-    fn default() -> Self {
-        Command {
-            name: String::default(),
-            action: None,
-            authors: String::default(),
-            copyright: String::default(),
-            description: None,
-            usage: String::default(),
-            l_flags: Vector::default(),
-            c_flags: Vector::default(),
-            sub: Vector::default(),
-            version: String::default(),
-            opt_props: Vector::default(),
-        }
-    }
-}*/
-
 impl Command {
     pub fn new() -> Command {
         Command::default()

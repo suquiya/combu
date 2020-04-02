@@ -5,6 +5,22 @@ pub struct Flag {
     pub usage: String,
     pub alias: Vector<String>,
     pub default_value: String,
+    pub flag_type: FlagType,
+}
+
+#[derive(PartialOrd, PartialEq, Clone)]
+pub enum FlagType {
+    Bool,
+    String,
+    Int,
+    Float,
+}
+
+pub enum FlagValue {
+    Bool(bool),
+    String(String),
+    Int(isize),
+    Float(f64),
 }
 
 impl Default for Flag {

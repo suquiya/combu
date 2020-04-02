@@ -4,35 +4,40 @@ use crate::Context;
 use crate::Flag;
 use crate::Vector;
 
+#[derive(Default)]
 pub struct Command {
     pub name: String,
+    pub action: Option<Action>,
+    pub authors: String,
+    pub copyright: String,
     pub description: Option<String>,
     pub usage: String,
-    pub action: Option<Action>,
     pub l_flags: Vector<Flag>,
-    pub common_flags: Vector<Flag>,
-    pub version: Option<String>,
+    pub c_flags: Vector<Flag>,
+    pub version: String,
     pub sub: Vector<Command>,
     pub opt_props: Vector<KeyValuePair>,
 }
 
 pub type KeyValuePair = (String, String);
 
-impl Default for Command {
+/*impl Default for Command {
     fn default() -> Self {
         Command {
             name: String::default(),
+            action: None,
+            authors: String::default(),
+            copyright: String::default(),
             description: None,
             usage: String::default(),
-            action: None,
             l_flags: Vector::default(),
-            common_flags: Vector::default(),
+            c_flags: Vector::default(),
             sub: Vector::default(),
-            version: None,
+            version: String::default(),
             opt_props: Vector::default(),
         }
     }
-}
+}*/
 
 impl Command {
     pub fn new() -> Command {
@@ -41,22 +46,26 @@ impl Command {
 
     pub fn build_new(
         name: String,
+        action: Option<Action>,
+        authors: String,
+        copyright: String,
         description: Option<String>,
         usage: String,
-        action: Option<Action>,
-        l_flags: Vector<Flag>,
+        local_flags: Vector<Flag>,
         common_flags: Vector<Flag>,
-        version: Option<String>,
+        version: String,
         sub: Vector<Command>,
         opt_props: Vector<(String, String)>,
     ) -> Command {
         Command {
             name,
+            action,
+            authors,
+            copyright,
             description,
             usage,
-            action,
-            l_flags,
-            common_flags,
+            l_flags: local_flags,
+            c_flags: common_flags,
             version,
             sub,
             opt_props,
@@ -108,7 +117,7 @@ impl Command {
     }
 
     pub fn common_flag(mut self, flag: Flag) -> Self {
-        self.common_flags.push(flag);
+        self.c_flags.push(flag);
         self
     }
 
@@ -118,7 +127,7 @@ impl Command {
     }
 
     pub fn version<T: Into<String>>(mut self, version: T) -> Self {
-        self.version = Some(version.into());
+        self.version = version.into();
         self
     }
 

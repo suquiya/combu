@@ -4,7 +4,7 @@ use crate::Context;
 use crate::Flag;
 use crate::Vector;
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Command {
     pub name: String,
     pub action: Option<Action>,
@@ -16,7 +16,7 @@ pub struct Command {
     pub c_flags: Vector<Flag>,
     pub version: String,
     pub sub: Vector<Command>,
-    pub opt_props: Vector<KeyValuePair>,
+    pub opt_values: Vector<KeyValuePair>,
 }
 
 pub type KeyValuePair = (String, String);
@@ -26,6 +26,7 @@ impl Command {
         Command::default()
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn build_new(
         name: String,
         action: Option<Action>,
@@ -37,7 +38,7 @@ impl Command {
         common_flags: Vector<Flag>,
         version: String,
         sub: Vector<Command>,
-        opt_props: Vector<(String, String)>,
+        opt_values: Vector<(String, String)>,
     ) -> Command {
         Command {
             name,
@@ -50,7 +51,7 @@ impl Command {
             c_flags: common_flags,
             version,
             sub,
-            opt_props,
+            opt_values,
         }
     }
 
@@ -83,13 +84,23 @@ impl Command {
         self
     }
 
-    pub fn usage<T: Into<String>>(mut self, usage: T) -> Command {
+    pub fn usage<T: Into<String>>(mut self, usage: T) -> Self {
         self.usage = usage.into();
         self
     }
 
     pub fn action(mut self, action: Action) -> Self {
         self.action = Some(action);
+        self
+    }
+
+    pub fn authors<T: Into<String>>(mut self, authors: T) -> Self {
+        self.authors = authors.into();
+        self
+    }
+
+    pub fn copyright<T: Into<String>>(mut self, copyright: T) -> Self {
+        self.copyright = copyright.into();
         self
     }
 
@@ -119,7 +130,7 @@ impl Command {
     }
 
     pub fn add_opt_prop(mut self, opt_prop: KeyValuePair) -> Self {
-        self.opt_props.push(opt_prop);
+        self.opt_values.push(opt_prop);
         self
     }
 }

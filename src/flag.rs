@@ -18,7 +18,7 @@ pub enum FlagType {
 }
 
 impl FlagType {
-    pub fn name<'a>(self) -> &'a str {
+    pub fn name<'a>(&self) -> &'a str {
         match self {
             FlagType::Bool => "Bool",
             FlagType::String => "String",
@@ -27,13 +27,16 @@ impl FlagType {
             //_ => "Unknown",
         }
     }
-    pub fn type_default(self) -> FlagValue {
+    pub fn type_default(&self) -> FlagValue {
         match self {
             FlagType::Bool => FlagValue::Bool(bool::default()),
             FlagType::String => FlagValue::String(String::default()),
             FlagType::Int => FlagValue::Int(isize::default()),
             FlagType::Float => FlagValue::Float(f64::default()),
         }
+    }
+    pub fn is_tyoe_of(&self, val: &FlagValue) -> bool {
+        Some(self) == val.get_type()
     }
 }
 
@@ -59,14 +62,17 @@ impl Default for FlagValue {
 }
 
 impl FlagValue {
-    pub fn get_type(self) -> Option<FlagType> {
+    pub fn get_type(&self) -> Option<&FlagType> {
         match self {
-            FlagValue::Bool(_) => Some(FlagType::Bool),
-            FlagValue::String(_) => Some(FlagType::String),
-            FlagValue::Int(_) => Some(FlagType::Int),
-            FlagValue::Float(_) => Some(FlagType::Float),
+            FlagValue::Bool(_) => Some(&FlagType::Bool),
+            FlagValue::String(_) => Some(&FlagType::String),
+            FlagValue::Int(_) => Some(&FlagType::Int),
+            FlagValue::Float(_) => Some(&FlagType::Float),
             FlagValue::None => None,
         }
+    }
+    pub fn is_type(&self, flag_type: &FlagType) -> bool {
+        Some(flag_type) == self.get_type()
     }
 }
 
@@ -106,39 +112,12 @@ impl Flag {
         flag_type: FlagType,
         default_value: FlagValue,
     ) -> Flag {
-        let calculated_default_value = match flag_type {
-            FlagType::Bool => {
-                if let FlagValue::Bool(_) = default_value {
-                    default_value
-                } else {
-                    println!("Inputted FlagType is Bool, but Inputted FlagValue is not Bool");
-                    FlagValue::Bool(bool::default())
-                }
-            }
-            FlagType::String => {
-                if let FlagValue::String(_) = default_value {
-                    default_value
-                } else {
-                    println!("Inputted FlagType is String, but Inputted FlagValue is not String");
-                    FlagValue::Bool(bool::default())
-                }
-            }
-            FlagType::Int => {
-                if let FlagValue::Int(_) = default_value {
-                    default_value
-                } else {
-                    println!("Inputted FlagType is Int, but Inputted FlagValue is not Int");
-                    FlagValue::Int(isize::default())
-                }
-            }
-            FlagType::Float => {
-                if let FlagValue::Float(_) = default_value {
-                    default_value
-                } else {
-                    println!("Inputted FlagType is String, but Inputted FlagValue is not String");
-                    FlagValue::Float(f64::default())
-                }
-            }
+        let calculated_default_value = if default_value.is_type(&flag_type) {
+            default_value
+        } else {
+            let flag_type_str = flag_type.name();
+            eprintln!("FlagType is {},but inputted default_value is not {}. default_value will be {}'s default.",flag_type_str,flag_type_str,flag_type_str);
+            flag_type.type_default()
         };
         Flag {
             name,
@@ -151,6 +130,18 @@ impl Flag {
 
     pub fn alias<T: Into<String>>(mut self, a: T) -> Self {
         self.alias.push(a.into());
+        self
+    }
+
+    pub fn default_value(mut self, default_value: FlagValue) -> Self {
+        if self.flag_type.is_tyoe_of(&default_value) {
+            self.default_value = default_value
+        } else {
+            println!(
+                "not match flag_type: {}. default_value is not changed.",
+                self.flag_type.name()
+            );
+        }
         self
     }
 }

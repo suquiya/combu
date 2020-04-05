@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Vector<T>(Option<Vec<T>>);
 
 impl<T> Default for Vector<T> {

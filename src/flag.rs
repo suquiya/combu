@@ -1,6 +1,6 @@
 use crate::Vector;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Flag {
     pub name: String,
     pub usage: String,
@@ -9,7 +9,7 @@ pub struct Flag {
     pub flag_type: FlagType,
 }
 
-#[derive(PartialOrd, PartialEq, Clone)]
+#[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum FlagType {
     Bool,
     String,
@@ -46,7 +46,7 @@ impl Default for FlagType {
     }
 }
 
-#[derive(PartialOrd, PartialEq, Clone)]
+#[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum FlagValue {
     Bool(bool),
     String(String),
@@ -142,6 +142,11 @@ impl Flag {
                 self.flag_type.name()
             );
         }
+        self
+    }
+
+    pub fn usage<T: Into<String>>(mut self, usage: T) -> Self {
+        self.usage = usage.into();
         self
     }
 }

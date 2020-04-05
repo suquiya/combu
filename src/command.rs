@@ -56,6 +56,8 @@ impl Command {
     }
 
     pub fn run_with_auto_arg_collect(self) {
+        //let args: Vec<String> = std::env::args().collect();
+        //self.run(&args, None);
         self.run(std::env::args().collect(), None);
     }
 
@@ -73,9 +75,10 @@ impl Command {
     pub fn show_help(self) {}
 
     pub fn run(self, args: Vec<String>, c: Option<Context>) {
+        println!("args: {:?}", args);
         match c {
             None => {}
-            Some(mut c) => {}
+            Some(c) => println!("context: {:?}", c),
         }
     }
 

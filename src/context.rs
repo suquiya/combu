@@ -1,5 +1,6 @@
 use crate::Flag;
 
+#[derive(Debug)]
 pub struct Context {
     pub args: Vec<String>,
     pub common_flag: Vec<Flag>,

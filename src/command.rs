@@ -21,13 +21,6 @@ pub struct Command {
 
 pub type KeyValuePair = (String, String);
 
-pub type VecStr = Vec<String>;
-
-pub enum RunArg {
-    VecStr(VecStr),
-    Context,
-}
-
 impl Command {
     pub fn new() -> Command {
         Command::default()

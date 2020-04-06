@@ -21,6 +21,13 @@ pub struct Command {
 
 pub type KeyValuePair = (String, String);
 
+pub type VecStr = Vec<String>;
+
+pub enum RunArg {
+    VecStr(VecStr),
+    Context,
+}
+
 impl Command {
     pub fn new() -> Command {
         Command::default()
@@ -58,29 +65,21 @@ impl Command {
     pub fn run_with_auto_arg_collect(self) {
         //let args: Vec<String> = std::env::args().collect();
         //self.run(&args, None);
-        self.run(std::env::args().collect(), None);
+        //self.run(std::env::args().collect());
     }
 
     pub fn single_run(self, args: Vec<String>) {
-        match self.action {
-            Some(action) => {
-                action(&Context::new(args));
-            }
-            None => {
-                self.show_help();
-            }
-        }
+        // match self.action {
+        //     Some(action) => {
+        //         action(&Context::new(args,Vector::new(None),self.c_flags);
+        //     }
+        //     None => {
+        //         self.show_help();
+        //     }
+        // }
     }
 
     pub fn show_help(self) {}
-
-    pub fn run(self, args: Vec<String>, c: Option<Context>) {
-        println!("args: {:?}", args);
-        match c {
-            None => {}
-            Some(c) => println!("context: {:?}", c),
-        }
-    }
 
     pub fn name<T: Into<String>>(mut self, name: T) -> Command {
         self.name = name.into();
@@ -136,4 +135,18 @@ impl Command {
         self.opt_values.push(opt_prop);
         self
     }
+}
+
+pub trait Run<T> {
+    fn run(self, args: T);
+}
+
+impl Run<Vec<String>> for Command {
+    fn run(self, args: Vec<String>) {
+        println!("{:?}", args);
+    }
+}
+
+impl Run<Context> for Command {
+    fn run(self, args: Context) {}
 }

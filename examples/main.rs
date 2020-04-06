@@ -1,6 +1,8 @@
-//use combu::command::Command;
+use combu::command::Run;
+use combu::Command;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    println!("{:?}", args);
+    let root = Command::new();
+    let arg: Vec<String> = std::env::args().collect();
+    root.run(arg);
 }

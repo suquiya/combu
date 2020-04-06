@@ -1,5 +1,5 @@
 #[derive(Clone, Debug)]
-pub struct Vector<T>(Option<Vec<T>>);
+pub struct Vector<T>(pub Option<Vec<T>>);
 
 impl<T> Default for Vector<T> {
     fn default() -> Self {
@@ -8,6 +8,9 @@ impl<T> Default for Vector<T> {
 }
 
 impl<T> Vector<T> {
+    pub fn new(inner: Option<Vec<T>>) -> Self {
+        Vector(inner)
+    }
     pub fn push(&mut self, push: T) {
         match self {
             Vector(None) => {

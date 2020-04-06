@@ -1,6 +1,6 @@
 mod action;
 mod app;
-mod command;
+pub mod command;
 mod context;
 //mod experiment;
 mod flag;

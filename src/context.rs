@@ -22,7 +22,7 @@ impl Context {
     }
 
     pub fn args(mut self, args: Vec<String>) -> Self {
-        self.args = Vector::init(Some(args));
+        self.args.init(Some(args));
         self
     }
 }

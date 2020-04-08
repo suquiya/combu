@@ -1,5 +1,5 @@
 #[derive(Clone, Debug)]
-pub struct Vector<T>(pub Option<Vec<T>>);
+pub struct Vector<T>(Option<Vec<T>>);
 
 impl<T> Default for Vector<T> {
     fn default() -> Self {
@@ -13,12 +13,18 @@ impl<T> From<Vec<T>> for Vector<T> {
     }
 }
 
+impl<T> From<Option<Vec<T>>> for Vector<T> {
+    fn from(val: Option<Vec<T>>) -> Self {
+        Vector(val)
+    }
+}
+
 impl<T> Vector<T> {
     pub fn new() -> Self {
         Vector::default()
     }
-    pub fn init(value: Option<Vec<T>>) -> Self {
-        Vector(value)
+    pub fn init(&mut self, value: Option<Vec<T>>) {
+        *self = Vector(value);
     }
     pub fn push(&mut self, push: T) {
         match self {

@@ -62,6 +62,7 @@ impl Command {
     }
 
     pub fn single_run(self, args: Vec<String>) {
+        println!("{:?}", args);
         // match self.action {
         //     Some(action) => {
         //         action(&Context::new(args,Vector::new(None),self.c_flags);
@@ -130,6 +131,24 @@ impl Command {
     }
 }
 
+impl From<String> for Command {
+    fn from(name: String) -> Self {
+        Command {
+            name,
+            action: None,
+            authors: String::default(),
+            copyright: String::default(),
+            description: None,
+            usage: String::default(),
+            l_flags: Vector::default(),
+            c_flags: Vector::default(),
+            version: String::default(),
+            sub: Vector::default(),
+            opt_values: Vector::default(),
+        }
+    }
+}
+
 pub trait Run<T> {
     fn run(self, args: T);
 }
@@ -141,5 +160,7 @@ impl Run<Vec<String>> for Command {
 }
 
 impl Run<Context> for Command {
-    fn run(self, args: Context) {}
+    fn run(self, c: Context) {
+        println!("{:?}", c);
+    }
 }

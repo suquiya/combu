@@ -7,9 +7,18 @@ impl<T> Default for Vector<T> {
     }
 }
 
+impl<T> From<Vec<T>> for Vector<T> {
+    fn from(vec: Vec<T>) -> Self {
+        Vector(Some(vec))
+    }
+}
+
 impl<T> Vector<T> {
-    pub fn new(inner: Option<Vec<T>>) -> Self {
-        Vector(inner)
+    pub fn new() -> Self {
+        Vector::default()
+    }
+    pub fn init(value: Option<Vec<T>>) -> Self {
+        Vector(value)
     }
     pub fn push(&mut self, push: T) {
         match self {

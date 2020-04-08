@@ -9,11 +9,11 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new(raw_args: Vec<String>, args: Vector<String>, common_flag: Vector<Flag>) -> Context {
+    pub fn new(raw_args: Vec<String>) -> Context {
         Context {
             raw_args,
-            args,
-            common_flag,
+            args: Vector::default(),
+            common_flag: Vector::default(),
         }
     }
 
@@ -22,7 +22,7 @@ impl Context {
     }
 
     pub fn args(mut self, args: Vec<String>) -> Self {
-        self.args = Vector::new(Some(args));
+        self.args = Vector::init(Some(args));
         self
     }
 }

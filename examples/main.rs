@@ -1,5 +1,4 @@
-use combu::command::Run;
-use combu::Command;
+use combu::command::*;
 
 fn main() {
     let root = Command::new();

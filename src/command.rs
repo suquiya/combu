@@ -159,8 +159,7 @@ impl Run<Vec<String>> for Command {
         if args.len() < 2 {
             match self.action {
                 Some(action) => {
-                    let vec_args = Vector::from(&args);
-                    action(&Context::new(args, vec_args, Vector::default()))
+                    action(&Context::from(args));
                 }
                 None => {
                     println!("args: {:?}", args);

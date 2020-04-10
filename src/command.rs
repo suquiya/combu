@@ -177,7 +177,7 @@ impl Run<Context> for Command {
 }
 
 impl Command {
-    pub fn run_with_args(self, args: Vec<String>) {
+    pub fn run_from_args(self, args: Vec<String>) {
         self.run(args);
     }
 

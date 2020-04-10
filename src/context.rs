@@ -9,11 +9,11 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new(raw_args: Vec<String>) -> Context {
+    pub fn new(raw_args: Vec<String>, args: Vector<String>, common_flag: Vector<Flag>) -> Context {
         Context {
             raw_args,
-            args: Vector::default(),
-            common_flag: Vector::default(),
+            args,
+            common_flag,
         }
     }
 
@@ -24,5 +24,16 @@ impl Context {
     pub fn args(mut self, args: Vec<String>) -> Self {
         self.args.init(Some(args));
         self
+    }
+}
+
+impl From<Vec<String>> for Context {
+    fn from(raw_args: Vec<String>) -> Context {
+        let args = Vector::from(&raw_args);
+        Context {
+            raw_args,
+            args,
+            common_flag: Vector::default(),
+        }
     }
 }

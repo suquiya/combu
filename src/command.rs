@@ -155,12 +155,34 @@ pub trait Run<T> {
 
 impl Run<Vec<String>> for Command {
     fn run(self, args: Vec<String>) {
-        println!("{:?}", args);
+        println!("{:?}, len: {}", &args, &args.len());
+        if args.len() < 2 {
+            match self.action {
+                Some(action) => {
+                    let vec_args = Vector::from(&args);
+                    action(&Context::new(args, vec_args, Vector::default()))
+                }
+                None => {
+                    println!("args: {:?}", args);
+                }
+            }
+        } else {
+        }
     }
 }
 
 impl Run<Context> for Command {
     fn run(self, c: Context) {
-        println!("{:?}", c);
+        println!("{:?}", &c);
+    }
+}
+
+impl Command {
+    pub fn run_with_args(self, args: Vec<String>) {
+        self.run(args);
+    }
+
+    pub fn run_in_context(self, context: Context) {
+        self.run(context);
     }
 }

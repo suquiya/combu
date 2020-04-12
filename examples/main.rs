@@ -1,7 +1,6 @@
-use combu::command::Command;
+use combu::command::*;
 
 fn main() {
     let root = Command::new();
-    let arg: Vec<String> = std::env::args().collect();
-    root.run_from_args(arg);
+    root.run_with_auto_arg_collect();
 }

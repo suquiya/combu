@@ -3,6 +3,7 @@ use crate::Action;
 use crate::Context;
 use crate::Flag;
 use crate::Vector;
+use std::collections::VecDeque;
 
 #[derive(Clone, Default)]
 pub struct Command {
@@ -20,6 +21,13 @@ pub struct Command {
 }
 
 pub type KeyValuePair = (String, String);
+
+pub fn get_env_args_vec() -> Vec<String> {
+    {
+        let args: Vec<String> = std::env::args().collect();
+        args
+    }
+}
 
 impl Command {
     pub fn new() -> Command {
@@ -57,8 +65,8 @@ impl Command {
 
     pub fn run_with_auto_arg_collect(self) {
         //let args: Vec<String> = std::env::args().collect();
-        //self.run(&args, None);
-        //self.run(std::env::args().collect());
+        //self.run(args);
+        self.run(get_env_args_vec());
     }
 
     pub fn single_run(self, args: Vec<String>) {
@@ -155,33 +163,35 @@ pub trait Run<T> {
 
 impl Run<Vec<String>> for Command {
     fn run(self, args: Vec<String>) {
-        println!("{:?}, len: {}", &args, &args.len());
-        if args.len() < 2 {
-            match self.action {
-                Some(action) => {
-                    action(&Context::from(args));
-                }
-                None => {
-                    println!("args: {:?}", args);
-                }
-            }
-        } else {
-        }
+        self.run_from_args(args);
     }
 }
 
 impl Run<Context> for Command {
     fn run(self, c: Context) {
-        println!("{:?}", &c);
+        self.run_in_context(c);
     }
 }
 
 impl Command {
-    pub fn run_from_args(self, args: Vec<String>) {
-        self.run(args);
+    pub fn run_from_args(self, raw_args: Vec<String>) {
+        println!("{:?}, len: {}", &raw_args, &raw_args.len());
+        if raw_args.len() < 2 {
+            match self.action {
+                Some(action) => {
+                    action(&Context::from(raw_args));
+                }
+                None => {
+                    println!("args: {:?}", raw_args);
+                }
+            }
+        } else {
+            let mut args = VecDeque::from(raw_args.clone());
+            let current_path = &args.remove(0);
+        }
     }
 
     pub fn run_in_context(self, context: Context) {
-        self.run(context);
+        println!("{:?}", context);
     }
 }

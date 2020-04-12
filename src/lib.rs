@@ -9,7 +9,7 @@ mod vector;
 pub use action::Action;
 pub use command::Command;
 pub use context::Context;
-pub use flag::Flag;
+pub use flag::{Flag, FlagType, FlagValue};
 pub use vector::Vector;
 /*#[cfg(test)]
 mod tests {

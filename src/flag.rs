@@ -4,7 +4,8 @@ use crate::Vector;
 pub struct Flag {
     pub name: String,
     pub usage: String,
-    pub alias: Vector<String>,
+    pub short_alias: Vector<String>,
+    pub long_alias: Vector<String>,
     pub default_value: FlagValue,
     pub flag_type: FlagType,
 }
@@ -81,7 +82,8 @@ impl Default for Flag {
         Flag {
             name: String::default(),
             usage: String::default(),
-            alias: Vector::default(),
+            short_alias: Vector::default(),
+            long_alias: Vector::default(),
             flag_type: FlagType::default(),
             default_value: FlagValue::default(),
         }
@@ -99,7 +101,8 @@ impl Flag {
         Flag {
             name,
             usage: String::default(),
-            alias: Vector::default(),
+            long_alias: Vector::default(),
+            short_alias: Vector::default(),
             flag_type,
             default_value,
         }
@@ -108,7 +111,8 @@ impl Flag {
     pub fn build_new(
         name: String,
         usage: String,
-        alias: Vector<String>,
+        short_alias: Vector<String>,
+        long_alias: Vector<String>,
         flag_type: FlagType,
         default_value: FlagValue,
     ) -> Flag {
@@ -122,14 +126,19 @@ impl Flag {
         Flag {
             name,
             usage,
-            alias,
+            short_alias,
+            long_alias,
             flag_type,
             default_value: calculated_default_value,
         }
     }
 
+    pub fn short<T: Into<String>>(mut self, a: T) -> Self {
+        self.short_alias.push(a.into());
+        self
+    }
     pub fn alias<T: Into<String>>(mut self, a: T) -> Self {
-        self.alias.push(a.into());
+        self.long_alias.push(a.into());
         self
     }
 

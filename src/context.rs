@@ -1,14 +1,14 @@
 use crate::Vector;
-use crate::{Flag, FlagType, FlagValue};
+use crate::{Flag, FlagValue};
 use std::collections::VecDeque;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct Context {
     pub raw_args: Vec<String>,
     pub args: VecDeque<String>,
-    pub parsed_common: Vector<Flag>,
-    pub current_path: PathBuf,
+    pub common_flags: Vector<Flag>,
+    current_path: PathBuf,
     pub flags: Vector<(String, Option<FlagValue>)>,
 }
 
@@ -16,14 +16,14 @@ impl Context {
     pub fn build_new(
         raw_args: Vec<String>,
         args: VecDeque<String>,
-        parsed_common: Vector<Flag>,
+        common_flags: Vector<Flag>,
         current_path: PathBuf,
         flags: Vector<(String, Option<FlagValue>)>,
     ) -> Context {
         Context {
             raw_args,
             args,
-            parsed_common,
+            common_flags,
             current_path,
             flags,
         }
@@ -37,6 +37,14 @@ impl Context {
         self.args = args;
         self
     }
+
+    pub fn current(&self) -> &Path {
+        &self.current_path
+    }
+
+    pub fn change_current(&mut self, path: PathBuf) {
+        self.current_path = path;
+    }
 }
 
 impl From<Vec<String>> for Context {
@@ -49,7 +57,7 @@ impl From<Vec<String>> for Context {
         Context {
             raw_args,
             args,
-            parsed_common: Vector::default(),
+            common_flags: Vector::default(),
             current_path,
             flags: Vector::default(),
         }

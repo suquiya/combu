@@ -1,5 +1,5 @@
 #[derive(Clone, Debug)]
-pub struct Vector<T>(Option<Vec<T>>);
+pub struct Vector<T>(pub Option<Vec<T>>);
 
 impl<T> Default for Vector<T> {
     fn default() -> Self {
@@ -64,5 +64,10 @@ impl<T> Vector<T> {
 
     pub fn none(&mut self) {
         (*self) = Vector(None);
+    }
+
+    pub fn inner(&self) -> &Option<Vec<T>> {
+        let Vector(inner) = self;
+        inner
     }
 }

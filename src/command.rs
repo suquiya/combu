@@ -4,6 +4,7 @@ use crate::Context;
 use crate::Flag;
 use crate::Vector;
 use std::collections::VecDeque;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Default)]
 pub struct Command {
@@ -15,19 +16,13 @@ pub struct Command {
     pub usage: String,
     pub l_flags: Vector<Flag>,
     pub c_flags: Vector<Flag>,
+    pub alias: Vector<String>,
     pub version: String,
     pub sub: Vector<Command>,
     pub opt_values: Vector<KeyValuePair>,
 }
 
 pub type KeyValuePair = (String, String);
-
-pub fn get_env_args_vec() -> Vec<String> {
-    {
-        let args: Vec<String> = std::env::args().collect();
-        args
-    }
-}
 
 impl Command {
     pub fn new() -> Command {
@@ -44,6 +39,7 @@ impl Command {
         usage: String,
         local_flags: Vector<Flag>,
         common_flags: Vector<Flag>,
+        alias: Vector<String>,
         version: String,
         sub: Vector<Command>,
         opt_values: Vector<(String, String)>,
@@ -57,6 +53,7 @@ impl Command {
             usage,
             l_flags: local_flags,
             c_flags: common_flags,
+            alias,
             version,
             sub,
             opt_values,
@@ -66,7 +63,7 @@ impl Command {
     pub fn run_with_auto_arg_collect(self) {
         //let args: Vec<String> = std::env::args().collect();
         //self.run(args);
-        self.run(get_env_args_vec());
+        self.run(std::env::args().collect::<Vec<String>>());
     }
 
     pub fn single_run(self, args: Vec<String>) {
@@ -133,9 +130,36 @@ impl Command {
         self
     }
 
+    pub fn alias<T: Into<String>>(mut self, a: T) -> Self {
+        self.alias.push(a.into());
+        self
+    }
+
     pub fn add_opt_prop(mut self, opt_prop: KeyValuePair) -> Self {
         self.opt_values.push(opt_prop);
         self
+    }
+
+    pub fn is(&self, name_or_alias: &str) -> bool {
+        if name_or_alias == self.name {
+            true
+        } else {
+            match self.alias.inner() {
+                None => false,
+                Some(inner) => {
+                    let mut iter = inner.iter();
+                    let hit = iter.find(|a| a.as_str() == name_or_alias);
+                    hit.is_some()
+                }
+            }
+        }
+    }
+
+    pub fn search_sub(&self, name: &str) -> Option<&Command> {
+        match &self.sub {
+            Vector(None) => None,
+            Vector(Some(inner)) => inner.iter().find(|c| c.is(name)),
+        }
     }
 }
 
@@ -150,6 +174,7 @@ impl From<String> for Command {
             usage: String::default(),
             l_flags: Vector::default(),
             c_flags: Vector::default(),
+            alias: Vector::default(),
             version: String::default(),
             sub: Vector::default(),
             opt_values: Vector::default(),
@@ -187,7 +212,44 @@ impl Command {
             }
         } else {
             let mut args = VecDeque::from(raw_args.clone());
-            let current_path = &args.remove(0);
+            let current_path = &args.remove(0).unwrap();
+            let mut not_flag_args: VecDeque<String> = VecDeque::new();
+            let mut parsing = true;
+            let flag_prefix = "-";
+            let long_flag_prefix = "--";
+            //get before first non-flag arg with parsing flags
+            match args.pop_front().unwrap() {
+                arg if arg.starts_with(flag_prefix) => {
+                    //Flag Parse
+                    println!("flag: {}", arg);
+                    //distinguish whether long flag or not
+                    if arg.starts_with(long_flag_prefix) {
+                        //long_flag
+                    } else {
+                        //short_flag
+                        let s = arg;
+                    }
+                }
+                arg => {
+                    println!("arg: {}", &arg);
+                    match self.search_sub(&arg) {
+                        None => match self.action {
+                            None => println!("no action"),
+                            Some(action) => {
+                                let context = Context::build_new(
+                                    raw_args,
+                                    args,
+                                    self.c_flags,
+                                    PathBuf::from(current_path),
+                                    Vector::default(),
+                                );
+                                action(&context);
+                            }
+                        },
+                        Some(_) => {}
+                    }
+                }
+            }
         }
     }
 

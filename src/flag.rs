@@ -40,7 +40,7 @@ impl FlagType {
         Some(self) == val.get_type()
     }
 
-    pub fn getValueFromString(&self, val: &str) -> FlagValue {
+    pub fn get_value_from_string(&self, val: &str) -> FlagValue {
         match self {
             FlagType::Bool => match val {
                 "true" => FlagValue::Bool(true),
@@ -162,7 +162,7 @@ impl Flag {
     }
 
     pub fn default_value(mut self, default_value: FlagValue) -> Self {
-        if self.flag_type.is_tyoe_of(&default_value) {
+        if self.flag_type.is_type_of(&default_value) {
             self.default_value = default_value
         } else {
             println!(

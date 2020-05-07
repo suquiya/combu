@@ -210,10 +210,11 @@ impl Command {
         } else {
             let mut args = VecDeque::from(raw_args.clone());
             let current_path = args.pop_front().unwrap();
-            let flag_prefix = "-";
-            let long_flag_prefix = "--";
+            //let flag_prefix = "-";
+            //let long_flag_prefix = "--";
             //get before first non-flag arg with parsing flags
-            match args.pop_front().unwrap() {
+            parser::parse_until_not_flag_args_or_end_args(args, self.c_flags, self.l_flags);
+            /*match args.pop_front().unwrap() {
                 arg if arg.starts_with(flag_prefix) => {
                     //Flag Parse
                     //distinguish whether long flag or not
@@ -231,7 +232,11 @@ impl Command {
                         None => match self.action {
                             None => println!("{} does not have any action.", self.name),
                             Some(action) => {
-                                parser::parse_least_args(args, self.c_flags, self.l_flags);
+                                parser::parse_until_not_flag_args_or_end_args(
+                                    args,
+                                    self.c_flags,
+                                    self.l_flags,
+                                );
                                 let context = Context::from(raw_args);
                                 action(&context);
                             }
@@ -239,7 +244,7 @@ impl Command {
                         Some(_) => {}
                     }
                 }
-            }
+            }*/
         }
     }
 

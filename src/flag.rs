@@ -36,8 +36,27 @@ impl FlagType {
             FlagType::Float => FlagValue::Float(f64::default()),
         }
     }
-    pub fn is_tyoe_of(&self, val: &FlagValue) -> bool {
+    pub fn is_type_of(&self, val: &FlagValue) -> bool {
         Some(self) == val.get_type()
+    }
+
+    pub fn getValueFromString(&self, val: &str) -> FlagValue {
+        match self {
+            FlagType::Bool => match val {
+                "true" => FlagValue::Bool(true),
+                "false" => FlagValue::Bool(false),
+                _ => FlagValue::None,
+            },
+            FlagType::String => FlagValue::String(String::from(val)),
+            FlagType::Int => match val.parse::<isize>() {
+                Ok(i) => FlagValue::Int(i),
+                Err(_) => FlagValue::None,
+            },
+            FlagType::Float => match val.parse::<f64>() {
+                Ok(f) => FlagValue::Float(f),
+                Err(_) => FlagValue::None,
+            },
+        }
     }
 }
 

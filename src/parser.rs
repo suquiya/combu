@@ -2,7 +2,7 @@ use crate::Flag;
 use crate::Vector;
 use std::collections::VecDeque;
 
-pub fn parse_least_args(
+pub fn parse_until_end_args(
     mut args: VecDeque<String>,
     common_flag: Vector<Flag>,
     local_flags: Vector<Flag>,
@@ -49,7 +49,7 @@ pub fn parse_least_args(
     }
 }
 
-pub fn parse_until_not_flag_args(
+pub fn parse_until_not_flag_args_or_end_args(
     mut args: VecDeque<String>,
     common_flags: Vector<Flag>,
     local_flags: Vector<String>,

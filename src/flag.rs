@@ -91,7 +91,7 @@ impl Default for Flag {
 }
 
 impl Flag {
-    pub fn new(name: String, flag_type: FlagType) -> Flag {
+    pub fn new(name: &str, usage: &str, flag_type: FlagType) -> Flag {
         let default_value: FlagValue = match flag_type {
             FlagType::Bool => FlagValue::Bool(bool::default()),
             FlagType::String => FlagValue::String(String::default()),
@@ -99,8 +99,8 @@ impl Flag {
             FlagType::Float => FlagValue::Float(f64::default()),
         };
         Flag {
-            name,
-            usage: String::default(),
+            name: String::from(name),
+            usage: String::from(usage),
             long_alias: Vector::default(),
             short_alias: Vector::default(),
             flag_type,
@@ -157,5 +157,23 @@ impl Flag {
     pub fn usage<T: Into<String>>(mut self, usage: T) -> Self {
         self.usage = usage.into();
         self
+    }
+
+    pub fn is(&self, name: &str) -> bool {
+        self.name == name
+    }
+
+    pub fn is_short(&self, alias: &str) -> bool {
+        match &self.short_alias {
+            Vector(None) => false,
+            Vector(Some(short_alias)) => short_alias.iter().any(|s| s == alias),
+        }
+    }
+
+    pub fn is_long(&self, alias: &str) -> bool {
+        match &self.long_alias {
+            Vector(None) => false,
+            Vector(Some(long_alias)) => long_alias.iter().any(|s| s == alias),
+        }
     }
 }

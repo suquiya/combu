@@ -1,10 +1,11 @@
 use crate::Action;
 
+use crate::parser;
 use crate::Context;
 use crate::Flag;
 use crate::Vector;
 use std::collections::VecDeque;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Clone, Default)]
 pub struct Command {
@@ -146,16 +147,12 @@ impl Command {
         } else {
             match self.alias.inner() {
                 None => false,
-                Some(inner) => {
-                    let mut iter = inner.iter();
-                    let hit = iter.find(|a| a.as_str() == name_or_alias);
-                    hit.is_some()
-                }
+                Some(inner) => inner.iter().any(|a| a == name_or_alias),
             }
         }
     }
 
-    pub fn search_sub(&self, name: &str) -> Option<&Command> {
+    pub fn find_sub(&self, name: &str) -> Option<&Command> {
         match &self.sub {
             Vector(None) => None,
             Vector(Some(inner)) => inner.iter().find(|c| c.is(name)),
@@ -212,37 +209,30 @@ impl Command {
             }
         } else {
             let mut args = VecDeque::from(raw_args.clone());
-            let current_path = &args.remove(0).unwrap();
-            let mut not_flag_args: VecDeque<String> = VecDeque::new();
-            let mut parsing = true;
+            let current_path = args.pop_front().unwrap();
             let flag_prefix = "-";
             let long_flag_prefix = "--";
             //get before first non-flag arg with parsing flags
             match args.pop_front().unwrap() {
                 arg if arg.starts_with(flag_prefix) => {
                     //Flag Parse
-                    println!("flag: {}", arg);
                     //distinguish whether long flag or not
                     if arg.starts_with(long_flag_prefix) {
                         //long_flag
                     } else {
                         //short_flag
-                        let s = arg;
+                        let (_, s) = arg.split_at(1);
+                        println!("{}", s);
                     }
                 }
                 arg => {
                     println!("arg: {}", &arg);
-                    match self.search_sub(&arg) {
+                    match self.find_sub(&arg) {
                         None => match self.action {
-                            None => println!("no action"),
+                            None => println!("{} does not have any action.", self.name),
                             Some(action) => {
-                                let context = Context::build_new(
-                                    raw_args,
-                                    args,
-                                    self.c_flags,
-                                    PathBuf::from(current_path),
-                                    Vector::default(),
-                                );
+                                parser::parse_least_args(args, self.c_flags, self.l_flags);
+                                let context = Context::from(raw_args);
                                 action(&context);
                             }
                         },

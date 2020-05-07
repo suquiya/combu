@@ -1,7 +1,7 @@
 mod action;
-mod app;
 pub mod command;
 mod context;
+pub mod parser;
 //mod experiment;
 mod flag;
 mod vector;

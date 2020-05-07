@@ -9,6 +9,7 @@ pub struct Context {
     pub args: VecDeque<String>,
     pub common_flags: Vector<Flag>,
     current_path: PathBuf,
+
     pub flags: Vector<(String, Option<FlagValue>)>,
 }
 

@@ -8,9 +8,11 @@ pub struct Context {
     pub raw_args: Vec<String>,
     pub args: VecDeque<String>,
     pub common_flags: Vector<Flag>,
-    current_path: PathBuf,
-
-    pub flags: Vector<(String, Option<FlagValue>)>,
+    pub local_flags: Vector<Flag>,
+    pub current_path: PathBuf,
+    pub common_flags_values: Vector<(String, Option<FlagValue>)>,
+    pub local_flags_values: Vector<(String, Option<FlagValue>)>,
+    pub unknown_flags: Vector<(String, Option<FlagValue>)>,
 }
 
 impl Context {
@@ -18,15 +20,21 @@ impl Context {
         raw_args: Vec<String>,
         args: VecDeque<String>,
         common_flags: Vector<Flag>,
+        local_flags: Vector<Flag>,
         current_path: PathBuf,
-        flags: Vector<(String, Option<FlagValue>)>,
+        common_flags_values: Vector<(String, Option<FlagValue>)>,
+        local_flags_values: Vector<(String, Option<FlagValue>)>,
+        unknown_flags: Vector<(String, Option<FlagValue>)>,
     ) -> Context {
         Context {
             raw_args,
             args,
             common_flags,
+            local_flags,
             current_path,
-            flags,
+            common_flags_values,
+            local_flags_values,
+            unknown_flags,
         }
     }
 
@@ -59,8 +67,11 @@ impl From<Vec<String>> for Context {
             raw_args,
             args,
             common_flags: Vector::default(),
+            local_flags: Vector::default(),
             current_path,
-            flags: Vector::default(),
+            common_flags_values: Vector::default(),
+            local_flags_values: Vector::default(),
+            unknown_flags: Vector::default(),
         }
     }
 }

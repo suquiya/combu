@@ -210,41 +210,57 @@ impl Command {
         } else {
             let mut args = VecDeque::from(raw_args.clone());
             let current_path = args.pop_front().unwrap();
-            //let flag_prefix = "-";
+            let flag_prefix = "-";
             //let long_flag_prefix = "--";
             //get before first non-flag arg with parsing flags
-            parser::parse_until_not_flag_args_or_end_args(args, self.c_flags, self.l_flags);
-            /*match args.pop_front().unwrap() {
+            //parser::parse_until_not_flag_args_or_end_args(args, self.c_flags, self.l_flags);
+            match args.pop_front().unwrap() {
                 arg if arg.starts_with(flag_prefix) => {
                     //Flag Parse
                     //distinguish whether long flag or not
-                    if arg.starts_with(long_flag_prefix) {
+                    /*if arg.starts_with(long_flag_prefix) {
                         //long_flag
                     } else {
                         //short_flag
                         let (_, s) = arg.split_at(1);
                         println!("{}", s);
-                    }
+                    }*/
+                    let c = Context::build_new(
+                        raw_args,
+                        args,
+                        self.c_flags,
+                        self.l_flags,
+                        PathBuf::from(current_path),
+                        Vector::default(),
+                        Vector::default(),
+                        Vector::default(),
+                    );
+                    parser::parse_flags_until_not_flag_args_or_end_args(arg, c);
                 }
                 arg => {
                     println!("arg: {}", &arg);
                     match self.find_sub(&arg) {
                         None => match self.action {
-                            None => println!("{} does not have any action.", self.name),
+                            None => println!("{} does not have its own action.", self.name),
                             Some(action) => {
-                                parser::parse_until_not_flag_args_or_end_args(
+                                let c = Context::build_new(
+                                    raw_args,
                                     args,
                                     self.c_flags,
                                     self.l_flags,
+                                    PathBuf::from(current_path),
+                                    Vector::default(),
+                                    Vector::default(),
+                                    Vector::default(),
                                 );
-                                let context = Context::from(raw_args);
+                                let context = parser::parse_until_end_args(c);
                                 action(&context);
                             }
                         },
                         Some(_) => {}
                     }
                 }
-            }*/
+            }
         }
     }
 

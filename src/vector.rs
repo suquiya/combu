@@ -1,3 +1,5 @@
+use crate::{CalledType, Flag};
+
 #[derive(Clone, Debug)]
 pub struct Vector<T>(pub Option<Vec<T>>);
 
@@ -66,8 +68,49 @@ impl<T> Vector<T> {
         (*self) = Vector(None);
     }
 
+    pub fn clear(&mut self) {
+        match self {
+            Vector(None) => {}
+            Vector(Some(ref mut inner)) => (*inner).clear(),
+        }
+    }
+
     pub fn inner(&self) -> &Option<Vec<T>> {
         let Vector(inner) = self;
         inner
+    }
+}
+
+impl Vector<Flag> {
+    pub fn find_long_flag(&self, alias_or_name: &str) -> (CalledType, Option<&Flag>) {
+        match &self {
+            Vector(None) => (CalledType::None, None),
+            Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(alias_or_name)) {
+                None => match flags.iter().find(|flag| flag.any_long(alias_or_name)) {
+                    None => match flags.iter().find(|flag| flag.any_short(alias_or_name)) {
+                        None => (CalledType::None, None),
+                        Some(f) => (CalledType::Short, Some(f)),
+                    },
+                    Some(f) => (CalledType::Long, Some(f)),
+                },
+                Some(f) => (CalledType::Short, Some(f)),
+            },
+        }
+    }
+
+    pub fn find_short_flag(&self, alias_or_name: &str) -> (CalledType, Option<&Flag>) {
+        match &self {
+            Vector(None) => (CalledType::None, None),
+            Vector(Some(flags)) => match flags.iter().find(|flag| flag.any_short(alias_or_name)) {
+                None => match flags.iter().find(|flag| flag.is(alias_or_name)) {
+                    None => match flags.iter().find(|flag| flag.any_long(alias_or_name)) {
+                        None => (CalledType::None, None),
+                        Some(f) => (CalledType::Long, Some(f)),
+                    },
+                    Some(f) => (CalledType::Name, Some(f)),
+                },
+                Some(f) => (CalledType::Short, Some(f)),
+            },
+        }
     }
 }

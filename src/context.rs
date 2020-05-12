@@ -12,7 +12,7 @@ pub struct Context {
     pub current_path: PathBuf,
     pub common_flags_values: Vector<(String, Option<FlagValue>)>,
     pub local_flags_values: Vector<(String, Option<FlagValue>)>,
-    pub unknown_flags: Vector<(String, Option<FlagValue>)>,
+    pub unknown_flags: Vector<(String, FlagValue)>,
 }
 
 impl Context {
@@ -24,7 +24,7 @@ impl Context {
         current_path: PathBuf,
         common_flags_values: Vector<(String, Option<FlagValue>)>,
         local_flags_values: Vector<(String, Option<FlagValue>)>,
-        unknown_flags: Vector<(String, Option<FlagValue>)>,
+        unknown_flags: Vector<(String, FlagValue)>,
     ) -> Context {
         Context {
             raw_args,

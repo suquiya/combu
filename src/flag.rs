@@ -10,6 +10,13 @@ pub struct Flag {
     pub flag_type: FlagType,
 }
 
+pub enum CalledType {
+    Name,
+    Short,
+    Long,
+    None,
+}
+
 #[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum FlagType {
     Bool,
@@ -182,14 +189,14 @@ impl Flag {
         self.name == name
     }
 
-    pub fn is_short(&self, alias: &str) -> bool {
+    pub fn any_short(&self, alias: &str) -> bool {
         match &self.short_alias {
             Vector(None) => false,
             Vector(Some(short_alias)) => short_alias.iter().any(|s| s == alias),
         }
     }
 
-    pub fn is_long(&self, alias: &str) -> bool {
+    pub fn any_long(&self, alias: &str) -> bool {
         match &self.long_alias {
             Vector(None) => false,
             Vector(Some(long_alias)) => long_alias.iter().any(|s| s == alias),

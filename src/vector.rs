@@ -93,7 +93,7 @@ impl Vector<Flag> {
                     },
                     Some(f) => (CalledType::Long, Some(f)),
                 },
-                Some(f) => (CalledType::Short, Some(f)),
+                Some(f) => (CalledType::Name, Some(f)),
             },
         }
     }

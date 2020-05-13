@@ -10,6 +10,7 @@ pub struct Flag {
     pub flag_type: FlagType,
 }
 
+#[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum CalledType {
     Name,
     Short,

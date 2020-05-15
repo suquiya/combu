@@ -232,15 +232,12 @@ impl Command {
                         None => match self.action {
                             None => println!("{} does not have its own action.", self.name),
                             Some(action) => {
-                                let c = Context::build_new(
+                                let c = Context::new(
                                     raw_args,
                                     args,
                                     self.c_flags,
                                     self.l_flags,
-                                    PathBuf::from(current_path),
-                                    Vector::default(),
-                                    Vector::default(),
-                                    Vector::default(),
+                                    &current_path,
                                 );
                                 let context = parser::parse_until_end_args(c);
                                 action(&context);

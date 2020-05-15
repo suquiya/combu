@@ -1,7 +1,6 @@
 use crate::Context;
 use crate::Vector;
-use crate::{CalledType, Flag, FlagValue};
-use std::collections::VecDeque;
+use crate::{CalledType, Flag, FlagType, FlagValue};
 
 pub fn parse_until_end_args(mut c: Context) -> Context {
     let mut non_flag_args: Vector<String> = Vector::default();
@@ -130,12 +129,44 @@ pub fn parse_flags_starts_with_long_flag(
             println!("{}", flag_name);
             match c.common_flags.find_long_flag(&flag_name) {
                 (CalledType::Name, Some(c_flag)) => match c.args.pop_front() {
+                    Some(next_arg) if next_arg.starts_with(long_flag_prefix) => {
+                        match c_flag.flag_type {
+                            FlagType::Bool => c
+                                .common_flags_values
+                                .push((flag_name, FlagValue::Bool(true))),
+                            _ => c.common_flags_values.push((flag_name, FlagValue::None)),
+                        }
+                        return parse_flags_starts_with_long_flag(next_arg, c);
+                    }
+                    Some(next_arg) if next_arg.starts_with(flag_pattern) => {
+                        return parse_flags_starts_with_short_flag(next_arg, c);
+                    }
+                    Some(next_arg) => {
+                        match c_flag.flag_type.get_value_from_string(&next_arg) {
+                            FlagValue::None => {
+                                return (Some(next_arg), c);
+                            }
+                            val => c.common_flags_values.push((flag_name, val)),
+                        }
+                        return parse_front_if_flags(c);
+                    }
+                    n => {
+                        (n, c);
+                    }
+                },
+                (CalledType::Long, Some(c_flag)) => match c.args.pop_front() {
                     Some(next_arg) if next_arg.starts_with(long_flag_prefix) => {}
                     Some(next_arg) if next_arg.starts_with(flag_pattern) => {}
-                    Some(next_arg) => {}
-                    None => {}
+                    Some(next_arg) => {
+                        match c_flag.flag_type.get_value_from_string(&next_arg) {
+                            FlagValue::None => {
+                                return (Some(next_arg), c);
+                            }
+                            val => c.common_flags_values.push((c_flag.name.clone(), val)),
+                        }
+                        return parse_front_if_flags(c);
+                    }
                 },
-                (CalledType::Long, Some(c_flag)) => {}
                 (CalledType::Short, Some(c_flag)) => {}
                 (_, _) => {}
             }
@@ -144,7 +175,18 @@ pub fn parse_flags_starts_with_long_flag(
     (non_flag_arg, c)
 }
 
-pub fn parse_flags_starts_with_short_flag(mut arg: String, c: Context) {
+pub fn parse_front_if_flags(mut c: Context) -> (Option<String>, Context) {
+    match c.args.pop_front() {
+        Some(arg) if arg.starts_with("--") => parse_flags_starts_with_short_flag(arg, c),
+        Some(arg) if arg.starts_with('-') => parse_flags_starts_with_long_flag(arg, c),
+        non_flag => (non_flag, c),
+    }
+}
+
+pub fn parse_flags_starts_with_short_flag(
+    mut arg: String,
+    c: Context,
+) -> (Option<String>, Context) {
     let eq = "=";
     match arg.find(eq) {
         Some(index) => {
@@ -158,6 +200,7 @@ pub fn parse_flags_starts_with_short_flag(mut arg: String, c: Context) {
             println!("{}", flag_name);
         }
     }
+    (None, c)
 }
 
 pub fn get_long_flag_name(mut arg: String, flag_pattern: char) -> String {

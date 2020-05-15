@@ -123,6 +123,8 @@ pub fn parse_flags_starts_with_long_flag(
                     }
                 },
             }
+            //値の格納が終了したので、次の引数の解析へ
+            parse_front_if_flags(c)
         }
         None => {
             let flag_name = get_long_flag_name(arg, flag_pattern);
@@ -136,10 +138,10 @@ pub fn parse_flags_starts_with_long_flag(
                                 .push((flag_name, FlagValue::Bool(true))),
                             _ => c.common_flags_values.push((flag_name, FlagValue::None)),
                         }
-                        return parse_flags_starts_with_long_flag(next_arg, c);
+                        parse_flags_starts_with_long_flag(next_arg, c)
                     }
                     Some(next_arg) if next_arg.starts_with(flag_pattern) => {
-                        return parse_flags_starts_with_short_flag(next_arg, c);
+                        parse_flags_starts_with_short_flag(next_arg, c)
                     }
                     Some(next_arg) => {
                         match c_flag.flag_type.get_value_from_string(&next_arg) {
@@ -148,11 +150,9 @@ pub fn parse_flags_starts_with_long_flag(
                             }
                             val => c.common_flags_values.push((flag_name, val)),
                         }
-                        return parse_front_if_flags(c);
+                        parse_front_if_flags(c)
                     }
-                    n => {
-                        (n, c);
-                    }
+                    n => (n, c),
                 },
                 (CalledType::Long, Some(c_flag)) => match c.args.pop_front() {
                     Some(next_arg) if next_arg.starts_with(long_flag_prefix) => {}
@@ -166,13 +166,22 @@ pub fn parse_flags_starts_with_long_flag(
                         }
                         return parse_front_if_flags(c);
                     }
+                    n => {
+                        return (n, c);
+                    }
                 },
-                (CalledType::Short, Some(c_flag)) => {}
+                (CalledType::Short, Some(c_flag)) => {
+                    match c.local_flags.find_long_flag(&flag_name) {
+                        (CalledType::Name, Some(l_flag)) => {}
+                        (CalledType::Long, Some(l_flag)) => {}
+                        (CalledType::Short, Some(l_flag)) => {}
+                        (_, _) => {}
+                    }
+                }
                 (_, _) => {}
             }
         }
     }
-    (non_flag_arg, c)
 }
 
 pub fn parse_front_if_flags(mut c: Context) -> (Option<String>, Context) {

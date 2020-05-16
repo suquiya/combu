@@ -48,13 +48,9 @@ impl FlagType {
         Some(self) == val.get_type()
     }
 
-    pub fn get_value_from_string(&self, val: &str) -> FlagValue {
+    pub fn get_value_from_str(&self, val: &str) -> FlagValue {
         match self {
-            FlagType::Bool => match val {
-                "true" => FlagValue::Bool(true),
-                "false" => FlagValue::Bool(false),
-                _ => FlagValue::None,
-            },
+            FlagType::Bool => FlagValue::get_bool_value_from_str(val),
             FlagType::String => FlagValue::String(String::from(val)),
             FlagType::Int => match val.parse::<isize>() {
                 Ok(i) => FlagValue::Int(i),
@@ -101,6 +97,14 @@ impl FlagValue {
     }
     pub fn is_type(&self, flag_type: &FlagType) -> bool {
         Some(flag_type) == self.get_type()
+    }
+
+    pub fn get_bool_value_from_str(val: &str) -> FlagValue {
+        match val {
+            "true" => FlagValue::Bool(true),
+            "false" => FlagValue::Bool(false),
+            _ => FlagValue::None,
+        }
     }
 }
 
@@ -202,5 +206,9 @@ impl Flag {
             Vector(None) => false,
             Vector(Some(long_alias)) => long_alias.iter().any(|s| s == alias),
         }
+    }
+
+    pub fn get_name_clone(&self) -> String {
+        self.name.clone()
     }
 }

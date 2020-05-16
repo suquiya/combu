@@ -50,7 +50,6 @@ pub fn parse_flags_starts_with_long_flag(
     mut arg: String,
     mut c: Context,
 ) -> (Option<String>, Context) {
-    let mut non_flag_arg: Option<String> = None;
     let long_flag_prefix = "--";
     let eq = '=';
 
@@ -104,28 +103,7 @@ pub fn parse_flags_starts_with_long_flag(
                             c.unknown_flags.push((flag_name, FlagValue::String(val)))
                         }
                     }
-                } /*(_, _) => match c.local_flags.find_long_flag(&flag_name) {
-                      //match local_flag
-                      (CalledType::Name, Some(l_flag)) => {
-                          c.local_flags_values
-                              .push((flag_name, l_flag.flag_type.get_value_from_str(&val)));
-                      }
-                      (CalledType::Long, Some(l_flag)) => c.local_flags_values.push((
-                          l_flag.name.clone(),
-                          l_flag.flag_type.get_value_from_str(&val),
-                      )),
-                      (CalledType::Short, Some(l_flag)) => {
-                          println!(
-                                      "The inputted flag name {} is a short form local_flag {}. It's interpreted Unknown string flag.",
-                                      flag_name, l_flag.name
-                                  );
-                          c.unknown_flags.push((flag_name, FlagValue::String(val)));
-                      }
-                      (_, _) => {
-                          println!("Unknown flag {} is inputted.", flag_name);
-                          c.unknown_flags.push((flag_name, FlagValue::String(val)))
-                      }
-                  },*/
+                }
             }
             //値の格納が終了したので、次の引数の解析へ
             parse_front_if_flags(c)

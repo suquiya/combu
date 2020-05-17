@@ -260,7 +260,7 @@ pub fn parse_flags_starts_with_long_flag(
                             parse_flags_starts_with_short_flag(next_arg, c)
                         }
                         Some(next_arg) =>
-                        //次の引数がフラグではないとき、フラグではないとき通常引数かフラグの値かを判定
+                        //次の引数がフラグではないとき、通常引数かフラグの値かを判定
                         {
                             match &l_flag.flag_type {
                                 FlagType::Bool => {
@@ -289,7 +289,7 @@ pub fn parse_flags_starts_with_long_flag(
                     },
                     (CalledType::Short, Some(l_flag)) => {
                         println!(
-                            "The inputted flag name {} is a short form of {}, but it is specified as long flag.",
+                            "The inputted flag name {} is a short form of {}. But it is specified as long flag.",
                             &flag_name, match (t, hit) {
                                 (CalledType::Short, Some(c_flag)) => format!(
                                     "common flag {} and local flag {}",
@@ -327,18 +327,59 @@ pub fn parse_front_if_flags(mut c: Context) -> (Option<String>, Context) {
 
 pub fn parse_flags_starts_with_short_flag(
     mut arg: String,
-    c: Context,
+    mut c: Context,
 ) -> (Option<String>, Context) {
     let eq = "=";
     match arg.find(eq) {
         Some(index) => {
             let val = arg.split_off(index + 1);
             arg.pop();
-            let (_, flag_name) = arg.split_at(1);
+            let flag_name = get_short_flag_name(arg);
             println!("{}, {}", flag_name, val);
+            match c.common_flags.find_short_flag(&flag_name) {
+                (CalledType::Short, Some(c_flag)) => {
+                    let flag_value = c_flag.flag_type.get_value_from_str(&val);
+                    c.common_flags_values
+                        .push((c_flag.get_name_clone(), flag_value));
+                }
+                (ct, chit) => {
+                    match c.local_flags.find_short_flag(&flag_name) {
+                        (CalledType::Short, Some(l_flag)) => {
+                            let flag_value = l_flag.flag_type.get_value_from_str(&val);
+                            c.local_flags_values
+                                .push((l_flag.get_name_clone(), flag_value));
+                        }
+                        (lt, lhit) => match (&ct, &lt) {
+                            (CalledType::None, CalledType::None) => {
+                                println!("The inputted flag name {} is unknown.", &flag_name);
+                            }
+                            (_, _) => {
+                                println!(
+                                    "The inputted flag {} matches {}. But it is specified as short flag.",
+                                    &flag_name,
+                                    match (ct, lt) {
+                                        (CalledType::None, _) => {
+                                            format!("a non-short form of local flag {}",lhit.unwrap().get_name_clone())
+                                        }
+                                        (_, CalledType::None)=>{
+                                            format!("a non-short form of common flag {}",chit.unwrap().get_name_clone())
+                                        }
+                                        (_,_)=>{
+                                            format!("non-short forms of common flag {} and local flag {}",
+                                                chit.unwrap().get_name_clone(), &lhit.unwrap().get_name_clone())
+                                        }
+                                    }
+                                );
+                                println!("Due to above reasons, it's interpreted unknown empty string flag.");
+                                c.unknown_flags.push((flag_name, FlagValue::String(val)));
+                            }
+                        },
+                    }
+                }
+            }
         }
         None => {
-            let (_, flag_name) = arg.split_at(1);
+            let flag_name = get_short_flag_name(arg);
             println!("{}", flag_name);
         }
     }
@@ -352,7 +393,6 @@ pub fn get_long_flag_name(mut arg: String, flag_pattern: char) -> String {
     }
 }
 
-pub fn get_short_flag_name(arg: &str) -> &str {
-    let (_, flag_name) = arg.split_at(1);
-    flag_name
+pub fn get_short_flag_name(mut arg: String) -> String {
+    arg.split_off(1)
 }

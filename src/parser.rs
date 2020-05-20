@@ -2,6 +2,134 @@ use crate::Context;
 use crate::Vector;
 use crate::{CalledType, Flag, FlagType, FlagValue};
 
+pub struct Parser {
+    pub flag_pattern: char,
+    pub long_flag_prefix: String,
+    pub eq: char,
+}
+
+impl Default for Parser {
+    fn default() -> Self {
+        Parser {
+            flag_pattern: '-',
+            long_flag_prefix: String::from("--"),
+            eq: '=',
+        }
+    }
+}
+
+impl From<char> for Parser {
+    fn from(flag_pattern: char) -> Self {
+        Parser {
+            flag_pattern,
+            long_flag_prefix: flag_pattern.to_string().repeat(2),
+            eq: '=',
+        }
+    }
+}
+
+impl From<(char, char)> for Parser {
+    fn from((flag_pattern, eq): (char, char)) -> Self {
+        Parser {
+            flag_pattern,
+            long_flag_prefix: flag_pattern.to_string().repeat(2),
+            eq,
+        }
+    }
+}
+
+impl Parser {
+    pub fn new(flag_pattern: char, long_flag_prefix: &str) -> Parser {
+        Parser {
+            flag_pattern,
+            long_flag_prefix: String::from(long_flag_prefix),
+            eq: '=',
+        }
+    }
+
+    pub fn long_flag(&self, str: &str) -> bool {
+        str.starts_with(&self.long_flag_prefix)
+    }
+
+    pub fn flag(&self, str: &str) -> bool {
+        str.starts_with(self.flag_pattern)
+    }
+
+    pub fn build_new(flag_pattern: char, long_flag_prefix: String, eq: char) -> Parser {
+        Parser {
+            flag_pattern,
+            long_flag_prefix,
+            eq,
+        }
+    }
+
+    pub fn get_long_flag_name(&self, mut arg: String) -> String {
+        match arg.find(|c| c != self.flag_pattern) {
+            Some(index) => arg.split_off(index),
+            None => String::default(),
+        }
+    }
+
+    pub fn get_short_flag_name(&self, mut arg: String) -> String {
+        arg.split_off(1)
+    }
+
+    pub fn parse_next_common_if_flags(&self, mut c: Context) -> (Option<String>, Context) {
+        match c.args.pop_front() {
+            Some(arg) if self.long_flag(&arg) => {
+                self.parse_common_flags_starts_with_long_flag(arg, c)
+            }
+            Some(arg) if self.flag(&arg) => self.parse_common_flags_starts_with_short_flag(arg, c),
+            non_flag => (non_flag, c),
+        }
+    }
+
+    pub fn parse_common_flags_starts_with_long_flag(
+        &self,
+        mut arg: String,
+        mut c: Context,
+    ) -> (Option<String>, Context) {
+        match arg.find(self.eq) {
+            Some(index) => {
+                let after_eq = arg.split_off(index + 1);
+                arg.pop();
+                let flag_name = get_long_flag_name(arg, self.flag_pattern);
+                match c.common_flags.find_long_flag(&flag_name) {
+                    (CalledType::Name, Some(c_flag)) => {
+                        match c_flag.flag_type.get_value_from_str(&after_eq) {
+                            FlagValue::None => c
+                                .unknown_flags
+                                .push((flag_name, FlagValue::String(after_eq))),
+                            val => c.common_flags_values.push((flag_name, val)),
+                        }
+                    }
+                    (CalledType::Long, Some(c_flag)) => {
+                        match c_flag.flag_type.get_value_from_str(&after_eq) {
+                            FlagValue::None => c
+                                .unknown_flags
+                                .push((c_flag.get_name_clone(), FlagValue::String(after_eq))),
+                            val => c.common_flags_values.push((c_flag.get_name_clone(), val)),
+                        }
+                    }
+                    (_, _) => c
+                        .unknown_flags
+                        .push((flag_name, FlagValue::String(after_eq))),
+                }
+                self.parse_next_common_if_flags(c)
+            }
+            None => {}
+        }
+    }
+
+    pub fn parse_common_flags_starts_with_short_flag(
+        &self,
+        mut arg: String,
+        mut c: Context,
+    ) -> (Option<String>, Context) {
+        (Some(arg), c)
+    }
+}
+
 pub fn parse_until_end_args(mut c: Context) -> Context {
     let mut non_flag_args: Vector<String> = Vector::default();
     match c.args.pop_front() {

@@ -1,5 +1,5 @@
 use crate::Vector;
-use crate::{Flag, FlagValue};
+use crate::{Flag, FlagType, FlagValue};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
@@ -13,6 +13,7 @@ pub struct Context {
     pub common_flags_values: Vector<(String, FlagValue)>,
     pub local_flags_values: Vector<(String, FlagValue)>,
     pub unknown_flags: Vector<(String, FlagValue)>,
+    pub default_unknown_type: (FlagType, FlagType),
 }
 
 impl Context {
@@ -32,6 +33,7 @@ impl Context {
             common_flags_values: Vector::default(),
             local_flags_values: Vector::default(),
             unknown_flags: Vector::default(),
+            default_unknown_type: (FlagType::Bool, FlagType::String),
         }
     }
     pub fn build_new(
@@ -43,6 +45,7 @@ impl Context {
         common_flags_values: Vector<(String, FlagValue)>,
         local_flags_values: Vector<(String, FlagValue)>,
         unknown_flags: Vector<(String, FlagValue)>,
+        default_unknown_type: (FlagType, FlagType),
     ) -> Context {
         Context {
             raw_args,
@@ -53,6 +56,7 @@ impl Context {
             common_flags_values,
             local_flags_values,
             unknown_flags,
+            default_unknown_type,
         }
     }
 
@@ -90,6 +94,7 @@ impl From<Vec<String>> for Context {
             common_flags_values: Vector::default(),
             local_flags_values: Vector::default(),
             unknown_flags: Vector::default(),
+            default_unknown_type: (FlagType::Bool, FlagType::String),
         }
     }
 }

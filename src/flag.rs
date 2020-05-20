@@ -212,3 +212,16 @@ impl Flag {
         self.name.clone()
     }
 }
+
+impl From<String> for Flag {
+    fn from(name: String) -> Self {
+        Flag {
+            name,
+            usage: String::default(),
+            short_alias: Vector::default(),
+            long_alias: Vector::default(),
+            default_value: FlagValue::default(),
+            flag_type: FlagType::default(),
+        }
+    }
+}

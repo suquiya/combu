@@ -117,7 +117,153 @@ impl Parser {
                 }
                 self.parse_next_common_if_flags(c)
             }
-            None => {}
+            None => {
+                let flag_name = self.get_long_flag_name(arg);
+                match c.common_flags.find_long_flag(&flag_name) {
+                    (CalledType::Name, Some(c_flag)) => match c.args.pop_front() {
+                        Some(next_arg) if self.long_flag(&next_arg) => {
+                            match &c_flag.flag_type {
+                                FlagType::Bool => {
+                                    c.common_flags_values
+                                        .push((flag_name, FlagValue::Bool(true)));
+                                }
+                                _ => {
+                                    c.common_flags_values.push((flag_name, FlagValue::None));
+                                }
+                            }
+                            self.parse_common_flags_starts_with_long_flag(next_arg, c)
+                        }
+                        Some(next_arg) if self.flag(&next_arg) => {
+                            match &c_flag.flag_type {
+                                FlagType::Bool => {
+                                    c.common_flags_values
+                                        .push((flag_name, FlagValue::Bool(true)));
+                                }
+                                _ => c.common_flags_values.push((flag_name, FlagValue::None)),
+                            }
+                            self.parse_common_flags_starts_with_short_flag(next_arg, c)
+                        }
+                        Some(next_arg) => match &c_flag.flag_type {
+                            FlagType::Bool => match FlagValue::get_bool_value_from_str(&next_arg) {
+                                FlagValue::None => {
+                                    c.common_flags_values
+                                        .push((c_flag.get_name_clone(), FlagValue::Bool(true)));
+                                    (Some(next_arg), c)
+                                }
+                                val => {
+                                    c.common_flags_values.push((c_flag.get_name_clone(), val));
+                                    self.parse_next_common_if_flags(c)
+                                }
+                            },
+                            ft => match ft.get_value_from_str(&next_arg) {
+                                FlagValue::None => {
+                                    c.unknown_flags.push((flag_name, FlagValue::None));
+                                    (Some(next_arg), c)
+                                }
+                                val => {
+                                    c.common_flags_values.push((flag_name, val));
+                                    self.parse_next_common_if_flags(c)
+                                }
+                            },
+                        },
+                        n => {
+                            match c_flag.flag_type {
+                                FlagType::Bool => c
+                                    .common_flags_values
+                                    .push((flag_name, FlagValue::Bool(true))),
+                                _ => c.common_flags_values.push((flag_name, FlagValue::None)),
+                            }
+                            (n, c)
+                        }
+                    },
+                    (CalledType::Long, Some(c_flag)) => match c.args.pop_front() {
+                        Some(next_arg) if self.long_flag(&next_arg) => {
+                            match &c_flag.flag_type {
+                                FlagType::Bool => {
+                                    c.common_flags_values
+                                        .push((c_flag.get_name_clone(), FlagValue::Bool(true)));
+                                }
+                                _ => c
+                                    .common_flags_values
+                                    .push((c_flag.get_name_clone(), FlagValue::None)),
+                            }
+                            self.parse_common_flags_starts_with_long_flag(arg, c)
+                        }
+                        Some(next_arg) if self.flag(&next_arg) => {
+                            match &c_flag.flag_type {
+                                FlagType::Bool => {
+                                    c.common_flags_values
+                                        .push((c_flag.get_name_clone(), FlagValue::Bool(true)));
+                                }
+                                _ => c
+                                    .common_flags_values
+                                    .push((c_flag.get_name_clone(), FlagValue::None)),
+                            }
+                            self.parse_common_flags_starts_with_short_flag(arg, c)
+                        }
+                        Some(next_arg) => match &c_flag.flag_type {
+                            FlagType::Bool => match FlagValue::get_bool_value_from_str(&next_arg) {
+                                FlagValue::None => {
+                                    c.common_flags_values
+                                        .push((c_flag.get_name_clone(), FlagValue::Bool(true)));
+                                    (Some(next_arg), c)
+                                }
+                                val => {
+                                    c.common_flags_values.push((c_flag.get_name_clone(), val));
+                                    self.parse_next_common_if_flags(c)
+                                }
+                            },
+                            ft => match ft.get_value_from_str(&next_arg) {
+                                FlagValue::None => {
+                                    c.unknown_flags
+                                        .push((c_flag.get_name_clone(), FlagValue::None));
+                                    (Some(next_arg), c)
+                                }
+                                val => {
+                                    c.common_flags_values.push((c_flag.get_name_clone(), val));
+                                    self.parse_next_common_if_flags(c)
+                                }
+                            },
+                        },
+                        None => {
+                            match c_flag.flag_type {
+                                FlagType::Bool => c
+                                    .common_flags_values
+                                    .push((c_flag.get_name_clone(), FlagValue::Bool(true))),
+                                _ => c
+                                    .common_flags_values
+                                    .push((c_flag.get_name_clone(), FlagValue::None)),
+                            }
+                            (None, c)
+                        }
+                    },
+                    (_, _) => {
+                        //unknown_flag
+                        match c.args.pop_front() {
+                            Some(next_arg) if self.long_flag(&next_arg) => {
+                                match c.default_unknown_type.0 {
+                                    FlagType::Bool => {
+                                        c.unknown_flags.push((flag_name, FlagValue::Bool(true)))
+                                    }
+                                    _ => c.unknown_flags.push((flag_name, FlagValue::None)),
+                                }
+                                self.parse_common_flags_starts_with_long_flag(arg, c)
+                            }
+                            Some(next_arg) if self.flag(&next_arg) => {
+                                match c.default_unknown_type.0 {
+                                    FlagType::Bool => {
+                                        c.unknown_flags.push((flag_name, FlagValue::Bool(true)))
+                                    }
+                                    _ => c.unknown_flags.push((flag_name, FlagValue::None)),
+                                }
+                                self.parse_common_flags_starts_with_short_flag(arg, c)
+                            }
+                            Some(next_arg) => {}
+                            None => {}
+                        }
+                    }
+                }
+            }
         }
     }
 

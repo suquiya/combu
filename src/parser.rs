@@ -283,14 +283,17 @@ impl Parser {
         mut arg: String,
         mut c: Context,
     ) -> (Option<String>, Context) {
-        match arg.find(self.eq) {
+        /*match arg.find(self.eq) {
             Some(index) => {
                 let after_eq = arg.split_off(index + 1);
                 arg.pop();
-                let flag_name = self.get_short_flag_name(arg)
+                let flag_name = self.get_short_flag_name(arg);
+                match c.common_flags.find_short_flag(&flag_name) {
+                    (CalledType::Short, Some(c_flag)) => {}
+                }
             }
             None => {}
-        }
+        }*/
 
         (Some(arg), c)
     }

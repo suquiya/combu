@@ -93,7 +93,7 @@ impl Parser {
             Some(index) => {
                 let after_eq = arg.split_off(index + 1);
                 arg.pop();
-                let flag_name = get_long_flag_name(arg, self.flag_pattern);
+                let flag_name = self.get_long_flag_name(arg);
                 match c.common_flags.find_long_flag(&flag_name) {
                     (CalledType::Name, Some(c_flag)) => {
                         match c_flag.flag_type.get_value_from_str(&after_eq) {
@@ -283,6 +283,15 @@ impl Parser {
         mut arg: String,
         mut c: Context,
     ) -> (Option<String>, Context) {
+        match arg.find(self.eq) {
+            Some(index) => {
+                let after_eq = arg.split_off(index + 1);
+                arg.pop();
+                let flag_name = self.get_short_flag_name(arg)
+            }
+            None => {}
+        }
+
         (Some(arg), c)
     }
 }

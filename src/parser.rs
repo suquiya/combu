@@ -187,7 +187,7 @@ impl Parser {
                                     .common_flags_values
                                     .push((c_flag.get_name_clone(), FlagValue::None)),
                             }
-                            self.parse_common_flags_starts_with_long_flag(arg, c)
+                            self.parse_common_flags_starts_with_long_flag(next_arg, c)
                         }
                         Some(next_arg) if self.flag(&next_arg) => {
                             match &c_flag.flag_type {
@@ -199,7 +199,7 @@ impl Parser {
                                     .common_flags_values
                                     .push((c_flag.get_name_clone(), FlagValue::None)),
                             }
-                            self.parse_common_flags_starts_with_short_flag(arg, c)
+                            self.parse_common_flags_starts_with_short_flag(next_arg, c)
                         }
                         Some(next_arg) => match &c_flag.flag_type {
                             FlagType::Bool => match FlagValue::get_bool_value_from_str(&next_arg) {
@@ -247,7 +247,7 @@ impl Parser {
                                     }
                                     _ => c.unknown_flags.push((flag_name, FlagValue::None)),
                                 }
-                                self.parse_common_flags_starts_with_long_flag(arg, c)
+                                self.parse_common_flags_starts_with_long_flag(next_arg, c)
                             }
                             Some(next_arg) if self.flag(&next_arg) => {
                                 match c.default_unknown_type.0 {
@@ -256,10 +256,21 @@ impl Parser {
                                     }
                                     _ => c.unknown_flags.push((flag_name, FlagValue::None)),
                                 }
-                                self.parse_common_flags_starts_with_short_flag(arg, c)
+                                self.parse_common_flags_starts_with_short_flag(next_arg, c)
                             }
-                            Some(next_arg) => {}
-                            None => {}
+                            Some(next_arg) => {
+                                c.unknown_flags.push((flag_name, FlagValue::None));
+                                (Some(next_arg), c)
+                            }
+                            None => {
+                                match c.default_unknown_type.0 {
+                                    FlagType::Bool => {
+                                        c.unknown_flags.push((flag_name, FlagValue::Bool(true)))
+                                    }
+                                    _ => c.unknown_flags.push((flag_name, FlagValue::None)),
+                                }
+                                (None, c)
+                            }
                         }
                     }
                 }

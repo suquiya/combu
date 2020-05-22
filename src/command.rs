@@ -3,9 +3,10 @@ use crate::Action;
 use crate::parser;
 use crate::Context;
 use crate::Flag;
+use crate::Parser;
 use crate::Vector;
+
 use std::collections::VecDeque;
-use std::path::PathBuf;
 
 #[derive(Clone, Default)]
 pub struct Command {
@@ -210,12 +211,11 @@ impl Command {
         } else {
             let mut args = VecDeque::from(raw_args.clone());
             let current_path = args.pop_front().unwrap();
-            let flag_prefix = "-";
-            let long_flag_prefix = "--";
+            let p = Parser::default();
             //get before first non-flag arg with parsing flags
             //parser::parse_until_not_flag_args_or_end_args(args, self.c_flags, self.l_flags);
             match args.pop_front().unwrap() {
-                arg if arg.starts_with(long_flag_prefix) => {
+                long_flag if p.long_flag(&long_flag) => {
                     //long flag
                     let c = Context::new(raw_args, args, self.c_flags, self.l_flags, &current_path);
                     parser::parse_flags_starts_with_long_flag(arg, c);

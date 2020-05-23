@@ -1,6 +1,5 @@
 use crate::Action;
 
-use crate::parser;
 use crate::Context;
 use crate::Flag;
 use crate::Parser;
@@ -62,7 +61,7 @@ impl Command {
         }
     }
 
-    pub fn run_with_auto_arg_collect(self) {
+    pub fn run_with_auto_arg_collect(mut self) {
         //let args: Vec<String> = std::env::args().collect();
         //self.run(args);
         self.run(std::env::args().collect::<Vec<String>>());
@@ -154,10 +153,12 @@ impl Command {
     }
 
     pub fn find_sub(&self, name: &str) -> Option<&Command> {
-        match &self.sub {
-            Vector(None) => None,
-            Vector(Some(inner)) => inner.iter().find(|c| c.is(name)),
-        }
+        let inner = self.sub.inner().unwrap();
+        inner.iter().find(|c| c.is(name))
+        /*match &self.sub.inner_ref() {
+            None => None,
+            Some(inner) => inner.iter().find(|c| c.is(name)),
+        }*/
     }
 }
 
@@ -181,23 +182,23 @@ impl From<String> for Command {
 }
 
 pub trait Run<T> {
-    fn run(self, args: T);
+    fn run(&mut self, args: T);
 }
 
 impl Run<Vec<String>> for Command {
-    fn run(self, args: Vec<String>) {
+    fn run(&mut self, args: Vec<String>) {
         self.run_from_args(args);
     }
 }
 
 impl Run<Context> for Command {
-    fn run(self, c: Context) {
+    fn run(&mut self, c: Context) {
         self.run_in_context(c);
     }
 }
 
 impl Command {
-    pub fn run_from_args(self, raw_args: Vec<String>) {
+    pub fn run_from_args(&mut self, raw_args: Vec<String>) {
         println!("{:?}, len: {}", &raw_args, &raw_args.len());
         if raw_args.len() < 2 {
             match self.action {
@@ -213,21 +214,20 @@ impl Command {
             let current_path = args.pop_front().unwrap();
             let p = Parser::default();
             //get before first non-flag arg with parsing flags
-            //parser::parse_until_not_flag_args_or_end_args(args, self.c_flags, self.l_flags);
+
             match args.pop_front().unwrap() {
                 long_flag if p.long_flag(&long_flag) => {
                     //long flag
-                    let c = Context::new(raw_args, args, self.c_flags, self.l_flags, &current_path);
-                    parser::parse_flags_starts_with_long_flag(arg, c);
+                    p.long_middle(long_flag);
                 }
-                arg if arg.starts_with(flag_prefix) => {
+                short_flag if p.flag(&short_flag) => {
                     //short flag
-                    let c = Context::new(raw_args, args, self.c_flags, self.l_flags, &current_path);
-                    parser::parse_flags_starts_with_short_flag(arg, c);
+                    p.short_middle(short_flag);
                 }
                 arg => {
                     //non-flag (normal) arg
                     println!("arg: {}", &arg);
+
                     match self.find_sub(&arg) {
                         None => match self.action {
                             None => println!("{} does not have its own action.", self.name),
@@ -239,18 +239,26 @@ impl Command {
                                     self.l_flags,
                                     &current_path,
                                 );
-                                let context = parser::parse_until_end_args(c);
-                                action(&context);
+                                action(&c);
                             }
                         },
-                        Some(_) => {}
+                        Some(sub) => {
+                            let c = Context::new(
+                                raw_args,
+                                args,
+                                self.c_flags,
+                                Vector(None),
+                                &current_path,
+                            );
+                            sub.run(c);
+                        }
                     }
                 }
             }
         }
     }
 
-    pub fn run_in_context(self, context: Context) {
+    pub fn run_in_context(&mut self, context: Context) {
         println!("{:?}", context);
     }
 }

@@ -57,7 +57,7 @@ impl Context {
         }
     }
 
-    pub fn root() -> Option<Context> {
+    pub fn root<'a>() -> Option<Context> {
         None
     }
 
@@ -75,7 +75,7 @@ impl Context {
     }
 }
 
-impl From<Vec<String>> for Context {
+impl<'a> From<Vec<String>> for Context {
     fn from(raw_args: Vec<String>) -> Context {
         let args = VecDeque::from(raw_args.clone());
         let current_path = match &raw_args.get(0) {

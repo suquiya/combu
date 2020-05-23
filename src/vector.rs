@@ -75,9 +75,18 @@ impl<T> Vector<T> {
         }
     }
 
-    pub fn inner(&self) -> &Option<Vec<T>> {
-        let Vector(inner) = self;
-        inner
+    pub fn inner(&self) -> Option<&Vec<T>> {
+        match &self {
+            Vector(None) => None,
+            Vector(Some(inner)) => Some(inner),
+        }
+    }
+
+    pub fn inner_ref(self) -> Option<Vec<T>> {
+        match self {
+            Vector(None) => None,
+            Vector(inner) => inner,
+        }
     }
 }
 

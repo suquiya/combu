@@ -95,7 +95,7 @@ impl Parser {
         }
     }
 
-    pub fn long_middle(&self, long_flag: String) -> FlagArg {
+    pub fn long_middle(&self, mut long_flag: String) -> FlagArg {
         match &long_flag.find(self.eq) {
             Some(index) => {
                 let after_eq = long_flag.split_off(index + 1);
@@ -109,7 +109,7 @@ impl Parser {
         }
     }
 
-    pub fn short_middle(&self, short_flag: String) -> FlagArg {
+    pub fn short_middle(&self, mut short_flag: String) -> FlagArg {
         match &short_flag.find(self.eq) {
             Some(index) => {
                 let after_eq = short_flag.split_off(index + 1);

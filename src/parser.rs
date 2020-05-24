@@ -122,6 +122,43 @@ impl Parser {
             None => FlagArg::Short(self.get_long_flag_name(short_flag), FlagValue::None),
         }
     }
+
+    pub fn parse_args_until_end(self, mut c: Context) -> Context {
+        let mut non_flag_args = VecDeque::<String>::new();
+
+        loop {
+            match c.args.pop_back() {
+                None => {
+                    break;
+                }
+                Some(mut long_flag) if self.long_flag(&long_flag) => {}
+                Some(mut short_flag) if self.flag(&short_flag) => {}
+                Some(mut arg) => {
+                    non_flag_args.push_back(arg);
+                }
+            }
+        }
+        c
+    }
+
+    pub fn parse_long_flag(&self, mut long_flag: String, c: Context) -> (Option<String>, Context) {
+        match long_flag.find(self.eq) {
+            Some(index) => {
+                let after_eq = long_flag.split_off(index);
+                long_flag.pop();
+                long_flag = self.get_long_flag_name(long_flag);
+
+                match c.local_flags.find_short_flag(&long_flag) {
+                    (CalledType::Name, Some(l_flag)) => {}
+                    (CalledType::Long, Some(l_flag)) => {}
+                    (ctype, chit) => {}
+                }
+            }
+            None => {}
+        };
+
+        (None, c)
+    }
 }
 
 pub enum FlagArg {

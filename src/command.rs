@@ -64,11 +64,38 @@ impl Command {
     pub fn run_with_auto_arg_collect(mut self) {
         //let args: Vec<String> = std::env::args().collect();
         //self.run(args);
-        self.run(std::env::args().collect::<Vec<String>>());
+        match &self.sub {
+            Vector(None) => self.single_run(std::env::args().collect::<Vec<String>>()),
+            _ => self.run(std::env::args().collect::<Vec<String>>()),
+        };
     }
 
-    pub fn single_run(self, args: Vec<String>) {
-        println!("{:?}", args);
+    pub fn single_run(&mut self, raw_args: Vec<String>) {
+        //println!("{:?}", args);
+        match self.action.take() {
+            Some(action) => {
+                if raw_args.len() < 2 {
+                    action(Context::from(raw_args))
+                } else {
+                    let mut args = VecDeque::from(raw_args.clone());
+                    let current_path = args.pop_front().unwrap();
+                    let mut context = Context::new(
+                        raw_args,
+                        args,
+                        self.c_flags.take(),
+                        self.l_flags.take(),
+                        &current_path,
+                    );
+                    context = Parser::default().parse_args_until_end(context);
+
+                    action(context)
+                }
+            }
+            None => match self.sub {
+                Vector(None) => println!("no action is registerd."),
+                _ => self.run(raw_args),
+            },
+        }
         // match self.action {
         //     Some(action) => {
         //         action(&Context::new(args,Vector::new(None),self.c_flags);
@@ -152,13 +179,16 @@ impl Command {
         }
     }
 
-    pub fn find_sub(&self, name: &str) -> Option<&Command> {
-        let inner = self.sub.inner().unwrap();
-        inner.iter().find(|c| c.is(name))
-        /*match &self.sub.inner_ref() {
-            None => None,
-            Some(inner) => inner.iter().find(|c| c.is(name)),
-        }*/
+    pub fn take_sub(&mut self, name_or_alias: &str) -> Option<Command> {
+        match self.sub.take() {
+            Vector(None) => None,
+            Vector(Some(ref mut inner)) => {
+                match inner.into_iter().position(|c| c.is(name_or_alias)) {
+                    None => return None,
+                    Some(index) => Some(inner.swap_remove(index)),
+                }
+            }
+        }
     }
 }
 
@@ -203,7 +233,7 @@ impl Command {
         if raw_args.len() < 2 {
             match self.action {
                 Some(action) => {
-                    action(&Context::from(raw_args));
+                    action(Context::from(raw_args));
                 }
                 None => {
                     println!("args: {:?}", raw_args);
@@ -214,7 +244,6 @@ impl Command {
             let current_path = args.pop_front().unwrap();
             let p = Parser::default();
             //get before first non-flag arg with parsing flags
-
             match args.pop_front().unwrap() {
                 long_flag if p.long_flag(&long_flag) => {
                     //long flag
@@ -228,25 +257,28 @@ impl Command {
                     //non-flag (normal) arg
                     println!("arg: {}", &arg);
 
-                    match self.find_sub(&arg) {
+                    //let common_flag = self.c_flags.take();
+
+                    match self.take_sub(&arg) {
                         None => match self.action {
                             None => println!("{} does not have its own action.", self.name),
                             Some(action) => {
                                 let c = Context::new(
                                     raw_args,
                                     args,
-                                    self.c_flags,
-                                    self.l_flags,
+                                    self.c_flags.take(),
+                                    self.l_flags.take(),
                                     &current_path,
                                 );
-                                action(&c);
+                                action(c);
                             }
                         },
-                        Some(sub) => {
+                        Some(mut sub) => {
+                            let common_flag = self.c_flags.take();
                             let c = Context::new(
                                 raw_args,
                                 args,
-                                self.c_flags,
+                                common_flag,
                                 Vector(None),
                                 &current_path,
                             );

@@ -82,6 +82,16 @@ impl<T> Vector<T> {
         }
     }
 
+    pub fn inner_mut(&mut self) -> &mut Option<Vec<T>> {
+        let Vector(inner) = self;
+        inner
+    }
+
+    pub fn take(&mut self) -> Vector<T> {
+        let Vector(inner) = self;
+        Vector(inner.take())
+    }
+
     pub fn inner_ref(self) -> Option<Vec<T>> {
         match self {
             Vector(None) => None,

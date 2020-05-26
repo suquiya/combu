@@ -1,5 +1,6 @@
+use crate::parser::FlagArg;
 use crate::Vector;
-use crate::{Flag, FlagType, FlagValue};
+use crate::{Flag, FlagValue};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
@@ -12,7 +13,7 @@ pub struct Context {
     pub current_path: PathBuf,
     pub common_flags_values: Vector<(String, FlagValue)>,
     pub local_flags_values: Vector<(String, FlagValue)>,
-    pub unknown_flags: Vector<(String, FlagValue)>,
+    pub parsing_flags: Vector<FlagArg>,
 }
 
 impl Context {
@@ -31,7 +32,7 @@ impl Context {
             current_path: PathBuf::from(current_path),
             common_flags_values: Vector::default(),
             local_flags_values: Vector::default(),
-            unknown_flags: Vector::default(),
+            parsing_flags: Vector::default(),
         }
     }
     pub fn build_new(
@@ -42,8 +43,7 @@ impl Context {
         current_path: PathBuf,
         common_flags_values: Vector<(String, FlagValue)>,
         local_flags_values: Vector<(String, FlagValue)>,
-        unknown_flags: Vector<(String, FlagValue)>,
-        default_unknown_type: (FlagType, FlagType),
+        parsing_flags: Vector<FlagArg>,
     ) -> Context {
         Context {
             raw_args,
@@ -53,7 +53,7 @@ impl Context {
             current_path,
             common_flags_values,
             local_flags_values,
-            unknown_flags,
+            parsing_flags,
         }
     }
 
@@ -90,7 +90,7 @@ impl<'a> From<Vec<String>> for Context {
             current_path,
             common_flags_values: Vector::default(),
             local_flags_values: Vector::default(),
-            unknown_flags: Vector::default(),
+            parsing_flags: Vector::default(),
         }
     }
 }

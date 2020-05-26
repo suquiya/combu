@@ -24,6 +24,7 @@ pub enum FlagType {
     String,
     Int,
     Float,
+    //Unknown,
 }
 
 impl FlagType {
@@ -48,17 +49,17 @@ impl FlagType {
         Some(self) == val.get_type()
     }
 
-    pub fn get_value_from_str(&self, val: &str) -> FlagValue {
+    pub fn get_value_from_string(&self, val: String) -> FlagValue {
         match self {
-            FlagType::Bool => FlagValue::get_bool_value_from_str(val),
+            FlagType::Bool => FlagValue::get_bool_value_from_string(val),
             FlagType::String => FlagValue::String(String::from(val)),
             FlagType::Int => match val.parse::<isize>() {
                 Ok(i) => FlagValue::Int(i),
-                Err(_) => FlagValue::None,
+                Err(_) => FlagValue::Invalid(val),
             },
             FlagType::Float => match val.parse::<f64>() {
                 Ok(f) => FlagValue::Float(f),
-                Err(_) => FlagValue::None,
+                Err(_) => FlagValue::Invalid(val),
             },
         }
     }
@@ -76,12 +77,19 @@ pub enum FlagValue {
     String(String),
     Int(isize),
     Float(f64),
+    Invalid(String),
     None,
 }
 
 impl Default for FlagValue {
     fn default() -> Self {
         FlagValue::None
+    }
+}
+
+impl From<String> for FlagValue {
+    fn from(val: String) -> Self {
+        FlagValue::String(val)
     }
 }
 
@@ -92,18 +100,18 @@ impl FlagValue {
             FlagValue::String(_) => Some(&FlagType::String),
             FlagValue::Int(_) => Some(&FlagType::Int),
             FlagValue::Float(_) => Some(&FlagType::Float),
-            FlagValue::None => None,
+            _ => None,
         }
     }
     pub fn is_type(&self, flag_type: &FlagType) -> bool {
         Some(flag_type) == self.get_type()
     }
 
-    pub fn get_bool_value_from_str(val: &str) -> FlagValue {
-        match val {
+    pub fn get_bool_value_from_string(val: String) -> FlagValue {
+        match val.as_str() {
             "true" => FlagValue::Bool(true),
             "false" => FlagValue::Bool(false),
-            _ => FlagValue::None,
+            _ => FlagValue::Invalid(val),
         }
     }
 }

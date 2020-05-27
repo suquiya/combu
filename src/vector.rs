@@ -64,7 +64,7 @@ impl<T> Vector<T> {
         }
     }
 
-    pub fn none(&mut self) {
+    pub fn set_none(&mut self) {
         (*self) = Vector(None);
     }
 

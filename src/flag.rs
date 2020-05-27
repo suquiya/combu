@@ -63,6 +63,13 @@ impl FlagType {
             },
         }
     }
+
+    pub fn get_value_if_no_value(&self) -> FlagValue {
+        match &self {
+            FlagType::Bool => FlagValue::Bool(true),
+            _ => FlagValue::None,
+        }
+    }
 }
 
 impl Default for FlagType {

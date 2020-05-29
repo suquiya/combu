@@ -1,5 +1,4 @@
 use crate::Context;
-use crate::Vector;
 use crate::{CalledType, FlagType, FlagValue};
 use std::collections::VecDeque;
 
@@ -82,10 +81,10 @@ impl Parser {
     ) -> (Option<String>, VecDeque<String>, VecDeque<FlagArg>) {
         loop {
             match args.pop_front() {
-                Some(mut long_flag) if self.long_flag(&long_flag) => {
+                Some(long_flag) if self.long_flag(&long_flag) => {
                     inter_mediate_args.push_back(self.long_middle(long_flag));
                 }
-                Some(mut short_flag) if self.flag(&short_flag) => {
+                Some(short_flag) if self.flag(&short_flag) => {
                     inter_mediate_args.push_back(self.short_middle(short_flag));
                 }
                 next => {
@@ -127,16 +126,29 @@ impl Parser {
         let mut non_flag_args = VecDeque::<String>::new();
 
         loop {
-            match c.args.pop_front() {
+            match c.next_arg() {
                 None => {
                     break;
                 }
-                Some(mut long_flag) if self.long_flag(&long_flag) => {
+                Some(long_flag) if self.long_flag(&long_flag) => {
                     let (next, _c) = self.parse_flags_start_with_long_flag(long_flag, c);
                     c = _c;
+                    if let Some(arg) = next {
+                        non_flag_args.push_back(arg);
+                    } else {
+                        break;
+                    }
                 }
-                Some(mut short_flag) if self.flag(&short_flag) => {}
-                Some(mut arg) => {
+                Some(short_flag) if self.flag(&short_flag) => {
+                    let (next, _c) = self.parse_flags_start_with_short_flag(short_flag, c);
+                    c = _c;
+                    if let Some(arg) = next {
+                        non_flag_args.push_back(arg);
+                    } else {
+                        break;
+                    }
+                }
+                Some(arg) => {
                     non_flag_args.push_back(arg);
                 }
             }
@@ -489,7 +501,7 @@ impl Parser {
                                                     }
                                                 }
                                             }
-                                            (ctype, chit) => {
+                                            (_ctype, _chit) => {
                                                 c.local_flags_values.push((
                                                     l_flag.get_name_clone(),
                                                     FlagValue::None,
@@ -517,7 +529,7 @@ impl Parser {
                         //
                         match c.common_flags.find_long_flag(&long_flag) {
                             (CalledType::Name, Some(c_flag)) => {
-                                //
+                                // TODO: エラーメッセージの表示
                                 match c.args.pop_front() {
                                     Some(next_long_flag) if self.long_flag(&next_long_flag) => {
                                         //
@@ -585,10 +597,8 @@ impl Parser {
                                             (Some(next_arg), c)
                                         }
                                         val => {
-                                            c.common_flags_values.push((
-                                                c_flag.get_name_clone(),
-                                                c_flag.flag_type.get_value_if_no_value(),
-                                            ));
+                                            c.common_flags_values
+                                                .push((c_flag.get_name_clone(), val));
                                             self.parse_next_if_flag(c)
                                         }
                                     }
@@ -637,8 +647,23 @@ impl Parser {
         match short_flag.find(self.eq) {
             Some(index) => {
                 let after_eq = short_flag.split_off(index + 1);
+                short_flag.pop();
+                short_flag = self.get_short_flag_name(short_flag);
+                match c.local_flags.find_short_flag(&short_flag) {
+                    (CalledType::Name, Some(l_flag)) => {
+                        //
+                    }
+                    (CalledType::Long, Some(l_flag)) => {
+                        //
+                    }
+                    (ctype, chit) => {
+                        //
+                    }
+                }
             }
-            None => {}
+            None => {
+                //
+            }
         }
         (None, c)
     }

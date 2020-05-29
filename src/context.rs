@@ -66,11 +66,16 @@ impl Context {
         self
     }
 
+    #[inline]
+    pub fn next_arg(&mut self) -> Option<String> {
+        self.args.pop_front()
+    }
+
     pub fn current(&self) -> &Path {
         &self.current_path
     }
 
-    pub fn change_current(&mut self, path: PathBuf) {
+    pub fn change_current(mut self, path: PathBuf) {
         self.current_path = path;
     }
 }

@@ -226,6 +226,16 @@ impl Flag {
     pub fn get_name_clone(&self) -> String {
         self.name.clone()
     }
+
+    #[inline]
+    pub fn derive_flag_value_from_string(&self, arg: String) -> FlagValue {
+        self.flag_type.get_value_from_string(arg)
+    }
+
+    #[inline]
+    pub fn derive_flag_value_if_no_value(&self) -> FlagValue {
+        self.flag_type.get_value_if_no_value()
+    }
 }
 
 impl From<String> for Flag {

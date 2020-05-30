@@ -121,6 +121,15 @@ impl FlagValue {
             _ => FlagValue::Invalid(val),
         }
     }
+
+    pub fn get_inner_str(&self) -> &str {
+        match &self {
+            FlagValue::String(val) => val,
+            FlagValue::Bool(val) => &val.to_string(),
+            FlagValue::Int(val) => &val.to_string(),
+            FlagValue::Float(val) => &val.to_string(),
+        }
+    }
 }
 
 impl Default for Flag {

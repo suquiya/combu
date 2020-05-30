@@ -1,4 +1,4 @@
-use crate::parser::FlagArg;
+use crate::parser::{FlagArg, ParseError};
 use crate::Vector;
 use crate::{Flag, FlagValue};
 use std::collections::VecDeque;
@@ -14,6 +14,7 @@ pub struct Context {
     pub common_flags_values: Vector<(String, FlagValue)>,
     pub local_flags_values: Vector<(String, FlagValue)>,
     pub parsing_flags: Vector<FlagArg>,
+    pub error_info_list: Vector<(FlagArg, ParseError, ParseError)>,
 }
 
 impl Context {
@@ -33,6 +34,7 @@ impl Context {
             common_flags_values: Vector::default(),
             local_flags_values: Vector::default(),
             parsing_flags: Vector::default(),
+            error_info_list: Vector::default(),
         }
     }
     pub fn build_new(
@@ -44,6 +46,7 @@ impl Context {
         common_flags_values: Vector<(String, FlagValue)>,
         local_flags_values: Vector<(String, FlagValue)>,
         parsing_flags: Vector<FlagArg>,
+        error_info_list: Vector<(FlagArg, ParseError, ParseError)>,
     ) -> Context {
         Context {
             raw_args,
@@ -54,6 +57,7 @@ impl Context {
             common_flags_values,
             local_flags_values,
             parsing_flags,
+            error_info_list,
         }
     }
 
@@ -96,6 +100,7 @@ impl<'a> From<Vec<String>> for Context {
             common_flags_values: Vector::default(),
             local_flags_values: Vector::default(),
             parsing_flags: Vector::default(),
+            error_info_list: Vector::default(),
         }
     }
 }

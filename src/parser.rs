@@ -175,10 +175,11 @@ impl Parser {
                                     (CalledType::Name, Some(c_flag)) => {
                                         match c_flag.flag_type.get_value_from_string(after_eq) {
                                             FlagValue::Invalid(after_eq) => {
-                                                println!(
-                                                    "The flag {}'s value is invalid. So, it is interpreted as an unknown flag.",
+                                                /*println!(
+                                                    "The flag {}'s value is invalid for . So, it is interpreted as an unknown flag.",
                                                     &long_flag
-                                                );
+                                                );*/
+
                                                 c.parsing_flags.push(FlagArg::Long(
                                                     long_flag,
                                                     FlagValue::String(after_eq),
@@ -882,3 +883,11 @@ pub enum ParseError {
     DifferentForm(String),
     Invalid(String),
 }
+
+/*#[derive(Debug)]
+pub struct ErrorInfo {
+    pub flag_arg: FlagValue,
+    pub local: ParseError,
+    pub common: ParseError,
+    pub description: String,
+}*/

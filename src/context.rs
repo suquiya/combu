@@ -1,6 +1,6 @@
 use crate::parser::{FlagArg, ParseError};
 use crate::Vector;
-use crate::{Flag, FlagValue};
+use crate::{CalledType, Flag, FlagValue};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
@@ -14,7 +14,7 @@ pub struct Context {
     pub common_flags_values: Vector<(String, FlagValue)>,
     pub local_flags_values: Vector<(String, FlagValue)>,
     pub parsing_flags: Vector<FlagArg>,
-    pub error_info_list: Vector<(FlagArg, ParseError, ParseError)>,
+    pub error_info_list: Vector<(FlagArg, ParseError, ParseError, String)>,
 }
 
 impl Context {
@@ -46,7 +46,7 @@ impl Context {
         common_flags_values: Vector<(String, FlagValue)>,
         local_flags_values: Vector<(String, FlagValue)>,
         parsing_flags: Vector<FlagArg>,
-        error_info_list: Vector<(FlagArg, ParseError, ParseError)>,
+        error_info_list: Vector<(FlagArg, ParseError, ParseError, String)>,
     ) -> Context {
         Context {
             raw_args,
@@ -81,6 +81,22 @@ impl Context {
 
     pub fn change_current(mut self, path: PathBuf) {
         self.current_path = path;
+    }
+
+    pub fn find_local_long_flag(&self, name_or_alias: &str) -> (CalledType, Option<&Flag>) {
+        self.local_flags.find_long_flag(name_or_alias)
+    }
+
+    pub fn find_local_short_flag(&self, short_alias: &str) -> (CalledType, Option<&Flag>) {
+        self.local_flags.find_short_flag(short_alias)
+    }
+
+    pub fn find_common_long_flag(&self, name_or_alias: &str) -> (CalledType, Option<&Flag>) {
+        self.common_flags.find_long_flag(name_or_alias)
+    }
+
+    pub fn find_common_short_flag(&self, short_alias: &str) -> (CalledType, Option<&Flag>) {
+        self.common_flags.find_short_flag(short_alias)
     }
 }
 

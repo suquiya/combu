@@ -101,12 +101,12 @@ impl<T> Vector<T> {
 }
 
 impl Vector<Flag> {
-    pub fn find_long_flag(&self, alias_or_name: &str) -> (CalledType, Option<&Flag>) {
+    pub fn find_long_flag(&self, name_or_alias: &str) -> (CalledType, Option<&Flag>) {
         match &self {
             Vector(None) => (CalledType::None, None),
-            Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(alias_or_name)) {
-                None => match flags.iter().find(|flag| flag.any_long(alias_or_name)) {
-                    None => match flags.iter().find(|flag| flag.any_short(alias_or_name)) {
+            Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(name_or_alias)) {
+                None => match flags.iter().find(|flag| flag.any_long(name_or_alias)) {
+                    None => match flags.iter().find(|flag| flag.any_short(name_or_alias)) {
                         None => (CalledType::None, None),
                         Some(f) => (CalledType::Short, Some(f)),
                     },
@@ -117,12 +117,12 @@ impl Vector<Flag> {
         }
     }
 
-    pub fn find_short_flag(&self, alias_or_name: &str) -> (CalledType, Option<&Flag>) {
+    pub fn find_short_flag(&self, short_alias: &str) -> (CalledType, Option<&Flag>) {
         match &self {
             Vector(None) => (CalledType::None, None),
-            Vector(Some(flags)) => match flags.iter().find(|flag| flag.any_short(alias_or_name)) {
-                None => match flags.iter().find(|flag| flag.is(alias_or_name)) {
-                    None => match flags.iter().find(|flag| flag.any_long(alias_or_name)) {
+            Vector(Some(flags)) => match flags.iter().find(|flag| flag.any_short(short_alias)) {
+                None => match flags.iter().find(|flag| flag.is(short_alias)) {
+                    None => match flags.iter().find(|flag| flag.any_long(short_alias)) {
                         None => (CalledType::None, None),
                         Some(f) => (CalledType::Long, Some(f)),
                     },

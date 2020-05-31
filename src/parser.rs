@@ -184,7 +184,6 @@ impl Parser {
                                                     ParseError::Invalid(l_flag.get_name_clone()),
                                                     ParseError::Invalid(c_flag.get_name_clone()),
                                                 ));
-
                                                 c.parsing_flags.push(flag_arg);
                                             }
                                             val => c.common_flags_values.push((long_flag, val)),
@@ -197,14 +196,10 @@ impl Parser {
                                                     long_flag,
                                                     FlagValue::String(after_eq),
                                                 );
-                                                c.error_info_list.push(
-                                                    (
-                                                        flag_arg.clone(),
-                                                        ParseError::Invalid(l_flag.get_name_clone()),
-                                                        ParseError::Invalid(c_flag.get_name_clone()),
-                                                        format!(
-                                                        "The flag {}'s value {} is not valid for either a local flag {} or a common flag {} . So, it is interpreted as an unknown flag.",
-                                                        flag_arg.name(), flag_arg.val(), &l_flag.name, &c_flag.name)
+                                                c.error_info_list.push((
+                                                    flag_arg.clone(),
+                                                    ParseError::Invalid(l_flag.get_name_clone()),
+                                                    ParseError::Invalid(c_flag.get_name_clone()),
                                                 ));
 
                                                 c.parsing_flags.push(flag_arg);
@@ -217,18 +212,24 @@ impl Parser {
                                     (CalledType::Short, Some(c_flag)) => {
                                         let flag_arg =
                                             FlagArg::Long(long_flag, FlagValue::String(after_eq));
-                                        c.error_info_list.push((flag_arg.clone(),ParseError::Invalid(l_flag.get_name_clone()),ParseError::DifferentForm(c_flag.get_name_clone()),format!("The flag {} is a name of a local flag {} and a short form of a common flag {}, but it has invalid value {1} as local flag {0} and it is specified long flag.\nDue to above reason, the flag {0} is interpreted as unknown flag.",flag_arg.name(), flag_arg.val(), &c_flag.name)));
+                                        c.error_info_list.push((
+                                            flag_arg.clone(),
+                                            ParseError::Invalid(l_flag.get_name_clone()),
+                                            ParseError::DifferentForm(
+                                                c_flag.get_name_clone(),
+                                                CalledType::Short,
+                                            ),
+                                        ));
                                         c.parsing_flags.push(flag_arg);
                                     }
                                     (_, _) => {
                                         let flag_arg =
                                             FlagArg::Long(long_flag, FlagValue::String(after_eq));
-                                        let desc = format!("The flag {} is a name of a local flag {0}, but its value is invalid.\nDue to above reason, {0} is interpreted unknown flag.", flag_arg.name());
+
                                         c.error_info_list.push((
                                             flag_arg.clone(),
                                             ParseError::Invalid(l_flag.get_name_clone()),
                                             ParseError::Nohit,
-                                            desc,
                                         ));
                                         c.parsing_flags.push(flag_arg)
                                     }
@@ -246,10 +247,16 @@ impl Parser {
                                     (CalledType::Name, Some(c_flag)) => {
                                         match c_flag.flag_type.get_value_from_string(after_eq) {
                                             FlagValue::Invalid(after_eq) => {
-                                                c.parsing_flags.push(FlagArg::Long(
+                                                let flag_arg = FlagArg::Long(
                                                     long_flag,
                                                     FlagValue::String(after_eq),
-                                                ))
+                                                );
+                                                c.error_info_list.push((
+                                                    flag_arg.clone(),
+                                                    ParseError::Invalid(l_flag.get_name_clone()),
+                                                    ParseError::Invalid(c_flag.get_name_clone()),
+                                                ));
+                                                c.parsing_flags.push(flag_arg.clone());
                                             }
                                             val => c.common_flags_values.push((long_flag, val)),
                                         }
@@ -257,10 +264,16 @@ impl Parser {
                                     (CalledType::Long, Some(c_flag)) => {
                                         match c_flag.flag_type.get_value_from_string(after_eq) {
                                             FlagValue::Invalid(after_eq) => {
-                                                c.parsing_flags.push(FlagArg::Long(
+                                                let flag_arg = FlagArg::Long(
                                                     long_flag,
                                                     FlagValue::String(after_eq),
-                                                ))
+                                                );
+                                                c.error_info_list.push((
+                                                    flag_arg.clone(),
+                                                    ParseError::Invalid(l_flag.get_name_clone()),
+                                                    ParseError::Invalid(c_flag.get_name_clone()),
+                                                ));
+                                                c.parsing_flags.push(flag_arg)
                                             }
                                             val => c
                                                 .common_flags_values
@@ -268,21 +281,27 @@ impl Parser {
                                         }
                                     }
                                     (CalledType::Short, Some(c_flag)) => {
-                                        println!(
-                                            "The flag {} is a long form of a local flag {} and a short form of a common flag {}. But, it has invalid value as {1} and it is specified as long flag.", &long_flag, &l_flag.name,&c_flag.name
-                                        );
-                                        println!("Due to above reason, {} is interpreted as an unknown flag.", &long_flag);
-                                        c.parsing_flags.push(FlagArg::Long(
-                                            long_flag,
-                                            FlagValue::String(after_eq),
-                                        ))
+                                        let flag_arg =
+                                            FlagArg::Long(long_flag, FlagValue::String(after_eq));
+                                        c.error_info_list.push((
+                                            flag_arg.clone(),
+                                            ParseError::Invalid(l_flag.get_name_clone()),
+                                            ParseError::DifferentForm(
+                                                c_flag.get_name_clone(),
+                                                CalledType::Short,
+                                            ),
+                                        ));
+                                        c.parsing_flags.push(flag_arg)
                                     }
                                     (_, _) => {
-                                        println!("The flag {} is a long form of a local flag {}, but its value \"{}\" is invalid.\nDue to above reason, {0} is inter_mediate_args as an unknown flag.",&long_flag, &l_flag.name, &after_eq);
-                                        c.parsing_flags.push(FlagArg::Long(
-                                            long_flag,
-                                            FlagValue::String(after_eq),
-                                        ))
+                                        let flag_arg =
+                                            FlagArg::Long(long_flag, FlagValue::String(after_eq));
+                                        c.error_info_list.push((
+                                            flag_arg.clone(),
+                                            ParseError::Invalid(l_flag.get_name_clone()),
+                                            ParseError::Nohit,
+                                        ));
+                                        c.parsing_flags.push(flag_arg)
                                     }
                                 }
                             }
@@ -350,7 +369,6 @@ impl Parser {
                             Some(next_arg) => {
                                 match l_flag.flag_type.get_value_from_string(next_arg) {
                                     FlagValue::Invalid(next_arg) => {
-                                        //
                                         match l_flag.flag_type {
                                             FlagType::Bool => {
                                                 c.local_flags_values
@@ -360,7 +378,6 @@ impl Parser {
                                             _ => {
                                                 match c.common_flags.find_long_flag(&long_flag) {
                                                     (CalledType::Name, Some(c_flag)) => {
-                                                        //
                                                         match c_flag
                                                             .flag_type
                                                             .get_value_from_string(next_arg)
@@ -435,21 +452,12 @@ impl Parser {
                                         }
                                     }
                                     val => {
-                                        //
                                         c.local_flags_values.push((long_flag, val));
                                         self.parse_next_if_flag(c)
                                     }
                                 }
                             }
                             None => {
-                                /*match l_flag.flag_type {
-                                    FlagType::Bool => c
-                                        .local_flags_values
-                                        .push((long_flag, FlagValue::Bool(true))),
-                                    _ => {
-                                        c.local_flags_values.push((long_flag, FlagValue::None));
-                                    }
-                                }*/
                                 c.local_flags_values
                                     .push((long_flag, l_flag.flag_type.get_value_if_no_value()));
                                 (None, c)
@@ -517,7 +525,7 @@ impl Parser {
                                                     }
                                                 }
                                             }
-                                            (_ctype, _chit) => {
+                                            (_, _) => {
                                                 c.local_flags_values.push((
                                                     l_flag.get_name_clone(),
                                                     FlagValue::None,
@@ -542,7 +550,6 @@ impl Parser {
                         }
                     }
                     (ltype, lhit) => {
-                        //
                         match c.common_flags.find_long_flag(&long_flag) {
                             (CalledType::Name, Some(c_flag)) => {
                                 // TODO: エラーメッセージの表示
@@ -900,18 +907,24 @@ impl FlagArg {
         }
     }
 
-    pub fn val(&self) -> &str {
-        match &self {
-            FlagArg::Long(_, val) => val.get_inner_str(),
-            FlagArg::Short(_, val) => val.get_inner_str(),
+    pub fn val_if_string(&self) -> Option<&String> {
+        match self {
+            FlagArg::Long(_, FlagValue::String(val)) => Some(val),
+            FlagArg::Short(_, FlagValue::String(val)) => Some(val),
+            FlagArg::Long(_, FlagValue::Invalid(val)) => Some(val),
+            FlagArg::Short(_, FlagValue::Invalid(val)) => Some(val),
+            FlagArg::Long(_, val) => None,
+            FlagArg::Short(_, val) => None,
         }
     }
-    pub fn inner(&self) -> (&str, &str) {
+    pub fn inner_if_string_val(&self) -> Option<(&str, &str)> {
         match &self {
-            FlagArg::Long(name, FlagValue::String(val)) => (name, val),
-            FlagArg::Short(name, FlagValue::String(val)) => (name, val),
-            FlagArg::Long(name, val) => (name, val.get_inner_str()),
-            FlagArg::Short(name, val) => (name, val.get_inner_str()),
+            FlagArg::Long(name, FlagValue::String(val)) => Some((name, val)),
+            FlagArg::Short(name, FlagValue::String(val)) => Some((name, val)),
+            FlagArg::Long(name, FlagValue::Invalid(val)) => Some((name, val)),
+            FlagArg::Short(name, FlagValue::Invalid(val)) => Some((name, val)),
+            FlagArg::Long(_, _) => None,
+            FlagArg::Short(_, _) => None,
         }
     }
 }
@@ -931,7 +944,7 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
             format!("{} is unknown flag.", &flag_arg.name())
         }
         (flag_arg, ParseError::Nohit, ParseError::Invalid(c_flag)) => {
-            let (name, val) = flag_arg.inner();
+            let (name, val) = flag_arg.inner_if_string_val().unwrap();
             format!(
                 "The flag {}'s value {} is not valid for a common flag {}.",
                 name, val, c_flag
@@ -953,7 +966,7 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
             }
         ),
         (flag_arg, ParseError::Invalid(l_flag), ParseError::Nohit) => {
-            let (name, val) = flag_arg.inner();
+            let (name, val) = flag_arg.inner_if_string_val().unwrap();
             format!(
                 "The flag {}'s value {} is not valid for a local flag {}.",
                 name, val, l_flag
@@ -975,14 +988,14 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
             }
         ),
         (flag_arg, ParseError::Invalid(l_flag), ParseError::Invalid(c_flag)) => {
-            let (name, val) = flag_arg.inner();
+            let (name, val) = flag_arg.inner_if_string_val().unwrap();
             format!(
                 "The flag {}'s value {} is not valid for a local flag {} and a common flag {}.",
                 name, val, l_flag, c_flag
             )
         }
         (flag_arg, ParseError::Invalid(l_flag), ParseError::DifferentForm(c_flag, ctype)) => {
-            let (name, val) = flag_arg.inner();
+            let (name, val) = flag_arg.inner_if_string_val().unwrap();
             format!("The flag {}'s value {} is not valid for a local flag {}.\nAnd {0} matches {}a common flag {}, but it is specified as a {} flag.",name,val,l_flag,match ctype{
                 CalledType::Name=>"",
                 CalledType::Long=>"a long form of ",
@@ -991,7 +1004,7 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
             },c_flag,match flag_arg{FlagArg::Long(_,_)=>"long",FlagArg::Short(_,_)=>"short"})
         }
         (flag_arg, ParseError::DifferentForm(l_flag, ltype), ParseError::Invalid(c_flag)) => {
-            let (name, val) = flag_arg.inner();
+            let (name, val) = flag_arg.inner_if_string_val().unwrap();
             format!("The flag {} matches {}a local flag {}, but it is specified as a {} flag.\nAnd {0}' s value {} is not valid for a common flag {}.", name,match ltype{
                 CalledType::Name=>"",
                 CalledType::Long=>"a long form of ",

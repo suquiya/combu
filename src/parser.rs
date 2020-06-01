@@ -897,8 +897,8 @@ impl FlagArg {
             FlagArg::Short(_, FlagValue::String(val)) => Some(val),
             FlagArg::Long(_, FlagValue::Invalid(val)) => Some(val),
             FlagArg::Short(_, FlagValue::Invalid(val)) => Some(val),
-            FlagArg::Long(_, val) => None,
-            FlagArg::Short(_, val) => None,
+            FlagArg::Long(_, _) => None,
+            FlagArg::Short(_, _) => None,
         }
     }
     pub fn inner_if_string_val(&self) -> Option<(&str, &str)> {

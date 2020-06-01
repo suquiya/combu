@@ -1,4 +1,4 @@
-use crate::parser::{ErrorInfo, FlagArg, ParseError};
+use crate::parser::{ErrorInfo, FlagArg};
 use crate::vector::flag::Found;
 use crate::Vector;
 use crate::{Flag, FlagValue};

@@ -4,12 +4,12 @@ mod context;
 pub mod parser;
 //mod experiment;
 mod flag;
-mod vector;
+pub mod vector;
 
 pub use action::Action;
 pub use command::Command;
 pub use context::Context;
-pub use flag::{CalledType, Flag, FlagType, FlagValue};
+pub use flag::{Flag, FlagType, FlagValue};
 pub use parser::Parser;
 pub use vector::Vector;
 

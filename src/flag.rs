@@ -11,14 +11,6 @@ pub struct Flag {
 }
 
 #[derive(PartialOrd, PartialEq, Clone, Debug)]
-pub enum CalledType {
-    Name,
-    Short,
-    Long,
-    None,
-}
-
-#[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum FlagType {
     Bool,
     String,

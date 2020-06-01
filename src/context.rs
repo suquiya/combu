@@ -1,6 +1,7 @@
 use crate::parser::{ErrorInfo, FlagArg, ParseError};
+use crate::vector::flag::Found;
 use crate::Vector;
-use crate::{CalledType, Flag, FlagValue};
+use crate::{Flag, FlagValue};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
@@ -83,19 +84,19 @@ impl Context {
         self.current_path = path;
     }
 
-    pub fn find_local_long_flag(&self, name_or_alias: &str) -> (CalledType, Option<&Flag>) {
+    pub fn find_local_long_flag(&self, name_or_alias: &str) -> Found {
         self.local_flags.find_long_flag(name_or_alias)
     }
 
-    pub fn find_local_short_flag(&self, short_alias: &str) -> (CalledType, Option<&Flag>) {
+    pub fn find_local_short_flag(&self, short_alias: &str) -> Found {
         self.local_flags.find_short_flag(short_alias)
     }
 
-    pub fn find_common_long_flag(&self, name_or_alias: &str) -> (CalledType, Option<&Flag>) {
+    pub fn find_common_long_flag(&self, name_or_alias: &str) -> Found {
         self.common_flags.find_long_flag(name_or_alias)
     }
 
-    pub fn find_common_short_flag(&self, short_alias: &str) -> (CalledType, Option<&Flag>) {
+    pub fn find_common_short_flag(&self, short_alias: &str) -> Found {
         self.common_flags.find_short_flag(short_alias)
     }
 }

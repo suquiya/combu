@@ -1,5 +1,3 @@
-use crate::{CalledType, Flag};
-
 #[derive(Clone, Debug)]
 pub struct Vector<T>(pub Option<Vec<T>>);
 
@@ -100,36 +98,50 @@ impl<T> Vector<T> {
     }
 }
 
-impl Vector<Flag> {
-    pub fn find_long_flag(&self, name_or_alias: &str) -> (CalledType, Option<&Flag>) {
-        match &self {
-            Vector(None) => (CalledType::None, None),
-            Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(name_or_alias)) {
-                None => match flags.iter().find(|flag| flag.any_long(name_or_alias)) {
-                    None => match flags.iter().find(|flag| flag.any_short(name_or_alias)) {
-                        None => (CalledType::None, None),
-                        Some(f) => (CalledType::Short, Some(f)),
-                    },
-                    Some(f) => (CalledType::Long, Some(f)),
-                },
-                Some(f) => (CalledType::Name, Some(f)),
-            },
-        }
+pub mod flag {
+    use super::Vector;
+    use crate::Flag;
+
+    pub enum Found<T> {
+        Name(T),
+        Short(T),
+        Long(T),
+        None,
     }
 
-    pub fn find_short_flag(&self, short_alias: &str) -> (CalledType, Option<&Flag>) {
-        match &self {
-            Vector(None) => (CalledType::None, None),
-            Vector(Some(flags)) => match flags.iter().find(|flag| flag.any_short(short_alias)) {
-                None => match flags.iter().find(|flag| flag.is(short_alias)) {
-                    None => match flags.iter().find(|flag| flag.any_long(short_alias)) {
-                        None => (CalledType::None, None),
-                        Some(f) => (CalledType::Long, Some(f)),
+    impl Vector<Flag> {
+        pub fn find_long_flag(&self, name_or_alias: &str) -> Found<&Flag> {
+            match &self {
+                Vector(None) => Found::None,
+                Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(name_or_alias)) {
+                    None => match flags.iter().find(|flag| flag.any_long(name_or_alias)) {
+                        None => match flags.iter().find(|flag| flag.any_short(name_or_alias)) {
+                            None => Found::None,
+                            Some(f) => Found::Short(f),
+                        },
+                        Some(f) => Found::Long(f),
                     },
-                    Some(f) => (CalledType::Name, Some(f)),
+                    Some(f) => Found::Name(f),
                 },
-                Some(f) => (CalledType::Short, Some(f)),
-            },
+            }
+        }
+
+        pub fn find_short_flag(&self, short_alias: &str) -> Found<&Flag> {
+            match &self {
+                Vector(None) => Found::None,
+                Vector(Some(flags)) => {
+                    match flags.iter().find(|flag| flag.any_short(short_alias)) {
+                        None => match flags.iter().find(|flag| flag.is(short_alias)) {
+                            None => match flags.iter().find(|flag| flag.any_long(short_alias)) {
+                                None => Found::None,
+                                Some(f) => Found::Long(f),
+                            },
+                            Some(f) => Found::Name(f),
+                        },
+                        Some(f) => Found::Short(f),
+                    }
+                }
+            }
         }
     }
 }

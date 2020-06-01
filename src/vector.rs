@@ -102,6 +102,7 @@ pub mod flag {
     use super::Vector;
     use crate::Flag;
 
+    #[derive(Debug, Clone)]
     pub enum Found<T> {
         Name(T),
         Short(T),

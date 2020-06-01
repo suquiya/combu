@@ -215,10 +215,9 @@ impl Parser {
                                     c.error_info_list.push((
                                         flag_arg.clone(),
                                         ParseError::Invalid(l_flag.get_name_clone()),
-                                        ParseError::DifferentForm(
+                                        ParseError::DifferentForm(Found::Short(
                                             c_flag.get_name_clone(),
-                                            CalledType::Short,
-                                        ),
+                                        )),
                                     ));
                                     c.parsing_flags.push(flag_arg);
                                 }
@@ -284,10 +283,9 @@ impl Parser {
                                     c.error_info_list.push((
                                         flag_arg.clone(),
                                         ParseError::Invalid(l_flag.get_name_clone()),
-                                        ParseError::DifferentForm(
+                                        ParseError::DifferentForm(Found::Short(
                                             c_flag.get_name_clone(),
-                                            CalledType::Short,
-                                        ),
+                                        )),
                                     ));
                                     c.parsing_flags.push(flag_arg)
                                 }
@@ -314,11 +312,10 @@ impl Parser {
                                     c.error_info_list.push((
                                         flag_arg.clone(),
                                         match lhit {
-                                            Found::None => ParseError::Nohit,
-                                            Found::Short => ParseError::DifferentForm(
-                                                lhit.unwrap().get_name_clone(),
-                                                ltype,
+                                            Found::Short(l_flag) => ParseError::DifferentForm(
+                                                Found::Short(l_flag.get_name_clone()),
                                             ),
+                                            _ => ParseError::Nohit,
                                         },
                                         ParseError::Invalid(c_flag.get_name_clone()),
                                     ));
@@ -327,19 +324,18 @@ impl Parser {
                                 val => c.common_flags_values.push((long_flag, val)),
                             }
                         }
-                        (CalledType::Long, Some(c_flag)) => {
+                        Found::Long(c_flag) => {
                             match c_flag.flag_type.get_value_from_string(after_eq) {
                                 FlagValue::Invalid(after_eq) => {
                                     let flag_arg =
                                         FlagArg::Long(long_flag, FlagValue::String(after_eq));
                                     c.error_info_list.push((
                                         flag_arg.clone(),
-                                        match ltype {
-                                            CalledType::None => ParseError::Nohit,
-                                            _ => ParseError::DifferentForm(
-                                                lhit.unwrap().get_name_clone(),
-                                                ltype,
+                                        match lhit {
+                                            Found::Short(l_flag) => ParseError::DifferentForm(
+                                                Found::Short(l_flag.get_name_clone()),
                                             ),
+                                            _ => ParseError::Nohit,
                                         },
                                         ParseError::Invalid(c_flag.get_name_clone()),
                                     ));
@@ -348,45 +344,36 @@ impl Parser {
                                 val => c.common_flags_values.push((c_flag.get_name_clone(), val)),
                             }
                         }
-                        (ctype, chit) => match (ltype, ctype) {
-                            (CalledType::None, CalledType::None) => {
-                                let flag_arg =
-                                    FlagArg::Long(long_flag, FlagValue::String(after_eq));
-                                c.error_info_list.push((
-                                    flag_arg.clone(),
-                                    ParseError::Nohit,
-                                    ParseError::Nohit,
-                                ));
-                                c.parsing_flags.push(flag_arg);
-                            }
-                            (CalledType::None, ctype) => {
-                                println!("The flag {} is a short form of a common flag {}. But it is specified as a long flag. \n Due to above reason, it is interpreted as an unknown flag.", &long_flag, &chit.unwrap().name);
-                                c.parsing_flags
-                                    .push(FlagArg::Long(long_flag, FlagValue::String(after_eq)));
-                            }
-                            (ltype, CalledType::None) => {
-                                println!("The flag {} is a short form of a local flag {}. But it is specified as a long flag.\nDue to above reason, it is interpreted as an unknown flag.", &long_flag, lhit.unwrap().get_name_clone());
-                                c.parsing_flags
-                                    .push(FlagArg::Long(long_flag, FlagValue::String(after_eq)));
-                            }
-                            (ltype, ctype) => {
-                                println!("The flag {} is short forms of a local flag {} and common flag {}. But it is specified as a long flag.\nDur to above reason, it is interpreted as an unknown flag.", &long_flag, &lhit.unwrap().name, &chit.unwrap().name);
-                                c.parsing_flags
-                                    .push(FlagArg::Long(long_flag, FlagValue::String(after_eq)));
-                            }
-                        },
+                        chit => {
+                            let flag_arg = FlagArg::Long(long_flag, FlagValue::String(after_eq));
+                            c.error_info_list.push((
+                                flag_arg.clone(),
+                                match lhit {
+                                    Found::Short(l_flag) => ParseError::DifferentForm(
+                                        Found::Short(l_flag.get_name_clone()),
+                                    ),
+                                    _ => ParseError::Nohit,
+                                },
+                                match chit {
+                                    Found::Short(c_flag) => ParseError::DifferentForm(
+                                        Found::Short(c_flag.get_name_clone()),
+                                    ),
+                                    _ => ParseError::Nohit,
+                                },
+                            ));
+                            c.parsing_flags.push(flag_arg)
+                        }
                     },
                 }
                 self.parse_next_if_flag(c)
             }
             None => {
                 match c.local_flags.find_long_flag(&long_flag) {
-                    (CalledType::Name, Some(l_flag)) => {
+                    Found::Name(l_flag) => {
                         match c.args.pop_front() {
                             Some(next_long_flag) if self.long_flag(&next_long_flag) => {
                                 c.local_flags_values
                                     .push((long_flag, l_flag.flag_type.get_value_if_no_value()));
-
                                 self.parse_flags_start_with_long_flag(next_long_flag, c)
                             }
                             Some(next_short_flag) if self.flag(&next_short_flag) => {
@@ -405,13 +392,12 @@ impl Parser {
                                             }
                                             _ => {
                                                 match c.common_flags.find_long_flag(&long_flag) {
-                                                    (CalledType::Name, Some(c_flag)) => {
+                                                    Found::Name(c_flag) => {
                                                         match c_flag
                                                             .flag_type
                                                             .get_value_from_string(next_arg)
                                                         {
                                                             FlagValue::Invalid(next_arg) => {
-                                                                //
                                                                 match c_flag.flag_type {
                                                                     FlagType::Bool => {
                                                                         c.common_flags_values.push(
@@ -442,7 +428,7 @@ impl Parser {
                                                             }
                                                         }
                                                     }
-                                                    (CalledType::Long, Some(c_flag)) => {
+                                                    Found::Long(c_flag) => {
                                                         //
                                                         match c_flag
                                                             .flag_type
@@ -466,13 +452,9 @@ impl Parser {
                                                             }
                                                         }
                                                     }
-                                                    (_, _) => {
-                                                        //
-                                                        println!("{} is unknown flag.", &long_flag);
-                                                        c.parsing_flags.push(FlagArg::Long(
-                                                            long_flag,
-                                                            FlagValue::None,
-                                                        ));
+                                                    _ => {
+                                                        c.local_flags_values
+                                                            .push((long_flag, FlagValue::None));
                                                         (Some(next_arg), c)
                                                     }
                                                 }
@@ -492,93 +474,77 @@ impl Parser {
                             }
                         }
                     }
-                    (CalledType::Long, Some(l_flag)) => {
-                        match c.args.pop_front() {
-                            Some(next_long_flag) if self.long_flag(&next_long_flag) => {
-                                c.local_flags_values.push((
-                                    l_flag.get_name_clone(),
-                                    l_flag.flag_type.get_value_if_no_value(),
-                                ));
-
-                                self.parse_flags_start_with_long_flag(next_long_flag, c)
-                            }
-                            Some(next_short_flag) if self.flag(&next_short_flag) => {
-                                c.local_flags_values.push((
-                                    l_flag.get_name_clone(),
-                                    l_flag.flag_type.get_value_if_no_value(),
-                                ));
-                                self.parse_flags_start_with_short_flag(next_short_flag, c)
-                            }
-                            Some(next_arg) => {
-                                match l_flag.flag_type.get_value_from_string(next_arg) {
-                                    FlagValue::Invalid(next_arg) => {
-                                        match c.common_flags.find_long_flag(&long_flag) {
-                                            (CalledType::Name, Some(c_flag)) => {
-                                                match c_flag
-                                                    .flag_type
-                                                    .get_value_from_string(next_arg)
-                                                {
-                                                    FlagValue::Invalid(next_arg) => {
-                                                        //
-                                                        c.local_flags_values.push((
-                                                            l_flag.get_name_clone(),
-                                                            FlagValue::None,
-                                                        ));
-                                                        (Some(next_arg), c)
-                                                    }
-                                                    val => {
-                                                        //
-                                                        c.common_flags_values
-                                                            .push((long_flag, val));
-                                                        self.parse_next_if_flag(c)
-                                                    }
-                                                }
-                                            }
-                                            (CalledType::Long, Some(c_flag)) => {
-                                                match c_flag
-                                                    .flag_type
-                                                    .get_value_from_string(next_arg)
-                                                {
-                                                    FlagValue::Invalid(next_arg) => {
-                                                        c.local_flags_values.push((
-                                                            l_flag.get_name_clone(),
-                                                            FlagValue::None,
-                                                        ));
-                                                        (Some(next_arg), c)
-                                                    }
-                                                    val => {
-                                                        c.common_flags_values
-                                                            .push((c_flag.get_name_clone(), val));
-                                                        self.parse_next_if_flag(c)
-                                                    }
-                                                }
-                                            }
-                                            (_, _) => {
+                    Found::Long(l_flag) => match c.args.pop_front() {
+                        Some(next_long_flag) if self.long_flag(&next_long_flag) => {
+                            c.local_flags_values.push((
+                                l_flag.get_name_clone(),
+                                l_flag.flag_type.get_value_if_no_value(),
+                            ));
+                            self.parse_flags_start_with_long_flag(next_long_flag, c)
+                        }
+                        Some(next_short_flag) if self.flag(&next_short_flag) => {
+                            c.local_flags_values.push((
+                                l_flag.get_name_clone(),
+                                l_flag.flag_type.get_value_if_no_value(),
+                            ));
+                            self.parse_flags_start_with_short_flag(next_short_flag, c)
+                        }
+                        Some(next_arg) => match l_flag.flag_type.get_value_from_string(next_arg) {
+                            FlagValue::Invalid(next_arg) => {
+                                match c.common_flags.find_long_flag(&long_flag) {
+                                    Found::Name(c_flag) => {
+                                        match c_flag.flag_type.get_value_from_string(next_arg) {
+                                            FlagValue::Invalid(next_arg) => {
                                                 c.local_flags_values.push((
                                                     l_flag.get_name_clone(),
                                                     FlagValue::None,
                                                 ));
                                                 (Some(next_arg), c)
                                             }
+                                            val => {
+                                                c.common_flags_values.push((long_flag, val));
+                                                self.parse_next_if_flag(c)
+                                            }
                                         }
                                     }
-                                    val => {
-                                        c.local_flags_values.push((long_flag, val));
-                                        self.parse_next_if_flag(c)
+                                    Found::Long(c_flag) => {
+                                        match c_flag.flag_type.get_value_from_string(next_arg) {
+                                            FlagValue::Invalid(next_arg) => {
+                                                c.local_flags_values.push((
+                                                    l_flag.get_name_clone(),
+                                                    FlagValue::None,
+                                                ));
+                                                (Some(next_arg), c)
+                                            }
+                                            val => {
+                                                c.common_flags_values
+                                                    .push((c_flag.get_name_clone(), val));
+                                                self.parse_next_if_flag(c)
+                                            }
+                                        }
+                                    }
+                                    _ => {
+                                        c.local_flags_values
+                                            .push((l_flag.get_name_clone(), FlagValue::None));
+                                        (Some(next_arg), c)
                                     }
                                 }
                             }
-                            None => {
-                                c.local_flags_values.push((
-                                    l_flag.get_name_clone(),
-                                    l_flag.flag_type.get_value_if_no_value(),
-                                ));
-                                (None, c)
+                            val => {
+                                c.local_flags_values.push((long_flag, val));
+                                self.parse_next_if_flag(c)
                             }
+                        },
+                        None => {
+                            c.local_flags_values.push((
+                                l_flag.get_name_clone(),
+                                l_flag.flag_type.get_value_if_no_value(),
+                            ));
+                            (None, c)
                         }
-                    }
-                    (ltype, lhit) => match c.common_flags.find_long_flag(&long_flag) {
-                        (CalledType::Name, Some(c_flag)) => match c.args.pop_front() {
+                    },
+                    lhit => match c.common_flags.find_long_flag(&long_flag) {
+                        Found::Name(c_flag) => match c.args.pop_front() {
                             Some(next_long_flag) if self.long_flag(&next_long_flag) => {
                                 c.common_flags_values
                                     .push((long_flag, c_flag.flag_type.get_value_if_no_value()));
@@ -610,7 +576,7 @@ impl Parser {
                                 (next_none, c)
                             }
                         },
-                        (CalledType::Long, Some(c_flag)) => match c.args.pop_front() {
+                        Found::Long(c_flag) => match c.args.pop_front() {
                             Some(next_long_flag) if self.long_flag(&next_long_flag) => {
                                 c.common_flags_values.push((
                                     c_flag.get_name_clone(),
@@ -648,42 +614,23 @@ impl Parser {
                                 (next_none, c)
                             }
                         },
-                        (ctype, chit) => {
+                        chit => {
                             let flag_arg = FlagArg::Long(long_flag, FlagValue::None);
-                            match (ltype, ctype) {
-                                (CalledType::None, CalledType::None) => c.error_info_list.push((
-                                    flag_arg.clone(),
-                                    ParseError::Nohit,
-                                    ParseError::Nohit,
-                                )),
-                                (CalledType::Short, CalledType::None) => c.error_info_list.push((
-                                    flag_arg.clone(),
-                                    ParseError::DifferentForm(
-                                        lhit.unwrap().get_name_clone(),
-                                        CalledType::Short,
+                            c.error_info_list.push((
+                                flag_arg.clone(),
+                                match lhit {
+                                    Found::Short(l_flag) => ParseError::DifferentForm(
+                                        Found::Short(l_flag.get_name_clone()),
                                     ),
-                                    ParseError::Nohit,
-                                )),
-                                (CalledType::None, CalledType::Short) => c.error_info_list.push((
-                                    flag_arg.clone(),
-                                    ParseError::Nohit,
-                                    ParseError::DifferentForm(
-                                        chit.unwrap().get_name_clone(),
-                                        CalledType::Short,
+                                    _ => ParseError::Nohit,
+                                },
+                                match chit {
+                                    Found::Short(c_flag) => ParseError::DifferentForm(
+                                        Found::Short(c_flag.get_name_clone()),
                                     ),
-                                )),
-                                (ltype, ctype) => c.error_info_list.push((
-                                    flag_arg.clone(),
-                                    ParseError::DifferentForm(
-                                        lhit.unwrap().get_name_clone(),
-                                        ltype,
-                                    ),
-                                    ParseError::DifferentForm(
-                                        chit.unwrap().get_name_clone(),
-                                        ctype,
-                                    ),
-                                )),
-                            }
+                                    _ => ParseError::Nohit,
+                                },
+                            ));
                             c.parsing_flags.push(flag_arg);
                             self.parse_next_if_flag(c)
                         }
@@ -704,49 +651,47 @@ impl Parser {
                 short_flag.pop();
                 short_flag = self.get_short_flag_name(short_flag);
                 match c.local_flags.find_short_flag(&short_flag) {
-                    (CalledType::Short, Some(l_flag)) => {
-                        match l_flag.derive_flag_value_from_string(after_eq) {
-                            FlagValue::Invalid(after_eq) => {
-                                match c.common_flags.find_short_flag(&short_flag) {
-                                    (CalledType::Short, Some(c_flag)) => {
-                                        match c_flag.derive_flag_value_from_string(after_eq) {
-                                            FlagValue::Invalid(after_eq) => {
-                                                let flag_arg = FlagArg::Short(
-                                                    short_flag,
-                                                    FlagValue::String(after_eq),
-                                                );
-                                                c.error_info_list.push((
-                                                    flag_arg.clone(),
-                                                    ParseError::Invalid(l_flag.get_name_clone()),
-                                                    ParseError::Invalid(c_flag.get_name_clone()),
-                                                ));
-                                                c.parsing_flags.push(flag_arg);
-                                            }
-                                            val => {
-                                                c.local_flags_values
-                                                    .push((c_flag.get_name_clone(), val));
-                                            }
+                    Found::Short(l_flag) => match l_flag.derive_flag_value_from_string(after_eq) {
+                        FlagValue::Invalid(after_eq) => {
+                            match c.common_flags.find_short_flag(&short_flag) {
+                                Found::Short(c_flag) => {
+                                    match c_flag.derive_flag_value_from_string(after_eq) {
+                                        FlagValue::Invalid(after_eq) => {
+                                            let flag_arg = FlagArg::Short(
+                                                short_flag,
+                                                FlagValue::String(after_eq),
+                                            );
+                                            c.error_info_list.push((
+                                                flag_arg.clone(),
+                                                ParseError::Invalid(l_flag.get_name_clone()),
+                                                ParseError::Invalid(c_flag.get_name_clone()),
+                                            ));
+                                            c.parsing_flags.push(flag_arg);
+                                        }
+                                        val => {
+                                            c.local_flags_values
+                                                .push((c_flag.get_name_clone(), val));
                                         }
                                     }
-                                    (_, _) => {
-                                        let flag_arg =
-                                            FlagArg::Short(short_flag, FlagValue::String(after_eq));
-                                        c.error_info_list.push((
-                                            flag_arg.clone(),
-                                            ParseError::Invalid(l_flag.get_name_clone()),
-                                            ParseError::Nohit,
-                                        ));
-                                        c.parsing_flags.push(flag_arg);
-                                    }
+                                }
+                                _ => {
+                                    let flag_arg =
+                                        FlagArg::Short(short_flag, FlagValue::String(after_eq));
+                                    c.error_info_list.push((
+                                        flag_arg.clone(),
+                                        ParseError::Invalid(l_flag.get_name_clone()),
+                                        ParseError::Nohit,
+                                    ));
+                                    c.parsing_flags.push(flag_arg);
                                 }
                             }
-                            val => {
-                                c.local_flags_values.push((short_flag, val));
-                            }
                         }
-                    }
-                    (ltype, lhit) => match c.common_flags.find_short_flag(&short_flag) {
-                        (CalledType::Short, Some(c_flag)) => {
+                        val => {
+                            c.local_flags_values.push((short_flag, val));
+                        }
+                    },
+                    lhit => match c.common_flags.find_short_flag(&short_flag) {
+                        Found::Short(c_flag) => {
                             match c_flag.derive_flag_value_from_string(after_eq) {
                                 FlagValue::Invalid(after_eq) => {
                                     let flag_arg =
@@ -763,158 +708,157 @@ impl Parser {
                                 }
                             }
                         }
-                        (ctype, chit) => {
-                            //println!("The flag {} is not any short forms of local and common flags.\nDue to above reason, it is interpreted as an unknown flag.", &short_flag);
-
-                            c.parsing_flags
-                                .push(FlagArg::Short(short_flag, FlagValue::String(after_eq)));
+                        chit => {
+                            let flag_arg = FlagArg::Short(short_flag, FlagValue::String(after_eq));
+                            c.error_info_list.push((
+                                flag_arg.clone(),
+                                match lhit {
+                                    Found::Short(l_flag) => ParseError::DifferentForm(
+                                        Found::Short(l_flag.get_name_clone()),
+                                    ),
+                                    _ => ParseError::Nohit,
+                                },
+                                match chit {
+                                    Found::Short(c_flag) => ParseError::DifferentForm(
+                                        Found::Short(c_flag.get_name_clone()),
+                                    ),
+                                    _ => ParseError::Nohit,
+                                },
+                            ));
+                            c.parsing_flags.push(flag_arg);
                         }
                     },
                 }
                 self.parse_next_if_flag(c)
             }
             None => {
-                //
                 short_flag = self.get_short_flag_name(short_flag);
                 match c.local_flags.find_short_flag(&short_flag) {
-                    (CalledType::Short, Some(l_flag)) => {
-                        match c.args.pop_front() {
-                            Some(next_long_flag) if self.long_flag(&next_long_flag) => {
-                                //
-                                c.local_flags_values.push((
-                                    l_flag.get_name_clone(),
-                                    l_flag.derive_flag_value_if_no_value(),
-                                ));
-                                self.parse_flags_start_with_long_flag(next_long_flag, c)
-                            }
-                            Some(next_short_flag) if self.flag(&next_short_flag) => {
-                                //
-                                c.local_flags_values.push((
-                                    l_flag.get_name_clone(),
-                                    l_flag.derive_flag_value_if_no_value(),
-                                ));
-                                self.parse_flags_start_with_short_flag(next_short_flag, c)
-                            }
-                            Some(next_arg) => {
-                                //
-                                match l_flag.derive_flag_value_from_string(next_arg) {
-                                    FlagValue::Invalid(next_arg) => {
-                                        match l_flag.flag_type {
-                                            FlagType::Bool => {
-                                                //
-                                                c.local_flags_values.push((
-                                                    l_flag.get_name_clone(),
-                                                    FlagValue::Bool(true),
-                                                ));
+                    Found::Short(l_flag) => match c.args.pop_front() {
+                        Some(next_long_flag) if self.long_flag(&next_long_flag) => {
+                            c.local_flags_values.push((
+                                l_flag.get_name_clone(),
+                                l_flag.derive_flag_value_if_no_value(),
+                            ));
+                            self.parse_flags_start_with_long_flag(next_long_flag, c)
+                        }
+                        Some(next_short_flag) if self.flag(&next_short_flag) => {
+                            c.local_flags_values.push((
+                                l_flag.get_name_clone(),
+                                l_flag.derive_flag_value_if_no_value(),
+                            ));
+                            self.parse_flags_start_with_short_flag(next_short_flag, c)
+                        }
+                        Some(next_arg) => match l_flag.derive_flag_value_from_string(next_arg) {
+                            FlagValue::Invalid(next_arg) => match l_flag.flag_type {
+                                FlagType::Bool => {
+                                    c.local_flags_values
+                                        .push((l_flag.get_name_clone(), FlagValue::Bool(true)));
+                                    (Some(next_arg), c)
+                                }
+                                _ => match c.common_flags.find_short_flag(&short_flag) {
+                                    Found::Short(c_flag) => {
+                                        match c_flag.derive_flag_value_from_string(next_arg) {
+                                            FlagValue::Invalid(next_arg) => {
+                                                match c_flag.flag_type {
+                                                    FlagType::Bool => {
+                                                        c.common_flags_values.push((
+                                                            c_flag.get_name_clone(),
+                                                            FlagValue::Bool(true),
+                                                        ));
+                                                    }
+                                                    _ => c.local_flags_values.push((
+                                                        l_flag.get_name_clone(),
+                                                        FlagValue::None,
+                                                    )),
+                                                }
                                                 (Some(next_arg), c)
                                             }
-                                            _ => {
-                                                match c.common_flags.find_short_flag(&short_flag) {
-                                                    (CalledType::Short, Some(c_flag)) => {
-                                                        //
-                                                        match c_flag
-                                                            .derive_flag_value_from_string(next_arg)
-                                                        {
-                                                            FlagValue::Invalid(next_arg) => {
-                                                                match c_flag.flag_type {
-                                                                    FlagType::Bool => {
-                                                                        c.common_flags_values.push(
-                                                                            (
-                                                                                c_flag
-                                                                                    .get_name_clone(
-                                                                                    ),
-                                                                                FlagValue::Bool(
-                                                                                    true,
-                                                                                ),
-                                                                            ),
-                                                                        );
-                                                                    }
-                                                                    _ => {
-                                                                        c.local_flags_values.push((
-                                                                            l_flag.get_name_clone(),
-                                                                            FlagValue::None,
-                                                                        ))
-                                                                    }
-                                                                }
-                                                                (Some(next_arg), c)
-                                                            }
-                                                            val => {
-                                                                c.common_flags_values.push((
-                                                                    c_flag.get_name_clone(),
-                                                                    val,
-                                                                ));
-                                                                self.parse_next_if_flag(c)
-                                                            }
-                                                        }
-                                                    }
-                                                    (ctype, chit) => {
-                                                        c.local_flags_values.push((
-                                                            l_flag.get_name_clone(),
-                                                            FlagValue::None,
-                                                        ));
-                                                        (Some(next_arg), c)
-                                                    }
-                                                }
+                                            val => {
+                                                c.common_flags_values
+                                                    .push((c_flag.get_name_clone(), val));
+                                                self.parse_next_if_flag(c)
                                             }
                                         }
                                     }
+                                    _ => {
+                                        c.local_flags_values
+                                            .push((l_flag.get_name_clone(), FlagValue::None));
+                                        (Some(next_arg), c)
+                                    }
+                                },
+                            },
+                            val => {
+                                c.local_flags_values.push((l_flag.get_name_clone(), val));
+                                self.parse_next_if_flag(c)
+                            }
+                        },
+                        next_none => {
+                            c.local_flags_values.push((
+                                l_flag.get_name_clone(),
+                                l_flag.derive_flag_value_if_no_value(),
+                            ));
+                            (next_none, c)
+                        }
+                    },
+                    lhit => match c.common_flags.find_short_flag(&short_flag) {
+                        Found::Short(c_flag) => match c.args.pop_front() {
+                            Some(next_long_flag) if self.long_flag(&next_long_flag) => {
+                                self.parse_flags_start_with_long_flag(next_long_flag, c)
+                            }
+                            Some(next_short_flag) if self.flag(&next_short_flag) => {
+                                self.parse_flags_start_with_short_flag(next_short_flag, c)
+                            }
+                            Some(next_arg) => {
+                                match c_flag.derive_flag_value_from_string(next_arg) {
+                                    FlagValue::Invalid(next_arg) => {
+                                        c.common_flags_values.push((
+                                            c_flag.get_name_clone(),
+                                            c_flag.derive_flag_value_if_no_value(),
+                                        ));
+                                        (Some(next_arg), c)
+                                    }
                                     val => {
-                                        c.local_flags_values.push((l_flag.get_name_clone(), val));
+                                        c.common_flags_values.push((c_flag.get_name_clone(), val));
                                         self.parse_next_if_flag(c)
                                     }
                                 }
                             }
                             next_none => {
-                                c.local_flags_values.push((
-                                    l_flag.get_name_clone(),
-                                    l_flag.derive_flag_value_if_no_value(),
+                                c.common_flags_values.push((
+                                    c_flag.get_name_clone(),
+                                    c_flag.derive_flag_value_if_no_value(),
                                 ));
                                 (next_none, c)
                             }
-                        }
-                    }
-                    (ltype, lhit) => {
-                        //
-                        match c.common_flags.find_short_flag(&short_flag) {
-                            (CalledType::Short, Some(c_flag)) => match c.args.pop_front() {
-                                Some(next_long_flag) if self.long_flag(&next_long_flag) => {
-                                    self.parse_flags_start_with_long_flag(next_long_flag, c)
-                                }
-                                Some(next_short_flag) if self.flag(&next_short_flag) => {
-                                    self.parse_flags_start_with_short_flag(next_short_flag, c)
-                                }
-                                Some(next_arg) => {
-                                    match c_flag.derive_flag_value_from_string(next_arg) {
-                                        FlagValue::Invalid(next_arg) => {
-                                            c.common_flags_values.push((
-                                                c_flag.get_name_clone(),
-                                                c_flag.derive_flag_value_if_no_value(),
-                                            ));
-                                            (Some(next_arg), c)
-                                        }
-                                        val => {
-                                            c.common_flags_values
-                                                .push((c_flag.get_name_clone(), val));
-                                            self.parse_next_if_flag(c)
-                                        }
-                                    }
-                                }
-                                next_none => {
-                                    //
-                                    c.common_flags_values.push((
+                        },
+                        chit => {
+                            let flag_arg = FlagArg::Short(short_flag, FlagValue::None);
+                            c.error_info_list.push((
+                                flag_arg.clone(),
+                                match lhit {
+                                    Found::Name(l_flag) => ParseError::DifferentForm(Found::Name(
+                                        l_flag.get_name_clone(),
+                                    )),
+                                    Found::Long(l_flag) => ParseError::DifferentForm(Found::Long(
+                                        l_flag.get_name_clone(),
+                                    )),
+                                    _ => ParseError::Nohit,
+                                },
+                                match chit {
+                                    Found::Name(c_flag) => ParseError::DifferentForm(Found::Name(
                                         c_flag.get_name_clone(),
-                                        c_flag.derive_flag_value_if_no_value(),
-                                    ));
-                                    (next_none, c)
-                                }
-                            },
-                            (_, _) => {
-                                c.parsing_flags
-                                    .push(FlagArg::Short(short_flag, FlagValue::None));
-                                self.parse_next_if_flag(c)
-                            }
+                                    )),
+                                    Found::Long(c_flag) => ParseError::DifferentForm(Found::Long(
+                                        c_flag.get_name_clone(),
+                                    )),
+                                    _ => ParseError::Nohit,
+                                },
+                            ));
+                            c.parsing_flags.push(flag_arg);
+                            self.parse_next_if_flag(c)
                         }
-                    }
+                    },
                 }
             }
         }
@@ -990,21 +934,19 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
                 name, val, c_flag
             )
         }
-        (flag_arg, ParseError::Nohit, ParseError::DifferentForm(c_flag, ctype)) => format!(
-            "The flag {} matches {}a common flag {}. But it is specified as a {} flag.",
-            flag_arg.name(),
-            match ctype {
-                CalledType::Name => "",
-                CalledType::Long => "a long form of ",
-                CalledType::Short => "a short form of ",
-                _ => "an unknown form of ",
-            },
-            c_flag,
-            match flag_arg {
-                FlagArg::Long(_, _) => "long",
-                FlagArg::Short(_, _) => "short",
-            }
-        ),
+        (flag_arg, ParseError::Nohit, ParseError::DifferentForm(chit)) => {
+            let (c_form, c_flag_name) = get_form_str_and_name(chit);
+            format!(
+                "The flag {} matches {}a common flag {}. But it is specified as a {} flag.",
+                flag_arg.name(),
+                c_form,
+                c_flag_name,
+                match flag_arg {
+                    FlagArg::Long(_, _) => "long",
+                    FlagArg::Short(_, _) => "short",
+                }
+            )
+        }
         (flag_arg, ParseError::Invalid(l_flag), ParseError::Nohit) => {
             let (name, val) = flag_arg.inner_if_string_val().unwrap();
             format!(
@@ -1012,21 +954,19 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
                 name, val, l_flag
             )
         }
-        (flag_arg, ParseError::DifferentForm(l_flag, ltype), ParseError::Nohit) => format!(
-            "The flag {} matches {}a local flag {}. But it is specified as a {} flag.",
-            flag_arg.name(),
-            l_flag,
-            match ltype {
-                CalledType::Name => "",
-                CalledType::Long => "a long form of ",
-                CalledType::Short => "a short form of ",
-                _ => "an unknown form of ",
-            },
-            match flag_arg {
-                FlagArg::Long(_, _) => "long",
-                FlagArg::Short(_, _) => "short",
-            }
-        ),
+        (flag_arg, ParseError::DifferentForm(l_flag), ParseError::Nohit) => {
+            let (l_form, l_flag_name) = get_form_str_and_name(l_flag);
+            format!(
+                "The flag {} matches {}a local flag {}. But it is specified as a {} flag.",
+                flag_arg.name(),
+                l_form,
+                l_flag_name,
+                match flag_arg {
+                    FlagArg::Long(_, _) => "long",
+                    FlagArg::Short(_, _) => "short",
+                }
+            )
+        }
         (flag_arg, ParseError::Invalid(l_flag), ParseError::Invalid(c_flag)) => {
             let (name, val) = flag_arg.inner_if_string_val().unwrap();
             format!(
@@ -1034,47 +974,28 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
                 name, val, l_flag, c_flag
             )
         }
-        (flag_arg, ParseError::Invalid(l_flag), ParseError::DifferentForm(c_flag, ctype)) => {
+        (flag_arg, ParseError::Invalid(l_flag), ParseError::DifferentForm(c_flag)) => {
             let (name, val) = flag_arg.inner_if_string_val().unwrap();
-            format!("The flag {}'s value {} is not valid for a local flag {}.\nAnd {0} matches {}a common flag {}, but it is specified as a {} flag.",name,val,l_flag,match ctype{
-                CalledType::Name=>"",
-                CalledType::Long=>"a long form of ",
-                CalledType::Short=> "a short form of ",
-                _=> "an unknown form of "
-            },c_flag,match flag_arg{FlagArg::Long(_,_)=>"long",FlagArg::Short(_,_)=>"short"})
+            let (c_form, c_flag_name) = get_form_str_and_name(c_flag);
+            format!("The flag {}'s value {} is not valid for a local flag {}.\nAnd {0} matches {}a common flag {}, but it is specified as a {} flag.",name,val,l_flag,c_form,c_flag_name,match flag_arg{FlagArg::Long(_,_)=>"long",FlagArg::Short(_,_)=>"short"})
         }
-        (flag_arg, ParseError::DifferentForm(l_flag, ltype), ParseError::Invalid(c_flag)) => {
+        (flag_arg, ParseError::DifferentForm(l_flag), ParseError::Invalid(c_flag)) => {
             let (name, val) = flag_arg.inner_if_string_val().unwrap();
-            format!("The flag {} matches {}a local flag {}, but it is specified as a {} flag.\nAnd {0}' s value {} is not valid for a common flag {}.", name,match ltype{
-                CalledType::Name=>"",
-                CalledType::Long=>"a long form of ",
-                CalledType::Short=>"a short form of ",
-                _ => "an unknown form of "
-            },l_flag,match flag_arg{
+            let (l_form, l_flag_name) = get_form_str_and_name(l_flag);
+            format!("The flag {} matches {}a local flag {}, but it is specified as a {} flag.\nAnd {0}' s value {} is not valid for a common flag {}.", name, 
+                l_form,l_flag_name,match flag_arg{
                 FlagArg::Long(_,_)=>"long",
                 FlagArg::Short(_,_)=>"short"
             },val,c_flag)
         }
-        (
-            flag_arg,
-            ParseError::DifferentForm(l_flag, ltype),
-            ParseError::DifferentForm(c_flag, ctype),
-        ) => {
+        (flag_arg, ParseError::DifferentForm(l_flag), ParseError::DifferentForm(c_flag)) => {
+            let (l_form, l_flag_name) = get_form_str_and_name(l_flag);
+            let (c_form, c_flag_name) = get_form_str_and_name(c_flag);
             format!("The flag {} matches {}a local flag {} and {}a common flag {}, but it is specified as a {} flag.",
             flag_arg.name(),
-            match ltype{
-                CalledType::Name=>"",
-                CalledType::Long=>"a long form of ",
-                CalledType::Short=>"a short form of ",
-                _ => "an unknown form of "
-            },
-            l_flag,
-            match ctype{
-                CalledType::Name=>"",
-                CalledType::Long=>"a long form of ",
-                CalledType::Short=>"a short form of ",
-                _ => "an unknown form of "
-            }, c_flag, match flag_arg{
+            l_form,
+            l_flag_name,
+            c_form, c_flag_name, match flag_arg{
                 FlagArg::Long(_,_)=>"long",
                 FlagArg::Short(_,_)=>"short"
             })
@@ -1082,9 +1003,11 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
     }
 }
 
-/*#[derive(Debug)]
-pub struct ErrorInfo {
-    pub flag_arg: FlagValue,
-    pub local: ParseError,
-    pub common: ParseError,
-}*/
+pub(crate) fn get_form_str_and_name<'a, 'f: 'a>(f: &'f Found<String>) -> (&'a str, &'a str) {
+    match f {
+        Found::Name(f_name) => ("", f_name),
+        Found::Long(f_name) => ("a long form of", f_name),
+        Found::Short(f_name) => ("a short form of ", f_name),
+        Found::None => ("not any form of", "unknown - error"),
+    }
+}

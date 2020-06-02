@@ -223,14 +223,17 @@ impl Run<Vec<String>> for Command {
 
 impl Run<Context> for Command {
     fn run(&mut self, c: Context) {
-        self.run_in_context(c);
+        self.run_with_context(c);
     }
 }
 
 impl Command {
     pub fn run_from_args(&mut self, raw_args: Vec<String>) {
         println!("{:?}, len: {}", &raw_args, &raw_args.len());
-        if raw_args.len() < 2 {
+        let mut args = VecDeque::from(raw_args.clone());
+        let current_path = args.pop_front().unwrap();
+        let first = args.pop_front();
+        if first.is_none() {
             match self.action {
                 Some(action) => {
                     action(Context::from(raw_args));
@@ -240,25 +243,53 @@ impl Command {
                 }
             }
         } else {
-            let mut args = VecDeque::from(raw_args.clone());
-            let current_path = args.pop_front().unwrap();
-            let p = Parser::default();
             //get before first non-flag arg with parsing flags
-            match args.pop_front().unwrap() {
-                long_flag if p.long_flag(&long_flag) => {
+            let p = Parser::default();
+            match first {
+                Some(long_flag) if p.long_flag(&long_flag) => {
                     //long flag
-                    p.long_middle(long_flag);
+                    let (arg, args, inter_mediate_args) = p.middle_parse(args, {
+                        let mut inter_mediate_args = VecDeque::new();
+                        inter_mediate_args.push_back(p.long_middle(long_flag));
+                        inter_mediate_args
+                    });
+                    if let Some(arg) = arg {
+                        match self.take_sub(&arg) {
+                            Some(mut sub) => {
+                                //
+                                let context = Context::build_new(
+                                    raw_args,
+                                    args,
+                                    self.c_flags.take(),
+                                    Vector::default(),
+                                    std::path::PathBuf::from(current_path),
+                                    Vector::default(),
+                                    Vector::default(),
+                                    Some(inter_mediate_args),
+                                    Vector::default(),
+                                );
+                                sub.run_with_context(context);
+                            }
+                            None => {
+                                //
+                            }
+                        }
+                    } else {
+                        //
+                    }
                 }
-                short_flag if p.flag(&short_flag) => {
+                Some(short_flag) if p.flag(&short_flag) => {
                     //short flag
-                    p.short_middle(short_flag);
+                    p.middle_parse(args, {
+                        let mut inter_mediate_args = VecDeque::new();
+                        inter_mediate_args.push_back(p.short_middle(short_flag));
+                        inter_mediate_args
+                    });
                 }
-                arg => {
+                Some(arg) => {
                     //non-flag (normal) arg
                     println!("arg: {}", &arg);
-
                     //let common_flag = self.c_flags.take();
-
                     match self.take_sub(&arg) {
                         None => match self.action {
                             None => println!("{} does not have its own action.", self.name),
@@ -286,11 +317,14 @@ impl Command {
                         }
                     }
                 }
+                _ => {
+                    panic!("unexpected error");
+                }
             }
         }
     }
 
-    pub fn run_in_context(&mut self, context: Context) {
+    pub fn run_with_context(&mut self, context: Context) {
         println!("{:?}", context);
     }
 }

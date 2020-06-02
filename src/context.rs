@@ -14,7 +14,7 @@ pub struct Context {
     pub current_path: PathBuf,
     pub common_flags_values: Vector<(String, FlagValue)>,
     pub local_flags_values: Vector<(String, FlagValue)>,
-    pub parsing_flags: Vector<FlagArg>,
+    pub parsing_flags: Option<VecDeque<FlagArg>>,
     pub error_info_list: Vector<ErrorInfo>,
 }
 
@@ -34,7 +34,7 @@ impl Context {
             current_path: PathBuf::from(current_path),
             common_flags_values: Vector::default(),
             local_flags_values: Vector::default(),
-            parsing_flags: Vector::default(),
+            parsing_flags: None,
             error_info_list: Vector::default(),
         }
     }
@@ -46,7 +46,7 @@ impl Context {
         current_path: PathBuf,
         common_flags_values: Vector<(String, FlagValue)>,
         local_flags_values: Vector<(String, FlagValue)>,
-        parsing_flags: Vector<FlagArg>,
+        parsing_flags: Option<VecDeque<FlagArg>>,
         error_info_list: Vector<ErrorInfo>,
     ) -> Context {
         Context {
@@ -99,12 +99,25 @@ impl Context {
     pub fn find_common_short_flag(&self, short_alias: &str) -> Found<&Flag> {
         self.common_flags.find_short_flag(short_alias)
     }
+
+    pub fn push_back_to_parsing_flags(&mut self, flag_arg: FlagArg) {
+        match self.parsing_flags {
+            None => {
+                self.parsing_flags = Some({
+                    let mut inner = VecDeque::new();
+                    inner.push_back(flag_arg);
+                    inner
+                })
+            }
+            Some(ref mut vd) => (*vd).push_back(flag_arg),
+        }
+    }
 }
 
 impl<'a> From<Vec<String>> for Context {
     fn from(raw_args: Vec<String>) -> Context {
         let args = VecDeque::from(raw_args.clone());
-        let current_path = match &raw_args.get(0) {
+        let current_path = match raw_args.get(0) {
             Some(str) => PathBuf::from(str),
             None => PathBuf::new(),
         };
@@ -116,7 +129,7 @@ impl<'a> From<Vec<String>> for Context {
             current_path,
             common_flags_values: Vector::default(),
             local_flags_values: Vector::default(),
-            parsing_flags: Vector::default(),
+            parsing_flags: None,
             error_info_list: Vector::default(),
         }
     }

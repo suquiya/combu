@@ -184,7 +184,7 @@ impl Parser {
                                                 ParseError::Invalid(l_flag.get_name_clone()),
                                                 ParseError::Invalid(c_flag.get_name_clone()),
                                             ));
-                                            c.parsing_flags.push(flag_arg);
+                                            c.push_back_to_parsing_flags(flag_arg);
                                         }
                                         val => c.common_flags_values.push((long_flag, val)),
                                     }
@@ -202,7 +202,7 @@ impl Parser {
                                                 ParseError::Invalid(c_flag.get_name_clone()),
                                             ));
 
-                                            c.parsing_flags.push(flag_arg);
+                                            c.push_back_to_parsing_flags(flag_arg);
                                         }
                                         val => c
                                             .common_flags_values
@@ -219,7 +219,7 @@ impl Parser {
                                             c_flag.get_name_clone(),
                                         )),
                                     ));
-                                    c.parsing_flags.push(flag_arg);
+                                    c.push_back_to_parsing_flags(flag_arg);
                                 }
                                 _ => {
                                     let flag_arg =
@@ -230,7 +230,7 @@ impl Parser {
                                         ParseError::Invalid(l_flag.get_name_clone()),
                                         ParseError::Nohit,
                                     ));
-                                    c.parsing_flags.push(flag_arg)
+                                    c.push_back_to_parsing_flags(flag_arg)
                                 }
                             }
                         }
@@ -253,7 +253,7 @@ impl Parser {
                                                 ParseError::Invalid(l_flag.get_name_clone()),
                                                 ParseError::Invalid(c_flag.get_name_clone()),
                                             ));
-                                            c.parsing_flags.push(flag_arg.clone());
+                                            c.push_back_to_parsing_flags(flag_arg.clone());
                                         }
                                         val => c.common_flags_values.push((long_flag, val)),
                                     }
@@ -270,7 +270,7 @@ impl Parser {
                                                 ParseError::Invalid(l_flag.get_name_clone()),
                                                 ParseError::Invalid(c_flag.get_name_clone()),
                                             ));
-                                            c.parsing_flags.push(flag_arg)
+                                            c.push_back_to_parsing_flags(flag_arg)
                                         }
                                         val => c
                                             .common_flags_values
@@ -287,7 +287,7 @@ impl Parser {
                                             c_flag.get_name_clone(),
                                         )),
                                     ));
-                                    c.parsing_flags.push(flag_arg)
+                                    c.push_back_to_parsing_flags(flag_arg)
                                 }
                                 _ => {
                                     let flag_arg =
@@ -297,7 +297,7 @@ impl Parser {
                                         ParseError::Invalid(l_flag.get_name_clone()),
                                         ParseError::Nohit,
                                     ));
-                                    c.parsing_flags.push(flag_arg)
+                                    c.push_back_to_parsing_flags(flag_arg)
                                 }
                             }
                         }
@@ -319,7 +319,7 @@ impl Parser {
                                         },
                                         ParseError::Invalid(c_flag.get_name_clone()),
                                     ));
-                                    c.parsing_flags.push(flag_arg)
+                                    c.push_back_to_parsing_flags(flag_arg)
                                 }
                                 val => c.common_flags_values.push((long_flag, val)),
                             }
@@ -339,7 +339,7 @@ impl Parser {
                                         },
                                         ParseError::Invalid(c_flag.get_name_clone()),
                                     ));
-                                    c.parsing_flags.push(flag_arg)
+                                    c.push_back_to_parsing_flags(flag_arg)
                                 }
                                 val => c.common_flags_values.push((c_flag.get_name_clone(), val)),
                             }
@@ -361,7 +361,7 @@ impl Parser {
                                     _ => ParseError::Nohit,
                                 },
                             ));
-                            c.parsing_flags.push(flag_arg)
+                            c.push_back_to_parsing_flags(flag_arg)
                         }
                     },
                 }
@@ -631,7 +631,7 @@ impl Parser {
                                     _ => ParseError::Nohit,
                                 },
                             ));
-                            c.parsing_flags.push(flag_arg);
+                            c.push_back_to_parsing_flags(flag_arg);
                             self.parse_next_if_flag(c)
                         }
                     },
@@ -666,7 +666,7 @@ impl Parser {
                                                 ParseError::Invalid(l_flag.get_name_clone()),
                                                 ParseError::Invalid(c_flag.get_name_clone()),
                                             ));
-                                            c.parsing_flags.push(flag_arg);
+                                            c.push_back_to_parsing_flags(flag_arg);
                                         }
                                         val => {
                                             c.local_flags_values
@@ -682,7 +682,7 @@ impl Parser {
                                         ParseError::Invalid(l_flag.get_name_clone()),
                                         ParseError::Nohit,
                                     ));
-                                    c.parsing_flags.push(flag_arg);
+                                    c.push_back_to_parsing_flags(flag_arg);
                                 }
                             }
                         }
@@ -701,7 +701,7 @@ impl Parser {
                                         ParseError::Nohit,
                                         ParseError::Invalid(c_flag.get_name_clone()),
                                     ));
-                                    c.parsing_flags.push(flag_arg)
+                                    c.push_back_to_parsing_flags(flag_arg)
                                 }
                                 val => {
                                     c.common_flags_values.push((c_flag.get_name_clone(), val));
@@ -725,7 +725,7 @@ impl Parser {
                                     _ => ParseError::Nohit,
                                 },
                             ));
-                            c.parsing_flags.push(flag_arg);
+                            c.push_back_to_parsing_flags(flag_arg);
                         }
                     },
                 }
@@ -855,7 +855,7 @@ impl Parser {
                                     _ => ParseError::Nohit,
                                 },
                             ));
-                            c.parsing_flags.push(flag_arg);
+                            c.push_back_to_parsing_flags(flag_arg);
                             self.parse_next_if_flag(c)
                         }
                     },

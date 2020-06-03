@@ -79,17 +79,20 @@ impl Parser {
         &self,
         mut args: VecDeque<String>,
         mut inter_mediate_args: VecDeque<FlagArg>,
-    ) -> (Option<String>, VecDeque<String>, VecDeque<FlagArg>) {
+        mut last: FlagArg,
+    ) -> (Option<String>, VecDeque<String>, VecDeque<FlagArg>, FlagArg) {
         loop {
             match args.pop_front() {
                 Some(long_flag) if self.long_flag(&long_flag) => {
-                    inter_mediate_args.push_back(self.long_middle(long_flag));
+                    inter_mediate_args.push_back(last);
+                    last = self.long_middle(long_flag);
                 }
                 Some(short_flag) if self.flag(&short_flag) => {
-                    inter_mediate_args.push_back(self.short_middle(short_flag));
+                    inter_mediate_args.push_back(last);
+                    last = self.short_middle(short_flag);
                 }
                 next => {
-                    break (next, args, inter_mediate_args);
+                    break (next, args, inter_mediate_args, last);
                 }
             }
         }

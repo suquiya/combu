@@ -1,9 +1,10 @@
 use crate::Action;
 
+use crate::parser::FlagArg;
 use crate::Context;
-use crate::Flag;
 use crate::Parser;
 use crate::Vector;
+use crate::{Flag, FlagValue};
 
 use std::collections::VecDeque;
 
@@ -232,8 +233,9 @@ impl Command {
         println!("{:?}, len: {}", &raw_args, &raw_args.len());
         let mut args = VecDeque::from(raw_args.clone());
         let current_path = args.pop_front().unwrap();
-        let first = args.pop_front();
-        if first.is_none() {
+        let head = args.pop_front();
+        if head.is_none() {
+            //引数がない場合
             match self.action {
                 Some(action) => {
                     action(Context::from(raw_args));
@@ -245,18 +247,15 @@ impl Command {
         } else {
             //get before first non-flag arg with parsing flags
             let p = Parser::default();
-            match first {
+            match head {
                 Some(long_flag) if p.long_flag(&long_flag) => {
                     //long flag
-                    let (arg, args, inter_mediate_args) = p.middle_parse(args, {
-                        let mut inter_mediate_args = VecDeque::new();
-                        inter_mediate_args.push_back(p.long_middle(long_flag));
-                        inter_mediate_args
-                    });
+                    let (arg, mut args, mut inter_mediate_args, last_flag_arg) =
+                        p.middle_parse(args, VecDeque::new(), p.long_middle(long_flag));
                     if let Some(arg) = arg {
                         match self.take_sub(&arg) {
                             Some(mut sub) => {
-                                //
+                                //最初にフラグの形になっていない引数を求める
                                 let context = Context::build_new(
                                     raw_args,
                                     args,
@@ -270,21 +269,105 @@ impl Command {
                                 );
                                 sub.run_with_context(context);
                             }
-                            None => {
-                                //
-                            }
+                            None => match last_flag_arg {
+                                FlagArg::Long(name, FlagValue::None) => {
+                                    //
+                                    match args.pop_front() {
+                                        Some(long_flag) if p.long_flag(&long_flag) => {
+                                            //
+                                        }
+                                        Some(short_flag) if p.flag(&short_flag) => {
+                                            //
+                                        }
+                                        Some(arg) => {
+                                            match self.take_sub(&arg) {
+                                                Some(mut sub) => {
+                                                    inter_mediate_args.push_back(FlagArg::Long(
+                                                        name,
+                                                        FlagValue::String(arg),
+                                                    ));
+                                                    let context = Context::build_new(
+                                                        raw_args,
+                                                        args,
+                                                        self.c_flags.take(),
+                                                        Vector::default(),
+                                                        std::path::PathBuf::from(current_path),
+                                                        Vector::default(),
+                                                        Vector::default(),
+                                                        Some(inter_mediate_args),
+                                                        Vector::default(),
+                                                    );
+                                                    sub.run(context)
+                                                }
+                                                None => {
+                                                    //
+                                                    let context = Context::build_new(
+                                                        raw_args,
+                                                        args,
+                                                        self.c_flags.take(),
+                                                        self.l_flags.take(),
+                                                        current_path.into(),
+                                                        Vector::default(),
+                                                        Vector::default(),
+                                                        Some(inter_mediate_args),
+                                                        Vector::default(),
+                                                    );
+
+                                                    if let Some(action) = self.action {
+                                                        action(context)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        None => {
+                                            //
+                                        } //    let mut non_flag_args = vec![arg];
+                                          //let mut lasts = vec![last_flag_arg];
+                                          //let mut inter_mediate_args_array = vec![inter_mediate_args];
+                                          //let (arg, args,inter_mediate_args,last_flag_arg) = p.middle_parse(args, VecDeque::new(), last)
+                                    }
+                                }
+                                FlagArg::Short(name, FlagValue::None) => {
+                                    //
+                                }
+                                flag_arg => {
+                                    //
+                                    inter_mediate_args.push_back(flag_arg);
+                                    let context = Context::build_new(
+                                        raw_args,
+                                        args,
+                                        self.c_flags.take(),
+                                        self.l_flags.take(),
+                                        std::path::PathBuf::from(current_path),
+                                        Vector::default(),
+                                        Vector::default(),
+                                        Some(inter_mediate_args),
+                                        Vector::default(),
+                                    );
+                                    self.run(context);
+                                }
+                            },
                         }
                     } else {
-                        //
+                        //Noneの場合、そのままself.runに放り込む
+                        let context = Context::build_new(
+                            raw_args,
+                            args,
+                            self.c_flags.take(),
+                            self.l_flags.take(),
+                            current_path.into(),
+                            Vector(None),
+                            Vector(None),
+                            Some(inter_mediate_args),
+                            Vector(None),
+                        );
+
+                        self.run(context);
                     }
                 }
                 Some(short_flag) if p.flag(&short_flag) => {
                     //short flag
-                    p.middle_parse(args, {
-                        let mut inter_mediate_args = VecDeque::new();
-                        inter_mediate_args.push_back(p.short_middle(short_flag));
-                        inter_mediate_args
-                    });
+                    p.middle_parse(args, VecDeque::new(), p.short_middle(short_flag));
                 }
                 Some(arg) => {
                     //non-flag (normal) arg

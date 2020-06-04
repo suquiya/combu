@@ -43,15 +43,15 @@ impl<T> Vector<T> {
         }
     }
 
-    pub fn append(&mut self, other: &mut Vec<T>) {
+    pub fn append(&mut self, mut other: Vec<T>) {
         match self {
             Vector(None) => {
-                let mut inner = vec![];
-                inner.append(other);
+                //let mut inner = vec![];
+                //inner.append(other);
+                //*self = Vector(Some(inner));
+                *self = Vector(Some(other))
             }
-            Vector(Some(ref mut vec)) => {
-                (*vec).append(other);
-            }
+            Vector(Some(ref mut vec)) => (*vec).append(&mut other),
         }
     }
 
@@ -59,6 +59,13 @@ impl<T> Vector<T> {
         match self {
             Vector(None) => true,
             _ => false,
+        }
+    }
+
+    pub fn has_inner_vec(&self) -> bool {
+        match self {
+            Vector(None) => false,
+            _ => true,
         }
     }
 

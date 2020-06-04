@@ -270,8 +270,7 @@ impl Command {
 								match &last_flag_arg {
 									MiddleArg::LongFlag(name, FlagValue::None) => {
 										//検出したものがフラグの値になる可能性がある場合のハンドリング
-										let mut inter_mediate_array = vec![inter_mediate_args];
-										let mut last_flag_array = vec![last_flag_arg];
+
 										let mut non_flag_args = {
 											let mut vd = VecDeque::new();
 											vd.push_back(arg);
@@ -288,18 +287,10 @@ impl Command {
 															p.long_middle(long_flag),
 														);
 													args = _args;
-													inter_mediate_array.push(inter_mediate_args);
-													last_flag_array.push(last_flag_arg);
 													if let Some(arg) = arg {
 														//
 													} else {
 														//最後になったのでself.runに放り込む
-														let inter_mediate_args = inter_mediate_array
-															.iter_mut()
-															.fold(VecDeque::new(), |mut acc, e| {
-																acc.append(e);
-																acc
-															});
 														let context = Context::build_new(
 															raw_args,
 															non_flag_args,

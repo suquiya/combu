@@ -99,7 +99,10 @@ impl Command {
 		}
 	}
 
-	pub fn show_help(self) {}
+	pub fn show_help(&self) {
+		//TODO: implement help function
+		println!("show_help_function");
+	}
 
 	pub fn name<T: Into<String>>(mut self, name: T) -> Command {
 		self.name = name.into();
@@ -244,7 +247,7 @@ impl Command {
 			match head {
 				Some(long_flag) if p.long_flag(&long_flag) => {
 					//long flag
-					let (arg, mut args, mut inter_mediate_args, last_flag_arg) =
+					let (arg, args, mut inter_mediate_args, last_flag_arg) =
 						p.middle_parse(args, VecDeque::new(), p.long_middle(long_flag));
 					//最初にフラグの形になっていない引数を求める
 					if let Some(arg) = arg {
@@ -256,7 +259,7 @@ impl Command {
 									args,
 									self.c_flags.take(),
 									Vector::default(),
-									std::path::PathBuf::from(current_path),
+									current_path.into(),
 									Vector::default(),
 									Vector::default(),
 									Some(inter_mediate_args),
@@ -268,99 +271,17 @@ impl Command {
 							//サブコマンドが合致しなかった場合
 							{
 								match &last_flag_arg {
-									MiddleArg::LongFlag(name, FlagValue::None) => {
+									MiddleArg::LongFlag(_, FlagValue::None)
+									| MiddleArg::ShortFlag(_, FlagValue::None) => {
 										//検出したものがフラグの値になる可能性がある場合のハンドリング
-
-										let mut non_flag_args = {
-											let mut vd = VecDeque::new();
-											vd.push_back(arg);
-											vd
-										};
-										loop {
-											//前のループ、あるいはループに入る前にサブコマンドが特定できなかった場合
-											match args.pop_front() {
-												Some(long_flag) if p.long_flag(&long_flag) => {
-													let (arg, _args, inter_mediate_args, last_flag_arg) = p
-														.middle_parse(
-															args,
-															VecDeque::new(),
-															p.long_middle(long_flag),
-														);
-													args = _args;
-													if let Some(arg) = arg {
-														//
-													} else {
-														//最後になったのでself.runに放り込む
-														let context = Context::build_new(
-															raw_args,
-															non_flag_args,
-															self.c_flags.take(),
-															None.into(),
-															current_path.into(),
-															None.into(),
-															None.into(),
-															Some(inter_mediate_args),
-															None.into(),
-														);
-														break self.run_with_context(context);
-													}
-												}
-												Some(short_flag) if p.flag(&short_flag) => {
-													//
-												}
-												Some(arg) => {
-													//次の引数を判定
-													match self.take_sub(&arg) {
-														Some(mut sub) => {
-															inter_mediate_args.push_back(
-																last_flag_arg.set_val(FlagValue::String(arg)),
-															);
-															let context = Context::build_new(
-																raw_args,
-																args,
-																self.c_flags.take(),
-																Vector::default(),
-																std::path::PathBuf::from(current_path),
-																Vector::default(),
-																Vector::default(),
-																Some(inter_mediate_args),
-																Vector::default(),
-															);
-															break sub.run(context);
-														}
-														None => {
-															//
-															let context = Context::build_new(
-																raw_args,
-																args,
-																self.c_flags.take(),
-																self.l_flags.take(),
-																current_path.into(),
-																Vector::default(),
-																Vector::default(),
-																Some(inter_mediate_args),
-																Vector::default(),
-															);
-
-															if let Some(action) = self.action {
-																break action(context);
-															}
-															break;
-														}
-													}
-												}
-												None => {
-													//
-												}
-											}
-										}
-									}
-									MiddleArg::ShortFlag(name, FlagValue::None) => {
-										//
+										inter_mediate_args.push_back(last_flag_arg);
+										inter_mediate_args.push_back(MiddleArg::Normal(arg));
+										self.assign_sub(args, inter_mediate_args, p, raw_args, current_path);
 									}
 									_ => {
-										//
+										//フラグになる可能性がない場合
 										inter_mediate_args.push_back(last_flag_arg);
+										inter_mediate_args.push_back(MiddleArg::Normal(arg));
 										let context = Context::build_new(
 											raw_args,
 											args,
@@ -372,13 +293,21 @@ impl Command {
 											Some(inter_mediate_args),
 											Vector::default(),
 										);
-										self.run_with_context(context);
+										match self.action {
+											Some(action) => {
+												action(context);
+											}
+											None => {
+												println!("no action registered");
+												self.show_help();
+											}
+										}
 									}
 								}
 							}
 						}
 					} else {
-						//Noneの場合、そのままself.runに放り込む
+						//Noneの場合、そのままself.actionに放り込む
 						let context = Context::build_new(
 							raw_args,
 							args,
@@ -390,16 +319,75 @@ impl Command {
 							Some(inter_mediate_args),
 							Vector(None),
 						);
-
-						self.run(context);
+						match self.action {
+							Some(action) => {
+								action(context);
+							}
+							_ => {
+								println!("no action registered");
+								self.show_help();
+							}
+						}
 					}
 				}
 				Some(short_flag) if p.flag(&short_flag) => {
 					//short flag
-					p.middle_parse(args, VecDeque::new(), p.short_middle(short_flag));
+					let (arg, args, mut inter_mediate_args, last_flag_arg) =
+						p.middle_parse(args, VecDeque::new(), p.short_middle(short_flag));
+					if let Some(arg) = arg {
+						match self.take_sub(&arg) {
+							Some(mut sub) => {
+								let context = Context::build_new(
+									raw_args,
+									args,
+									self.c_flags.take(),
+									Vector(None),
+									current_path.into(),
+									Vector(None),
+									Vector(None),
+									Some(inter_mediate_args),
+									Vector(None),
+								);
+								sub.run_with_context(context);
+							}
+							None => match &last_flag_arg {
+								MiddleArg::LongFlag(_, FlagValue::None)
+								| MiddleArg::ShortFlag(_, FlagValue::None) => {
+									inter_mediate_args.push_back(last_flag_arg);
+									inter_mediate_args.push_back(MiddleArg::Normal(arg));
+									self.assign_sub(args, inter_mediate_args, p, raw_args, current_path);
+								}
+								_ => {
+									//フラグの値になる可能性がない場合（サブコマンドではなくself実行）
+									inter_mediate_args.push_back(last_flag_arg);
+									inter_mediate_args.push_back(MiddleArg::Normal(arg));
+									let context = Context::build_new(
+										raw_args,
+										args,
+										self.c_flags.take(),
+										self.l_flags.take(),
+										current_path.into(),
+										Vector(None),
+										Vector(None),
+										Some(inter_mediate_args),
+										Vector(None),
+									);
+									match self.action {
+										Some(action) => {
+											action(context);
+										}
+										None => {
+											println!("no action registered");
+											self.show_help();
+										}
+									}
+								}
+							},
+						}
+					}
 				}
 				Some(arg) => {
-					//non-flag (normal) arg
+					//first arg is non-flag (normal) arg
 					println!("arg: {}", &arg);
 					//let common_flag = self.c_flags.take();
 					match self.take_sub(&arg) {
@@ -424,6 +412,7 @@ impl Command {
 					}
 				}
 				_ => {
+					//Because None has already excluded, this area must be unreachable.
 					panic!("unexpected error");
 				}
 			}
@@ -432,5 +421,163 @@ impl Command {
 
 	pub fn run_with_context(&mut self, context: Context) {
 		println!("{:?}", context);
+	}
+
+	pub fn assign_sub(
+		&mut self,
+		mut args: VecDeque<String>,
+		mut inter_mediate_args: VecDeque<MiddleArg>,
+		p: Parser,
+		raw_args: Vec<String>,
+		current_path: String,
+	) {
+		match args.pop_front() {
+			Some(long_flag) if p.long_flag(&long_flag) => {
+				let (arg, _args, mut _inter_mediate_args, last_flag_arg) =
+					p.middle_parse(args, inter_mediate_args, p.long_middle(long_flag));
+				args = _args;
+				inter_mediate_args = _inter_mediate_args;
+				if let Some(arg) = arg {
+					match self.take_sub(&arg) {
+						Some(mut sub) => {
+							inter_mediate_args.push_back(last_flag_arg);
+							sub.run(Context::build_new(
+								raw_args,
+								args,
+								self.c_flags.take(),
+								None.into(),
+								current_path.into(),
+								None.into(),
+								None.into(),
+								Some(inter_mediate_args),
+								None.into(),
+							))
+						}
+						None => {
+							//一致するサブコマンドがなかった場合
+							match &last_flag_arg {
+								MiddleArg::LongFlag(_, FlagValue::None)
+								| MiddleArg::ShortFlag(_, FlagValue::None) => {
+									inter_mediate_args.push_back(last_flag_arg);
+									inter_mediate_args.push_back(MiddleArg::Normal(arg));
+								}
+								_ => {
+									inter_mediate_args.push_back(last_flag_arg);
+									inter_mediate_args.push_back(MiddleArg::Normal(arg));
+									match self.action {
+										Some(action) => {
+											//
+											let context = Context::build_new(
+												raw_args,
+												args,
+												self.c_flags.take(),
+												self.l_flags.take(),
+												current_path.into(),
+												None.into(),
+												None.into(),
+												Some(inter_mediate_args),
+												None.into(),
+											);
+											action(context)
+										}
+										_ => println!("no action is registered."),
+									}
+								}
+							}
+						}
+					}
+				} else {
+					//
+				}
+			}
+			Some(short_flag) if p.flag(&short_flag) => {
+				//そのままself.runに放り込む
+				let context = Context::build_new(
+					raw_args,
+					args,
+					self.c_flags.take(),
+					self.l_flags.take(),
+					current_path.into(),
+					Vector(None),
+					Vector(None),
+					Some(inter_mediate_args),
+					Vector::default(),
+				);
+
+				match self.action {
+					Some(action) => {
+						action(context);
+					}
+					_ => {
+						println!("no action registerd");
+						self.show_help();
+					}
+				}
+			}
+			Some(arg) => {
+				//次が普通の引数だった場合サブコマンドか判定
+				match self.take_sub(&arg) {
+					Some(mut sub) => sub.run(Context::build_new(
+						raw_args,
+						args,
+						self.c_flags.take(),
+						None.into(),
+						current_path.into(),
+						None.into(),
+						None.into(),
+						Some(inter_mediate_args),
+						None.into(),
+					)),
+					None => {
+						//サブコマンドはないのでそのままselfでaction
+						let mut c = Context::build_new(
+							raw_args,
+							args,
+							self.c_flags.take(),
+							self.l_flags.take(),
+							current_path.into(),
+							Vector(None),
+							Vector(None),
+							Some(inter_mediate_args),
+							Vector(None),
+						);
+						//TODO: inter_mediate_argsに入っているフラグをパースする処理
+						c = p.parse_args_until_end(c);
+						match self.action {
+							Some(action) => {
+								action(c);
+							}
+							None => {
+								println!("no action is registered");
+								self.show_help();
+							}
+						}
+					}
+				}
+			}
+			None => {
+				//これで終わっている場合の判定
+				let context = Context::build_new(
+					raw_args,
+					args,
+					self.c_flags.take(),
+					self.l_flags.take(),
+					current_path.into(),
+					Vector(None),
+					Vector(None),
+					Some(inter_mediate_args),
+					Vector(None),
+				);
+				match self.action {
+					Some(action) => {
+						action(context);
+					}
+					None => {
+						println!("no action is registered.");
+						self.show_help();
+					}
+				}
+			}
+		}
 	}
 }

@@ -88,7 +88,7 @@ impl Context {
 		self.local_flags.find_long_flag(name_or_alias)
 	}
 
-	pub fn find_local_short_flag(&self, short_alias: &str) -> Found<&Flag> {
+	pub fn find_local_short_flag(&self, short_alias: &char) -> Found<&Flag> {
 		self.local_flags.find_short_flag(short_alias)
 	}
 
@@ -96,7 +96,7 @@ impl Context {
 		self.common_flags.find_long_flag(name_or_alias)
 	}
 
-	pub fn find_common_short_flag(&self, short_alias: &str) -> Found<&Flag> {
+	pub fn find_common_short_flag(&self, short_alias: &char) -> Found<&Flag> {
 		self.common_flags.find_short_flag(short_alias)
 	}
 

@@ -4,7 +4,7 @@ use crate::Vector;
 pub struct Flag {
 	pub name: String,
 	pub usage: String,
-	pub short_alias: Vector<String>,
+	pub short_alias: Vector<char>,
 	pub long_alias: Vector<String>,
 	pub default_value: FlagValue,
 	pub flag_type: FlagType,
@@ -160,7 +160,7 @@ impl Flag {
 	pub fn build_new(
 		name: String,
 		usage: String,
-		short_alias: Vector<String>,
+		short_alias: Vector<char>,
 		long_alias: Vector<String>,
 		flag_type: FlagType,
 		default_value: FlagValue,
@@ -182,7 +182,7 @@ impl Flag {
 		}
 	}
 
-	pub fn short<T: Into<String>>(mut self, a: T) -> Self {
+	pub fn short_alias<T: Into<char>>(mut self, a: T) -> Self {
 		self.short_alias.push(a.into());
 		self
 	}
@@ -212,14 +212,29 @@ impl Flag {
 		self.name == name
 	}
 
-	pub fn any_short(&self, alias: &str) -> bool {
+	pub fn is_short(&self, alias: &char) -> bool {
 		match &self.short_alias {
 			Vector(None) => false,
 			Vector(Some(short_alias)) => short_alias.iter().any(|s| s == alias),
 		}
 	}
 
-	pub fn any_long(&self, alias: &str) -> bool {
+	pub fn any_short(&self, aliases: &std::str::Chars) -> Vector<usize> {
+		match self.short_alias {
+			Vector(None) => Vector(None),
+			Vector(Some(short_aliases)) => {
+				let result = Vector::default();
+				for (i, s) in aliases.enumerate() {
+					if self.is_short(&s) {
+						result.push(i);
+					}
+				}
+				result
+			}
+		}
+	}
+
+	pub fn is_long(&self, alias: &str) -> bool {
 		match &self.long_alias {
 			Vector(None) => false,
 			Vector(Some(long_alias)) => long_alias.iter().any(|s| s == alias),

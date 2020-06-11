@@ -100,7 +100,7 @@ impl Context {
 		self.common_flags.find_short_flag(short_alias)
 	}
 
-	pub fn push_back_to_parsing_flags(&mut self, middle_arg: MiddleArg) {
+	pub fn push_back_to_parsing_args(&mut self, middle_arg: MiddleArg) {
 		match self.parsing_args {
 			None => {
 				self.parsing_args = Some({

@@ -216,7 +216,7 @@ impl Parser {
 								c.error_info_list.push((
 									flag_arg.clone(),
 									ParseError::InvalidLong(l_flag.get_name_clone()),
-									ParseError::NoLong,
+									ParseError::NoExistLong,
 								));
 								c.push_back_to_parsing_flags(flag_arg)
 							}
@@ -262,7 +262,7 @@ impl Parser {
 								c.error_info_list.push((
 									flag_arg.clone(),
 									ParseError::InvalidLong(l_flag.get_name_clone()),
-									ParseError::NoLong,
+									ParseError::NoExistLong,
 								));
 								c.push_back_to_parsing_flags(flag_arg)
 							}
@@ -275,7 +275,7 @@ impl Parser {
 								let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::String(after_eq));
 								c.error_info_list.push((
 									flag_arg.clone(),
-									ParseError::NoLong,
+									ParseError::NoExistLong,
 									ParseError::InvalidLong(c_flag.get_name_clone()),
 								));
 								c.push_back_to_parsing_flags(flag_arg)
@@ -287,7 +287,7 @@ impl Parser {
 								let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::String(after_eq));
 								c.error_info_list.push((
 									flag_arg.clone(),
-									ParseError::NoLong,
+									ParseError::NoExistLong,
 									ParseError::InvalidLong(c_flag.get_name_clone()),
 								));
 								c.push_back_to_parsing_flags(flag_arg)
@@ -298,8 +298,8 @@ impl Parser {
 							let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::String(after_eq));
 							c.error_info_list.push((
 								flag_arg.clone(),
-								ParseError::NoLong,
-								ParseError::NoLong,
+								ParseError::NoExistLong,
+								ParseError::NoExistLong,
 							));
 							c.push_back_to_parsing_flags(flag_arg)
 						}
@@ -509,8 +509,8 @@ impl Parser {
 						let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::None);
 						c.error_info_list.push((
 							flag_arg.clone(),
-							ParseError::NoLong,
-							ParseError::NoLong,
+							ParseError::NoExistLong,
+							ParseError::NoExistLong,
 						));
 						c.push_back_to_parsing_flags(flag_arg);
 						self.parse_next_if_flag(c)
@@ -530,12 +530,13 @@ impl Parser {
 				let after_eq = short_flag.split_off(index + 1);
 				short_flag.pop();
 				short_flag = self.get_short_flag_name(short_flag);
+				let mut i: usize = 0;
 				match short_flag.pop() {
 					None => {
 						c.error_info_list.push((
 							MiddleArg::ShortFlag(short_flag, FlagValue::String(after_eq)),
-							ParseError::NoExist,
-							ParseError::NoExist,
+							ParseError::NoExistShort(i),
+							ParseError::NoExistShort(i),
 						));
 						self.parse_next_if_flag(c)
 					}
@@ -584,8 +585,8 @@ impl Parser {
 												short_flag.clone(),
 												FlagValue::String(after_eq),
 											),
-											ParseError::NoShort(i),
-											ParseError::NoShort(i),
+											ParseError::NoExistShort(i),
+											ParseError::NoExistShort(i),
 										))
 									}
 								},
@@ -635,7 +636,17 @@ impl Parser {
 								}
 							}
 							_ => {
-								//
+								//ローカルにヒットしなかった場合
+								match c.find_local_short_flag(&before_eq) {
+									Found::Short(c_flag) => {
+										//
+									}
+									_ => c.error_info_list.push((
+										MiddleArg::ShortFlag(short_flag, FlagValue::String(after_eq)),
+										ParseError::NoExistShort(i),
+										ParseError::NoExistShort(i),
+									)),
+								}
 							}
 						}
 						self.parse_next_if_flag(c)
@@ -644,6 +655,8 @@ impl Parser {
 			}
 			None => {
 				short_flag = self.get_short_flag_name(short_flag);
+				let i: Index = 0;
+				let last = short_flag.pop();
 				match c.local_flags.find_short_flag(&short_flag) {
 					Found::Short(l_flag) => match c.args.pop_front() {
 						Some(next_long_flag) if self.long_flag(&next_long_flag) => {
@@ -784,17 +797,6 @@ impl Parser {
 	}
 }
 
-/*#[derive(Debug, Clone)]
-pub enum MiddleArg {
-	NonFlag(String),
-	Flag(FlagArg),
-}
-
-impl From<FlagArg> for Arg {
-	fn from(flag_arg: FlagArg) -> Arg {
-		Arg::Flag(flag_arg)
-	}
-}*/
 #[derive(Debug, Clone)]
 pub enum MiddleArg {
 	Normal(String),
@@ -860,12 +862,13 @@ impl MiddleArg {
 	}
 }
 
+type Index = usize;
 #[derive(Debug)]
 pub enum ParseError {
-	NoLong,
-	NoShort(usize),
+	NoExistLong,
+	NoExistShort(Index),
 	//DifferentForm(Found<String>),
-	InvalidShort(usize, String),
+	InvalidShort(Index, String),
 	InvalidLong(String),
 	NoExist,
 }

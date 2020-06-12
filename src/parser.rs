@@ -177,7 +177,7 @@ impl Parser {
 				long_flag = self.get_long_flag_name(long_flag);
 
 				match c.local_flags.find_long_flag(&long_flag) {
-					Found::Name(l_flag) => match l_flag.flag_type.get_value_from_string(after_eq) {
+					Found::Name(l_flag) => match l_flag.derive_flag_value_from_string(after_eq) {
 						FlagValue::Invalid(after_eq) => match c.common_flags.find_long_flag(&long_flag) {
 							Found::Name(c_flag) => {
 								match c_flag.flag_type.get_value_from_string(after_eq) {
@@ -544,27 +544,12 @@ impl Parser {
 						let i = 0;
 						for s in short_flag.chars() {
 							match c.find_local_short_flag(&s) {
-								Found::Short(l_flag) => match l_flag.flag_type {
-									FlagType::Bool => {
-										c.local_flags_values
-											.push((l_flag.get_name_clone(), FlagValue::Bool(true)));
-									}
-									val => match c.find_common_short_flag(&s) {
-										Found::Short(c_flag) => match c_flag.flag_type {
-											FlagType::Bool => {
-												c.common_flags_values
-													.push((c_flag.get_name_clone(), FlagValue::Bool(true)));
-											}
-											_ => c
-												.local_flags_values
-												.push((l_flag.get_name_clone(), FlagValue::None)),
-										},
-										_ => {
-											c.local_flags_values
-												.push((l_flag.get_name_clone(), FlagValue::None));
-										}
-									},
-								},
+								Found::Short(l_flag) => {
+									c.local_flags_values.push((
+										l_flag.get_name_clone(),
+										l_flag.derive_flag_value_if_no_value(),
+									));
+								}
 								_ => match c.find_common_short_flag(&s) {
 									Found::Short(c_flag) => {
 										c.common_flags_values.push((
@@ -601,7 +586,6 @@ impl Parser {
 										//
 										match c.find_common_short_flag(&before_eq) {
 											Found::Short(c_flag) => {
-												//
 												match c_flag.derive_flag_value_from_string(after_eq) {
 													FlagValue::Invalid(after_eq) => {
 														c.push_back_to_parsing_args(MiddleArg::ShortFlag(
@@ -621,7 +605,7 @@ impl Parser {
 														c.common_flags_values
 															.push((c_flag.get_name_clone(), val));
 													}
-												}
+												};
 											}
 											_ => c.error_info_list.push((
 												MiddleArg::ShortFlag(short_flag, FlagValue::String(after_eq)),
@@ -633,19 +617,40 @@ impl Parser {
 									val => {
 										c.local_flags_values.push((l_flag.get_name_clone(), val));
 									}
-								}
+								};
 							}
 							_ => {
 								//ローカルにヒットしなかった場合
-								match c.find_local_short_flag(&before_eq) {
+								match c.find_common_short_flag(&before_eq) {
 									Found::Short(c_flag) => {
-										//
+										match c_flag.derive_flag_value_from_string(after_eq) {
+											FlagValue::Invalid(after_eq) => {
+												//
+												c.push_back_to_parsing_args(MiddleArg::ShortFlag(
+													before_eq.to_string(),
+													FlagValue::String(after_eq),
+												));
+												c.error_info_list.push((
+													MiddleArg::ShortFlag(
+														short_flag,
+														FlagValue::String(after_eq),
+													),
+													ParseError::NoExistShort(i),
+													ParseError::InvalidShort(i, c_flag.get_name_clone()),
+												));
+											}
+											val => {
+												c.local_flags_values.push((c_flag.get_name_clone(), val));
+											}
+										}
 									}
-									_ => c.error_info_list.push((
-										MiddleArg::ShortFlag(short_flag, FlagValue::String(after_eq)),
-										ParseError::NoExistShort(i),
-										ParseError::NoExistShort(i),
-									)),
+									_ => {
+										c.error_info_list.push((
+											MiddleArg::ShortFlag(short_flag, FlagValue::String(after_eq)),
+											ParseError::NoExistShort(i),
+											ParseError::NoExistShort(i),
+										));
+									}
 								}
 							}
 						}
@@ -659,8 +664,35 @@ impl Parser {
 				let last = short_flag.pop();
 				match last {
 					Some(last) => {
-						for c in short_flag.chars() {
-							//
+						for s in short_flag.chars() {
+							match c.find_local_short_flag(&s) {
+								Found::Short(l_flag) => {
+									c.local_flags_values.push((
+										l_flag.get_name_clone(),
+										l_flag.derive_flag_value_if_no_value(),
+									));
+								}
+								_ => match c.find_common_short_flag(&s) {
+									Found::Short(c_flag) => {
+										c.common_flags_values.push((
+											c_flag.get_name_clone(),
+											c_flag.derive_flag_value_if_no_value(),
+										));
+									}
+									_ => {
+										c.push_back_to_parsing_args(MiddleArg::ShortFlag(
+											s.to_string(),
+											FlagValue::None,
+										));
+										c.error_info_list.push((
+											MiddleArg::ShortFlag(short_flag.clone(), FlagValue::None),
+											ParseError::NoExistShort(i),
+											ParseError::NoExistShort(i),
+										));
+									}
+								},
+							};
+							i = i + 1;
 						}
 						match c.local_flags.find_short_flag(&last) {
 							Found::Short(l_flag) => match c.args.pop_front() {
@@ -891,6 +923,7 @@ pub enum ParseError {
 	InvalidShort(Index, String),
 	InvalidLong(String),
 	NoExist,
+	None,
 }
 
 pub type ErrorInfo = (MiddleArg, ParseError, ParseError);

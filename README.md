@@ -1,6 +1,7 @@
 # combu(WIP)
 
-combu is mini cli framework(crate name was cmb, renamed to combu). Work In Progress, and Implimenting.
+combu is a customizable cli framework(crate name was cmb, renamed to combu). Work In Progress, and Implimenting.
+The library name "combu" comes from command + 昆布(konbu, it means kelp in japanese).
 
 # Inspired
 

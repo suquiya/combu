@@ -176,7 +176,7 @@ impl Parser {
 				long_flag.pop();
 				long_flag = self.get_long_flag_name(long_flag);
 
-				match c.local_flags.find_long_flag(&long_flag) {
+				match c.find_local_long_flag(&long_flag) {
 					Found::Name(l_flag) => match l_flag.derive_flag_value_from_string(after_eq) {
 						FlagValue::Invalid(after_eq) => {
 							let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::Invalid(after_eq));
@@ -514,7 +514,7 @@ impl Parser {
 			}
 			None => {
 				short_flag = self.get_short_flag_name(short_flag);
-				let i: Index = 0;
+				let mut i: Index = 0;
 				let last = short_flag.pop();
 				match last {
 					Some(last) => {
@@ -794,42 +794,7 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
 				"flag: {:?}, error in parse local flag: {:?}, error in parse common flag: {:?}",
 				flag_arg, local_error, common_error
 			)
-		} /*(flag_arg, ParseError::DifferentForm(l_flag), ParseError::Nohit) => {
-			  let (l_form, l_flag_name) = get_form_str_and_name(l_flag);
-			  format!(
-				  "The flag {} matches {}a local flag {}. But it is specified as a {} flag.",
-				  flag_arg.name(),
-				  l_form,
-				  l_flag_name,
-				  flag_arg.get_flag_type_str()
-			  )
-		  }
-		  (flag_arg, ParseError::Invalid(l_flag), ParseError::Invalid(c_flag)) => {
-			  let (name, val) = flag_arg.inner_if_string_val().unwrap();
-			  format!(
-				  "The flag {}'s value {} is not valid for a local flag {} and a common flag {}.",
-				  name, val, l_flag, c_flag
-			  )
-		  }
-		  (flag_arg, ParseError::Invalid(l_flag), ParseError::DifferentForm(c_flag)) => {
-			  let (name, val) = flag_arg.inner_if_string_val().unwrap();
-			  let (c_form, c_flag_name) = get_form_str_and_name(c_flag);
-			  format!("The flag {}'s value {} is not valid for a local flag {}.\nAnd {0} matches {}a common flag {}, but it is specified as a {} flag.",name,val,l_flag,c_form,c_flag_name,flag_arg.get_flag_type_str())
-		  }
-		  (flag_arg, ParseError::DifferentForm(l_flag), ParseError::Invalid(c_flag)) => {
-			  let (name, val) = flag_arg.inner_if_string_val().unwrap();
-			  let (l_form, l_flag_name) = get_form_str_and_name(l_flag);
-			  format!("The flag {} matches {}a local flag {}, but it is specified as a {} flag.\nAnd {0}' s value {} is not valid for a common flag {}.", name, l_form,l_flag_name,flag_arg.get_flag_type_str(),val,c_flag)
-		  }
-		  (flag_arg, ParseError::DifferentForm(l_flag), ParseError::DifferentForm(c_flag)) => {
-			  let (l_form, l_flag_name) = get_form_str_and_name(l_flag);
-			  let (c_form, c_flag_name) = get_form_str_and_name(c_flag);
-			  format!("The flag {} matches {}a local flag {} and {}a common flag {}, but it is specified as a {} flag.",
-				  flag_arg.name(),
-				  l_form,
-				  l_flag_name,
-				  c_form, c_flag_name, flag_arg.get_flag_type_str())
-		  }*/
+		}
 	}
 }
 

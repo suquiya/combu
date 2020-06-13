@@ -219,11 +219,11 @@ impl Flag {
 		}
 	}
 
-	pub fn any_short(&self, aliases: &std::str::Chars) -> Vector<usize> {
-		match self.short_alias {
+	pub fn any_short(&self, aliases: std::str::Chars) -> Vector<usize> {
+		match &self.short_alias {
 			Vector(None) => Vector(None),
 			Vector(Some(short_aliases)) => {
-				let result = Vector::default();
+				let mut result = Vector::default();
 				for (i, s) in aliases.enumerate() {
 					if self.is_short(&s) {
 						result.push(i);

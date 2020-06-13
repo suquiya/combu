@@ -140,20 +140,5 @@ pub mod flag {
 				Vector(None) => Found::None,
 			}
 		}
-
-		pub fn find_short_flags(&self, short_flag: &str) -> Vector<Found<&Flag>> {
-			match &self {
-				Vector(Some(flags)) => {
-					let mut chars = short_flag.chars();
-					let mut result: Vec<Found<&Flag>> = Vec::default();
-					for c in chars {
-						result.push(self.find_short_flag(&c));
-					}
-					result.shrink_to_fit();
-					Vector(Some(result))
-				}
-				Vector(None) => Vector(None),
-			}
-		}
 	}
 }

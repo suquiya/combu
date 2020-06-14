@@ -84,18 +84,22 @@ impl Context {
 		self.current_path = path;
 	}
 
+	#[inline]
 	pub fn find_local_long_flag(&self, name_or_alias: &str) -> Found<&Flag> {
 		self.local_flags.find_long_flag(name_or_alias)
 	}
 
+	#[inline]
 	pub fn find_local_short_flag(&self, short_alias: &char) -> Found<&Flag> {
 		self.local_flags.find_short_flag(short_alias)
 	}
 
+	#[inline]
 	pub fn find_common_long_flag(&self, name_or_alias: &str) -> Found<&Flag> {
 		self.common_flags.find_long_flag(name_or_alias)
 	}
 
+	#[inline]
 	pub fn find_common_short_flag(&self, short_alias: &char) -> Found<&Flag> {
 		self.common_flags.find_short_flag(short_alias)
 	}

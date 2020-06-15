@@ -147,22 +147,78 @@ impl Parser {
 									} else {
 										match flag_val {
 											FlagValue::String(val) => {
-												//
+												match l_flag.derive_flag_value_from_string(val) {
+													FlagValue::Invalid(val) => {
+														let flag_arg =
+															MiddleArg::LongFlag(long_flag, FlagValue::String(val));
+														c.error_info_list.push((
+															flag_arg.clone(),
+															ParseError::InvalidLong(l_flag.get_name_clone()),
+															ParseError::NotParsed,
+														));
+														c.push_back_to_parsing_args(flag_arg);
+													}
+													val => {
+														c.local_flags_values.push((long_flag, val));
+													}
+												}
 											}
 											FlagValue::None => {
 												c.local_flags_values
 													.push((long_flag, l_flag.derive_flag_value_if_no_value()));
 											}
 											_ => {
-												c.push_back_to_parsing_args(MiddleArg::LongFlag(
-													long_flag, flag_val,
+												let flag_arg = MiddleArg::LongFlag(long_flag, flag_val);
+												c.error_info_list.push((
+													flag_arg.clone(),
+													ParseError::InvalidLong(l_flag.get_name_clone()),
+													ParseError::NotParsed,
 												));
+												c.push_back_to_parsing_args(flag_arg);
 											}
 										}
 									}
 								}
 								Found::Long(l_flag) => {
-									//
+									if l_flag.flag_type.is_string() {
+										c.local_flags_values
+											.push((l_flag.get_name_clone(), flag_val));
+									} else {
+										match flag_val {
+											FlagValue::String(val) => {
+												match l_flag.derive_flag_value_from_string(val) {
+													FlagValue::Invalid(val) => {
+														let flag_arg =
+															MiddleArg::LongFlag(long_flag, FlagValue::String(val));
+														c.error_info_list.push((
+															flag_arg.clone(),
+															ParseError::InvalidLong(l_flag.get_name_clone()),
+															ParseError::NotParsed,
+														));
+														c.push_back_to_parsing_args(flag_arg);
+													}
+													val => {
+														c.local_flags_values.push((l_flag.get_name_clone(), val));
+													}
+												}
+											}
+											FlagValue::None => {
+												c.local_flags_values.push((
+													l_flag.get_name_clone(),
+													l_flag.derive_flag_value_if_no_value(),
+												));
+											}
+											_ => {
+												let flag_arg = MiddleArg::LongFlag(long_flag, flag_val);
+												c.error_info_list.push((
+													flag_arg.clone(),
+													ParseError::InvalidLong(l_flag.get_name_clone()),
+													ParseError::NotParsed,
+												));
+												c.push_back_to_parsing_args(flag_arg);
+											}
+										}
+									}
 								}
 								_ => {
 									match c.common_flags.find_long_flag(&long_flag) {

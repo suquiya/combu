@@ -62,6 +62,10 @@ impl FlagType {
 			_ => FlagValue::None,
 		}
 	}
+
+	pub fn is_string(&self) -> bool {
+		*self == FlagType::String
+	}
 }
 
 impl Default for FlagType {
@@ -222,7 +226,7 @@ impl Flag {
 	pub fn any_short(&self, aliases: std::str::Chars) -> Vector<usize> {
 		match &self.short_alias {
 			Vector(None) => Vector(None),
-			Vector(Some(short_aliases)) => {
+			_ => {
 				let mut result = Vector::default();
 				for (i, s) in aliases.enumerate() {
 					if self.is_short(&s) {

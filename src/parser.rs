@@ -64,7 +64,7 @@ impl Parser {
 		}
 	}
 
-	pub fn get_long_flag_name(&self, mut arg: String) -> String {
+	pub fn remove_long_flag_prefix(&self, mut arg: String) -> String {
 		match arg.find(|c| c != self.flag_pattern) {
 			Some(index) => arg.split_off(index),
 			None => String::default(),
@@ -109,11 +109,11 @@ impl Parser {
 				let after_eq = long_flag.split_off(index + 1);
 				long_flag.pop();
 				MiddleArg::LongFlag(
-					self.get_long_flag_name(long_flag),
+					self.remove_long_flag_prefix(long_flag),
 					FlagValue::String(after_eq),
 				)
 			}
-			None => MiddleArg::LongFlag(self.get_long_flag_name(long_flag), FlagValue::None),
+			None => MiddleArg::LongFlag(self.remove_long_flag_prefix(long_flag), FlagValue::None),
 		}
 	}
 
@@ -127,7 +127,71 @@ impl Parser {
 					FlagValue::String(after_eq),
 				)
 			}
-			None => MiddleArg::ShortFlag(self.get_long_flag_name(short_flag), FlagValue::None),
+			None => MiddleArg::ShortFlag(self.remove_long_flag_prefix(short_flag), FlagValue::None),
+		}
+	}
+
+	pub fn parse_inter_mediate_args(self, mut c: Context) -> Context {
+		match c.parsing_args {
+			None => c,
+			Some(mut inter_middle_args) => {
+				let _inter_middle_args = inter_middle_args.clone();
+				c.parsing_args = None;
+				loop {
+					match inter_middle_args.pop_front() {
+						Some(MiddleArg::LongFlag(long_flag, flag_val)) => {
+							match c.local_flags.find_long_flag(&long_flag) {
+								Found::Name(l_flag) => {
+									if l_flag.flag_type.is_string() {
+										c.local_flags_values.push((long_flag, flag_val));
+									} else {
+										match flag_val {
+											FlagValue::String(val) => {
+												//
+											}
+											FlagValue::None => {
+												c.local_flags_values
+													.push((long_flag, l_flag.derive_flag_value_if_no_value()));
+											}
+											_ => {
+												c.push_back_to_parsing_args(MiddleArg::LongFlag(
+													long_flag, flag_val,
+												));
+											}
+										}
+									}
+								}
+								Found::Long(l_flag) => {
+									//
+								}
+								_ => {
+									match c.common_flags.find_long_flag(&long_flag) {
+										Found::Name(l_flag) => {
+											//
+										}
+										Found::Long(l_flag) => {
+											//
+										}
+										_ => {
+											//
+										}
+									};
+								}
+							}
+						}
+						Some(MiddleArg::ShortFlag(short_flag, flag_val)) => {
+							//
+						}
+						None => {
+							break;
+						}
+						Some(MiddleArg::Normal(name)) => {
+							panic!("normal arg {} should not be before sub command.", name);
+						}
+					}
+				}
+				c
+			}
 		}
 	}
 
@@ -135,6 +199,7 @@ impl Parser {
 		let mut non_flag_args = VecDeque::<String>::new();
 
 		loop {
+			//println!("{:?}", c);
 			match c.next_arg() {
 				None => {
 					break;
@@ -162,6 +227,7 @@ impl Parser {
 				}
 			}
 		}
+		c.args = non_flag_args;
 		c
 	}
 
@@ -170,12 +236,11 @@ impl Parser {
 		mut long_flag: String,
 		mut c: Context,
 	) -> (Option<String>, Context) {
+		long_flag = self.remove_long_flag_prefix(long_flag);
 		match long_flag.find(self.eq) {
 			Some(index) => {
 				let after_eq = long_flag.split_off(index + 1);
 				long_flag.pop();
-				long_flag = self.get_long_flag_name(long_flag);
-
 				match c.local_flags.find_long_flag(&long_flag) {
 					Found::Name(l_flag) => match l_flag.derive_flag_value_from_string(after_eq) {
 						FlagValue::Invalid(after_eq) => {
@@ -208,7 +273,7 @@ impl Parser {
 							c.local_flags_values.push((l_flag, val));
 						}
 					},
-					lhit => match c.common_flags.find_long_flag(&long_flag) {
+					_ => match c.common_flags.find_long_flag(&long_flag) {
 						Found::Name(c_flag) => match c_flag.flag_type.get_value_from_string(after_eq) {
 							FlagValue::Invalid(after_eq) => {
 								let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::String(after_eq));
@@ -233,7 +298,7 @@ impl Parser {
 							}
 							val => c.common_flags_values.push((c_flag.get_name_clone(), val)),
 						},
-						chit => {
+						_ => {
 							let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::String(after_eq));
 							c.error_info_list.push((
 								flag_arg.clone(),
@@ -311,7 +376,7 @@ impl Parser {
 						(None, c)
 					}
 				},
-				lhit => match c.common_flags.find_long_flag(&long_flag) {
+				_ => match c.common_flags.find_long_flag(&long_flag) {
 					Found::Name(c_flag) => match c.args.pop_front() {
 						Some(next_long_flag) if self.long_flag(&next_long_flag) => {
 							c.common_flags_values
@@ -376,7 +441,7 @@ impl Parser {
 							(next_none, c)
 						}
 					},
-					chit => {
+					_ => {
 						let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::None);
 						c.error_info_list.push((
 							flag_arg.clone(),
@@ -593,7 +658,7 @@ impl Parser {
 									(next_none, c)
 								}
 							},
-							lhit => match c.common_flags.find_short_flag(&last) {
+							_ => match c.common_flags.find_short_flag(&last) {
 								Found::Short(c_flag) => match c.args.pop_front() {
 									Some(next_long_flag) if self.long_flag(&next_long_flag) => {
 										self.parse_flags_start_with_long_flag(next_long_flag, c)
@@ -622,7 +687,7 @@ impl Parser {
 										(next_none, c)
 									}
 								},
-								chit => {
+								_ => {
 									let flag_arg = MiddleArg::ShortFlag(short_flag, FlagValue::None);
 									c.error_info_list.push((
 										flag_arg.clone(),
@@ -748,7 +813,7 @@ pub type ErrorInfo = (MiddleArg, ParseError, ParseError);
 
 pub fn gen_error_description(err_info: &ErrorInfo) -> String {
 	match err_info {
-		(flag_arg, ParseError::NoExistShort(i), ParseError::NoExistShort(j)) => {
+		(flag_arg, ParseError::NoExistShort(i), ParseError::NoExistShort(_)) => {
 			let name = flag_arg.name();
 			format!(
 				"The short flag {} in {} is an unknown short flag.",
@@ -802,14 +867,5 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
 				flag_arg, local_error, common_error
 			)
 		}
-	}
-}
-
-pub(crate) fn get_form_str_and_name<'a, 'f: 'a>(f: &'f Found<String>) -> (&'a str, &'a str) {
-	match f {
-		Found::Name(f_name) => ("", f_name),
-		Found::Long(f_name) => ("a long form of", f_name),
-		Found::Short(f_name) => ("a short form of ", f_name),
-		Found::None => ("not any form of", "unknown - error"),
 	}
 }

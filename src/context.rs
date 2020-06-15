@@ -24,7 +24,7 @@ impl Context {
 		args: VecDeque<String>,
 		common_flags: Vector<Flag>,
 		local_flags: Vector<Flag>,
-		current_path: &str,
+		current_path: String,
 	) -> Context {
 		Context {
 			raw_args,

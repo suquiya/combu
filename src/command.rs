@@ -72,7 +72,7 @@ impl Command {
 	}
 
 	pub fn single_run(&mut self, raw_args: Vec<String>) {
-		//println!("{:?}", args);
+		println!("single_run: {:?}", raw_args);
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
@@ -85,7 +85,7 @@ impl Command {
 						args,
 						self.c_flags.take(),
 						self.l_flags.take(),
-						&current_path,
+						current_path,
 					);
 					context = Parser::default().parse_args_until_end(context);
 
@@ -235,7 +235,13 @@ impl Command {
 			//引数がない場合
 			match self.action {
 				Some(action) => {
-					action(Context::from(raw_args));
+					action(Context::new(
+						raw_args,
+						args,
+						self.c_flags.take(),
+						self.l_flags.take(),
+						current_path,
+					));
 				}
 				None => {
 					println!("args: {:?}", raw_args);
@@ -276,7 +282,7 @@ impl Command {
 										//検出したものがフラグの値になる可能性がある場合のハンドリング
 										inter_mediate_args.push_back(last_flag_arg);
 										inter_mediate_args.push_back(MiddleArg::Normal(arg));
-										self.assign_sub(args, inter_mediate_args, p, raw_args, current_path);
+										self.assign_run(args, inter_mediate_args, p, raw_args, current_path);
 									}
 									_ => {
 										//フラグになる可能性がない場合
@@ -355,7 +361,7 @@ impl Command {
 								| MiddleArg::ShortFlag(_, FlagValue::None) => {
 									inter_mediate_args.push_back(last_flag_arg);
 									inter_mediate_args.push_back(MiddleArg::Normal(arg));
-									self.assign_sub(args, inter_mediate_args, p, raw_args, current_path);
+									self.assign_run(args, inter_mediate_args, p, raw_args, current_path);
 								}
 								_ => {
 									//フラグの値になる可能性がない場合（サブコマンドではなくself実行）
@@ -399,14 +405,14 @@ impl Command {
 									args,
 									self.c_flags.take(),
 									self.l_flags.take(),
-									&current_path,
+									current_path,
 								);
 								action(c);
 							}
 						},
 						Some(mut sub) => {
 							let common_flag = self.c_flags.take();
-							let c = Context::new(raw_args, args, common_flag, Vector(None), &current_path);
+							let c = Context::new(raw_args, args, common_flag, Vector(None), current_path);
 							sub.run(c);
 						}
 					}
@@ -423,7 +429,7 @@ impl Command {
 		println!("{:?}", context);
 	}
 
-	pub fn assign_sub(
+	pub fn assign_run(
 		&mut self,
 		mut args: VecDeque<String>,
 		mut inter_mediate_args: VecDeque<MiddleArg>,

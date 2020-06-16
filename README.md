@@ -3,7 +3,7 @@
 combu is a customizable cli framework(crate name was cmb, renamed to combu). Work In Progress, and Implimenting.
 The library name "combu" comes from command + 昆布(konbu, it means kelp in japanese).
 
-combu(com + 昆布)はカスタマイズ可能な CLI フレームワークです（一時クレートの名前が cmb だったこともありましたが、現在は combu です）。
+combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可能な CLI フレームワークです（一時クレートの名前が cmb だったこともありましたが、現在は combu です）。
 まだまだ実装中（WIP）で、使用できる段階ではありません。
 
 # Inspired
@@ -22,4 +22,5 @@ combu(com + 昆布)はカスタマイズ可能な CLI フレームワークで�
   - 似たような CLI フレームワークを作りたいときに使用できる部品を用意
 - カスタマイズできるヘルプ表示
 - サブコマンド前のフラグの受付
-- エラーハンドリングなど、ある程度の自由度（柔軟性）
+- エラーハンドリングなどに関して、ある程度の自由度を持たせた設計
+- ドキュメントコメントの整備

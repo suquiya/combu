@@ -66,6 +66,10 @@ impl FlagType {
 	pub fn is_string(&self) -> bool {
 		*self == FlagType::String
 	}
+
+	pub fn is_bool(&self) -> bool {
+		*self == FlagType::Bool
+	}
 }
 
 impl Default for FlagType {

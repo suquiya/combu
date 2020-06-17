@@ -218,16 +218,17 @@ impl Parser {
 									FlagValue::String(val) => {
 										match l_flag.derive_flag_value_from_string(val) {
 											FlagValue::Invalid(val) => {
-												let flag_arg = MiddleArg::LongFlag(
+												c.local_flags_values.push((
 													l_flag.get_name_clone(),
-													FlagValue::String(val),
-												);
+													l_flag.derive_flag_value_if_no_value(),
+												));
+												let arg = MiddleArg::Normal(val);
 												c.error_info_list.push((
-													flag_arg.clone(),
+													arg.clone(),
 													ParseError::InvalidLong(l_flag.get_name_clone()),
 													ParseError::NotParsed,
 												));
-												c.push_back_to_parsing_args(flag_arg);
+												c.push_back_to_parsing_args(arg);
 											}
 											val => {
 												c.local_flags_values.push((l_flag.get_name_clone(), val));
@@ -284,19 +285,74 @@ impl Parser {
 														}
 													}
 												}
-												FlagValue::None => {
-													c.common_flags_values.push((
-														long_flag,
-														c_flag.derive_flag_value_if_no_value(),
-													));
-												}
+												FlagValue::None => match inter_middle_args.front() {
+													Some(MiddleArg::Normal(_)) => {
+														if let Some(MiddleArg::Normal(val)) =
+															inter_middle_args.pop_front()
+														{
+															match c_flag.derive_flag_value_from_string(val) {
+																FlagValue::Invalid(val) => {
+																	c.common_flags_values.push((
+																		long_flag.clone(),
+																		c_flag.derive_flag_value_if_no_value(),
+																	));
+																	let arg = MiddleArg::Normal(val);
+																	c.error_info_list.push((
+																		arg.clone(),
+																		ParseError::InvalidLong(long_flag),
+																		ParseError::NotParsed,
+																	));
+																	c.push_back_to_parsing_args(arg);
+																}
+																val => {
+																	c.common_flags_values.push((long_flag, val));
+																}
+															}
+														} else {
+															panic!("This panic should be unreachable.");
+														}
+													}
+													None => {
+														c.common_flags_values.push((
+															long_flag,
+															c_flag.derive_flag_value_if_no_value(),
+														));
+														break;
+													}
+													_ => {
+														c.common_flags_values.push((
+															long_flag,
+															c_flag.derive_flag_value_if_no_value(),
+														));
+													}
+												},
 												_ => {
 													//
 												}
 											}
 										}
 										Found::Long(c_flag) => {
-											//
+											match flag_val {
+												FlagValue::String(_) if c_flag.flag_type.is_string() => {
+													c.common_flags_values
+														.push((c_flag.get_name_clone(), flag_val));
+												}
+												FlagValue::String(val) => {
+													match c_flag.derive_flag_value_from_string(val) {
+														FlagValue::Invalid(val) => {
+															c.common_flags_values.push((
+																c_flag.get_name_clone(),
+																c_flag.derive_flag_value_if_no_value(),
+															));
+															let arg = MiddleArg::Normal(val);
+														}
+														val => {
+															c.common_flags_values
+																.push((c_flag.get_name_clone(), val));
+														}
+													}
+												}
+											};
 										}
 										_ => {
 											//
@@ -878,9 +934,10 @@ impl MiddleArg {
 			MiddleArg::ShortFlag(_, FlagValue::String(val)) => Some(val),
 			MiddleArg::LongFlag(_, FlagValue::Invalid(val)) => Some(val),
 			MiddleArg::ShortFlag(_, FlagValue::Invalid(val)) => Some(val),
-			MiddleArg::LongFlag(_, _) => None,
+			_ => None,
+			/*MiddleArg::LongFlag(_, _) => None,
 			MiddleArg::ShortFlag(_, _) => None,
-			MiddleArg::Normal(_) => None,
+			MiddleArg::Normal(_) => None,*/
 		}
 	}
 	pub fn inner_if_string_val(&self) -> Option<(&str, &str)> {
@@ -889,9 +946,10 @@ impl MiddleArg {
 			MiddleArg::ShortFlag(name, FlagValue::String(val)) => Some((name, val)),
 			MiddleArg::LongFlag(name, FlagValue::Invalid(val)) => Some((name, val)),
 			MiddleArg::ShortFlag(name, FlagValue::Invalid(val)) => Some((name, val)),
-			MiddleArg::LongFlag(_, _) => None,
+			_ => None,
+			/*MiddleArg::LongFlag(_, _) => None,
 			MiddleArg::ShortFlag(_, _) => None,
-			MiddleArg::Normal(_) => None,
+			MiddleArg::Normal(_) => None,*/
 		}
 	}
 
@@ -916,7 +974,7 @@ impl MiddleArg {
 		match self {
 			MiddleArg::LongFlag(_, _) => "long",
 			MiddleArg::ShortFlag(_, _) => "short",
-			MiddleArg::Normal(_) => "non",
+			MiddleArg::Normal(_) => "normal",
 		}
 	}
 }

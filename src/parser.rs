@@ -135,7 +135,7 @@ impl Parser {
 		match c.parsing_args {
 			None => c,
 			Some(mut inter_middle_args) => {
-				let _inter_middle_args = inter_middle_args.clone();
+				//let _inter_middle_args = inter_middle_args.clone();
 				c.parsing_args = None;
 				loop {
 					match inter_middle_args.pop_front() {
@@ -241,7 +241,17 @@ impl Parser {
 											{
 												match l_flag.derive_flag_value_from_string(val) {
 													FlagValue::Invalid(val) => {
-														//
+														c.local_flags_values.push((
+															l_flag.get_name_clone(),
+															l_flag.derive_flag_value_if_no_value(),
+														));
+														let arg = MiddleArg::Normal(val);
+														c.error_info_list.push((
+															arg.clone(),
+															ParseError::InvalidLong(l_flag.get_name_clone()),
+															ParseError::NotParsed,
+														));
+														c.push_back_to_parsing_args(arg);
 													}
 													val => {
 														c.local_flags_values.push((l_flag.get_name_clone(), val));
@@ -327,7 +337,13 @@ impl Parser {
 													}
 												},
 												_ => {
-													//
+													let flag_arg = MiddleArg::LongFlag(long_flag, flag_val);
+													c.error_info_list.push((
+														flag_arg.clone(),
+														ParseError::NoExistLong,
+														ParseError::InvalidLong(c_flag.get_name_clone()),
+													));
+													c.push_back_to_parsing_args(flag_arg);
 												}
 											}
 										}
@@ -352,10 +368,51 @@ impl Parser {
 														}
 													}
 												}
+												FlagValue::None => {
+													match inter_middle_args.front() {
+														Some(MiddleArg::Normal(_)) => {
+															if let Some(MiddleArg::Normal(val)) =
+																inter_middle_args.pop_front()
+															{
+																//
+															} else {
+																panic!("This panic should be unreachable.")
+															}
+														}
+														None => {
+															c.common_flags_values.push((
+																c_flag.get_name_clone(),
+																c_flag.derive_flag_value_if_no_value(),
+															));
+															break;
+														}
+														_ => {
+															c.common_flags_values.push((
+																c_flag.get_name_clone(),
+																c_flag.derive_flag_value_if_no_value(),
+															));
+														}
+													};
+												}
+												_ => {
+													let flag_arg = MiddleArg::LongFlag(long_flag, flag_val);
+													c.error_info_list.push((
+														flag_arg.clone(),
+														ParseError::NoExistLong,
+														ParseError::InvalidLong(c_flag.get_name_clone()),
+													));
+													c.push_back_to_parsing_args(flag_arg);
+												}
 											};
 										}
 										_ => {
-											//
+											let flag_arg = MiddleArg::LongFlag(long_flag, flag_val);
+											c.error_info_list.push((
+												flag_arg.clone(),
+												ParseError::NoExistLong,
+												ParseError::NoExistLong,
+											));
+											c.push_back_to_parsing_args(flag_arg);
 										}
 									};
 								}
@@ -367,8 +424,14 @@ impl Parser {
 						None => {
 							break;
 						}
-						Some(MiddleArg::Normal(name)) => {
-							panic!("normal arg {} should not be before sub command.", name);
+						Some(val) => {
+							c.error_info_list.push((
+								val.clone(),
+								ParseError::NotExist,
+								ParseError::NotExist,
+							));
+							c.push_back_to_parsing_args(val);
+							//panic!("normal arg {} should not be before sub command.", name);
 						}
 					}
 				}
@@ -889,8 +952,8 @@ impl Parser {
 						));
 						c.error_info_list.push((
 							MiddleArg::ShortFlag(short_flag, FlagValue::String(String::new())),
-							ParseError::NoExist,
-							ParseError::NoExist,
+							ParseError::NotExist,
+							ParseError::NotExist,
 						));
 						self.parse_next_if_flag(c)
 					}
@@ -987,7 +1050,7 @@ pub enum ParseError {
 	//DifferentForm(Found<String>),
 	InvalidShort(Index, String),
 	InvalidLong(String),
-	NoExist,
+	NotExist,
 	NotParsed,
 	Empty,
 	None,

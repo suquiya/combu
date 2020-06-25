@@ -131,11 +131,16 @@ impl Parser {
 		}
 	}
 
-	pub fn parse_inter_mediate_args(self, mut c: Context) -> Context {
+	pub fn parse_inter_mediate_args(
+		self,
+		mut c: Context,
+		flag_only: bool,
+	) -> (Context, Option<VecDeque<String>>) {
 		match c.parsing_args {
-			None => c,
+			None => (c, None),
 			Some(mut inter_middle_args) => {
 				//let _inter_middle_args = inter_middle_args.clone();
+				let mut non_flag_args = VecDeque::<String>::new();
 				c.parsing_args = None;
 				loop {
 					match inter_middle_args.pop_front() {
@@ -174,13 +179,17 @@ impl Parser {
 															long_flag.clone(),
 															l_flag.derive_flag_value_if_no_value(),
 														));
-														let arg = MiddleArg::Normal(val);
-														c.error_info_list.push((
-															arg.clone(),
-															ParseError::InvalidLong(long_flag),
-															ParseError::NotParsed,
-														));
-														c.push_back_to_parsing_args(arg);
+														if flag_only {
+															let arg = MiddleArg::Normal(val);
+															c.error_info_list.push((
+																arg.clone(),
+																ParseError::InvalidLong(long_flag),
+																ParseError::NotParsed,
+															));
+															c.push_back_to_parsing_args(arg);
+														} else {
+															non_flag_args.push_back(val);
+														}
 													}
 													val => {
 														c.local_flags_values.push((long_flag, val));
@@ -245,13 +254,17 @@ impl Parser {
 															l_flag.get_name_clone(),
 															l_flag.derive_flag_value_if_no_value(),
 														));
-														let arg = MiddleArg::Normal(val);
-														c.error_info_list.push((
-															arg.clone(),
-															ParseError::InvalidLong(l_flag.get_name_clone()),
-															ParseError::NotParsed,
-														));
-														c.push_back_to_parsing_args(arg);
+														if flag_only {
+															let arg = MiddleArg::Normal(val);
+															c.error_info_list.push((
+																arg.clone(),
+																ParseError::InvalidLong(l_flag.get_name_clone()),
+																ParseError::NotParsed,
+															));
+															c.push_back_to_parsing_args(arg);
+														} else {
+															non_flag_args.push_back(val);
+														}
 													}
 													val => {
 														c.local_flags_values.push((l_flag.get_name_clone(), val));
@@ -280,32 +293,41 @@ impl Parser {
 								},
 								_ => {
 									match c.common_flags.find_long_flag(&long_flag) {
-										Found::Name(c_flag) => {
-											match flag_val {
-												FlagValue::String(_) if c_flag.flag_type.is_string() => {
-													c.common_flags_values.push((long_flag, flag_val));
-												}
-												FlagValue::String(val) => {
-													match c_flag.derive_flag_value_from_string(val) {
-														FlagValue::Invalid(val) => {
-															//
-														}
-														val => {
-															c.common_flags_values.push((long_flag, val));
-														}
+										Found::Name(c_flag) => match flag_val {
+											FlagValue::String(_) if c_flag.flag_type.is_string() => {
+												c.common_flags_values.push((long_flag, flag_val));
+											}
+											FlagValue::String(val) => {
+												match c_flag.derive_flag_value_from_string(val) {
+													FlagValue::Invalid(val) => {
+														c.local_flags_values.push((
+															long_flag,
+															c_flag.derive_flag_value_if_no_value(),
+														));
+														let arg = MiddleArg::Normal(val);
+														c.error_info_list.push((
+															arg.clone(),
+															ParseError::NoExistLong,
+															ParseError::InvalidLong(c_flag.get_name_clone()),
+														));
+													}
+													val => {
+														c.common_flags_values.push((long_flag, val));
 													}
 												}
-												FlagValue::None => match inter_middle_args.front() {
-													Some(MiddleArg::Normal(_)) => {
-														if let Some(MiddleArg::Normal(val)) =
-															inter_middle_args.pop_front()
-														{
-															match c_flag.derive_flag_value_from_string(val) {
-																FlagValue::Invalid(val) => {
-																	c.common_flags_values.push((
-																		long_flag.clone(),
-																		c_flag.derive_flag_value_if_no_value(),
-																	));
+											}
+											FlagValue::None => match inter_middle_args.front() {
+												Some(MiddleArg::Normal(_)) => {
+													if let Some(MiddleArg::Normal(val)) =
+														inter_middle_args.pop_front()
+													{
+														match c_flag.derive_flag_value_from_string(val) {
+															FlagValue::Invalid(val) => {
+																c.common_flags_values.push((
+																	long_flag.clone(),
+																	c_flag.derive_flag_value_if_no_value(),
+																));
+																if flag_only {
 																	let arg = MiddleArg::Normal(val);
 																	c.error_info_list.push((
 																		arg.clone(),
@@ -313,40 +335,42 @@ impl Parser {
 																		ParseError::NotParsed,
 																	));
 																	c.push_back_to_parsing_args(arg);
-																}
-																val => {
-																	c.common_flags_values.push((long_flag, val));
+																} else {
+																	non_flag_args.push_back(val);
 																}
 															}
-														} else {
-															panic!("This panic should be unreachable.");
+															val => {
+																c.common_flags_values.push((long_flag, val));
+															}
 														}
+													} else {
+														panic!("This panic should be unreachable.");
 													}
-													None => {
-														c.common_flags_values.push((
-															long_flag,
-															c_flag.derive_flag_value_if_no_value(),
-														));
-														break;
-													}
-													_ => {
-														c.common_flags_values.push((
-															long_flag,
-															c_flag.derive_flag_value_if_no_value(),
-														));
-													}
-												},
-												_ => {
-													let flag_arg = MiddleArg::LongFlag(long_flag, flag_val);
-													c.error_info_list.push((
-														flag_arg.clone(),
-														ParseError::NoExistLong,
-														ParseError::InvalidLong(c_flag.get_name_clone()),
-													));
-													c.push_back_to_parsing_args(flag_arg);
 												}
+												None => {
+													c.common_flags_values.push((
+														long_flag,
+														c_flag.derive_flag_value_if_no_value(),
+													));
+													break;
+												}
+												_ => {
+													c.common_flags_values.push((
+														long_flag,
+														c_flag.derive_flag_value_if_no_value(),
+													));
+												}
+											},
+											_ => {
+												let flag_arg = MiddleArg::LongFlag(long_flag, flag_val);
+												c.error_info_list.push((
+													flag_arg.clone(),
+													ParseError::NoExistLong,
+													ParseError::InvalidLong(c_flag.get_name_clone()),
+												));
+												c.push_back_to_parsing_args(flag_arg);
 											}
-										}
+										},
 										Found::Long(c_flag) => {
 											match flag_val {
 												FlagValue::String(_) if c_flag.flag_type.is_string() => {
@@ -361,6 +385,12 @@ impl Parser {
 																c_flag.derive_flag_value_if_no_value(),
 															));
 															let arg = MiddleArg::Normal(val);
+															c.error_info_list.push((
+																arg.clone(),
+																ParseError::NoExistLong,
+																ParseError::InvalidLong(c_flag.get_name_clone()),
+															));
+															c.push_back_to_parsing_args(arg);
 														}
 														val => {
 															c.common_flags_values
@@ -374,7 +404,30 @@ impl Parser {
 															if let Some(MiddleArg::Normal(val)) =
 																inter_middle_args.pop_front()
 															{
-																//
+																match c_flag.derive_flag_value_from_string(val) {
+																	FlagValue::Invalid(val) => {
+																		c.local_flags_values.push((
+																			c_flag.get_name_clone(),
+																			c_flag.derive_flag_value_if_no_value(),
+																		));
+																		if flag_only {
+																			let arg = MiddleArg::Normal(val);
+																			c.error_info_list.push((
+																				arg.clone(),
+																				ParseError::NoExistLong,
+																				ParseError::InvalidLong(
+																					c_flag.get_name_clone(),
+																				),
+																			));
+																		} else {
+																			non_flag_args.push_back(val);
+																		}
+																	}
+																	val => {
+																		c.common_flags_values
+																			.push((c_flag.get_name_clone(), val));
+																	}
+																}
 															} else {
 																panic!("This panic should be unreachable.")
 															}
@@ -418,27 +471,198 @@ impl Parser {
 								}
 							}
 						}
-						Some(MiddleArg::ShortFlag(short_flag, flag_val)) => {
-							//
+						Some(MiddleArg::ShortFlag(mut short_flag, flag_val)) => {
+							match short_flag.pop() {
+								Some(last) => {
+									let mut i: usize = 0;
+									for s in short_flag.chars() {
+										match c.find_local_short_flag(&s) {
+											Found::Short(l_flag) => {
+												let record = (
+													l_flag.get_name_clone(),
+													l_flag.derive_flag_value_if_no_value(),
+												);
+												c.local_flags_values.push(record);
+											}
+											_ => {
+												match c.find_common_short_flag(&s) {
+													Found::Short(c_flag) => {
+														let record = (
+															c_flag.get_name_clone(),
+															c_flag.derive_flag_value_if_no_value(),
+														);
+														c.local_flags_values.push(record);
+													}
+													_ => {
+														c.push_back_to_parsing_args(MiddleArg::ShortFlag(
+															short_flag.clone(),
+															FlagValue::None,
+														));
+														c.error_info_list.push((
+															MiddleArg::ShortFlag(
+																{
+																	let mut short_flag = short_flag.clone();
+																	short_flag.push(last);
+																	short_flag
+																},
+																FlagValue::None,
+															),
+															ParseError::NoExistShort(i),
+															ParseError::NoExistShort(i),
+														))
+													}
+												};
+											}
+										}
+										i = i + 1;
+									}
+									match c.local_flags.find_short_flag(&last) {
+										Found::Short(l_flag) => {
+											match flag_val {
+												FlagValue::String(_) if l_flag.flag_type.is_string() => {
+													let record = (l_flag.get_name_clone(), flag_val);
+													c.local_flags_values.push(record);
+												}
+												FlagValue::String(val) => {
+													match l_flag.derive_flag_value_from_string(val) {
+														FlagValue::Invalid(val) => {
+															let flag_val = FlagValue::String(val);
+															let record = (
+																MiddleArg::ShortFlag(
+																	{
+																		short_flag.push(last);
+																		short_flag
+																	},
+																	flag_val.clone(),
+																),
+																ParseError::InvalidShort(
+																	i,
+																	l_flag.get_name_clone(),
+																),
+																ParseError::NotParsed,
+															);
+															c.error_info_list.push(record);
+															c.push_back_to_parsing_args(MiddleArg::ShortFlag(
+																last.to_string(),
+																flag_val,
+															));
+														}
+														val => {
+															let record = (l_flag.get_name_clone(), val);
+															c.local_flags_values.push(record);
+														}
+													}
+												}
+												FlagValue::None => match inter_middle_args.front() {
+													Some(MiddleArg::Normal(_)) => {
+														match inter_middle_args.pop_front() {
+															Some(MiddleArg::Normal(val)) => {
+																match l_flag.derive_flag_value_from_string(val) {
+																	FlagValue::Invalid(val) => {
+																		c.local_flags_values.push((
+																			l_flag.get_name_clone(),
+																			l_flag.derive_flag_value_if_no_value(),
+																		));
+																		if flag_only {
+																			let arg = MiddleArg::Normal(val);
+																			c.error_info_list.push((
+																				arg.clone(),
+																				ParseError::InvalidShort(
+																					i,
+																					l_flag.get_name_clone(),
+																				),
+																				ParseError::NotParsed,
+																			));
+																		} else {
+																			non_flag_args.push_back(val);
+																		}
+																	}
+																	val => {
+																		let record = (l_flag.get_name_clone(), val);
+																		c.local_flags_values.push(record);
+																	}
+																}
+															}
+															_ => panic!("This panic should be unreachable."),
+														}
+													}
+													None => {
+														c.local_flags_values.push((
+															l_flag.get_name_clone(),
+															l_flag.derive_flag_value_if_no_value(),
+														));
+														break;
+													}
+													_ => {
+														let record = (
+															l_flag.get_name_clone(),
+															l_flag.derive_flag_value_if_no_value(),
+														);
+														c.local_flags_values.push(record);
+													}
+												},
+												_ => {
+													//
+												}
+											}
+										}
+										_ => {
+											match c.find_common_short_flag(&last) {
+												Found::Short(c_flag) => {
+													//
+												}
+												_ => {
+													//
+												}
+											}
+										}
+									}
+								}
+								None => {
+									//
+								}
+							}
 						}
 						None => {
 							break;
 						}
 						Some(val) => {
-							c.error_info_list.push((
-								val.clone(),
-								ParseError::NotExist,
-								ParseError::NotExist,
-							));
-							c.push_back_to_parsing_args(val);
-							//panic!("normal arg {} should not be before sub command.", name);
+							if flag_only {
+								c.error_info_list.push((
+									val.clone(),
+									ParseError::NotExist,
+									ParseError::NotExist,
+								));
+								c.push_back_to_parsing_args(val);
+							} else if let MiddleArg::Normal(val) = val {
+								non_flag_args.push_back(val);
+							} else {
+								panic!("This panic should not be unreachable.");
+							}
 						}
 					}
 				}
-				c
+				(c, {
+					if flag_only {
+						None
+					} else {
+						Some(non_flag_args)
+					}
+				})
 			}
 		}
 	}
+
+	/*　関数分離時のためのメモ
+	pub fn parse_inter_mediate_long_flag(
+		&self,
+		long_flag: String,
+		flag_val: FlagValue,
+		ref mut inter_mediate_args: VecDeque<MiddleArg>,
+		ref mut c: Context,
+	) {
+		//
+	}*/
 
 	pub fn parse_args_until_end(self, mut c: Context) -> Context {
 		let mut non_flag_args = VecDeque::<String>::new();
@@ -748,7 +972,7 @@ impl Parser {
 										short_flag.push(before_eq);
 
 										c.error_info_list.push((
-											MiddleArg::ShortFlag(short_flag.clone(), FlagValue::None),
+											MiddleArg::ShortFlag(short_flag, FlagValue::None),
 											ParseError::NoExistShort(i),
 											ParseError::NoExistShort(i),
 										))
@@ -1110,7 +1334,7 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
 		(flag_arg, local_error, common_error) => {
 			//どれでもない状況になったとき
 			format!(
-				"flag: {:?}, error in parse local flag: {:?}, error in parse common flag: {:?}",
+				"arg: {:?}, error in parse local flag: {:?}, error in parse common flag: {:?}",
 				flag_arg, local_error, common_error
 			)
 		}

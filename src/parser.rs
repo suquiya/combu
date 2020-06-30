@@ -1,4 +1,4 @@
-use crate::vector::flag::Found;
+use crate::vector::flag::LongFound;
 use crate::Context;
 use crate::FlagValue;
 use std::collections::VecDeque;
@@ -146,7 +146,7 @@ impl Parser {
 					match inter_middle_args.pop_front() {
 						Some(MiddleArg::LongFlag(long_flag, flag_val)) => {
 							match c.local_flags.find_long_flag(&long_flag) {
-								Found::Name(l_flag) => match flag_val {
+								LongFound::Name(l_flag) => match flag_val {
 									FlagValue::String(_) if l_flag.flag_type.is_string() => {
 										c.local_flags_values.push((long_flag, flag_val));
 									}
@@ -219,7 +219,7 @@ impl Parser {
 										c.push_back_to_parsing_args(flag_arg);
 									}
 								},
-								Found::Long(l_flag) => match flag_val {
+								LongFound::Long(l_flag) => match flag_val {
 									FlagValue::String(_) if l_flag.flag_type.is_string() => {
 										c.local_flags_values
 											.push((l_flag.get_name_clone(), flag_val));
@@ -293,7 +293,7 @@ impl Parser {
 								},
 								_ => {
 									match c.common_flags.find_long_flag(&long_flag) {
-										Found::Name(c_flag) => match flag_val {
+										LongFound::Name(c_flag) => match flag_val {
 											FlagValue::String(_) if c_flag.flag_type.is_string() => {
 												c.common_flags_values.push((long_flag, flag_val));
 											}
@@ -371,7 +371,7 @@ impl Parser {
 												c.push_back_to_parsing_args(flag_arg);
 											}
 										},
-										Found::Long(c_flag) => {
+										LongFound::Long(c_flag) => {
 											match flag_val {
 												FlagValue::String(_) if c_flag.flag_type.is_string() => {
 													c.common_flags_values
@@ -477,7 +477,7 @@ impl Parser {
 									let mut i: usize = 0;
 									for s in short_flag.chars() {
 										match c.find_local_short_flag(&s) {
-											Found::Short(l_flag) => {
+											Some(l_flag) => {
 												let record = (
 													l_flag.get_name_clone(),
 													l_flag.derive_flag_value_if_no_value(),
@@ -486,7 +486,7 @@ impl Parser {
 											}
 											_ => {
 												match c.find_common_short_flag(&s) {
-													Found::Short(c_flag) => {
+													Some(c_flag) => {
 														let record = (
 															c_flag.get_name_clone(),
 															c_flag.derive_flag_value_if_no_value(),
@@ -517,7 +517,7 @@ impl Parser {
 										i = i + 1;
 									}
 									match c.find_local_short_flag(&last) {
-										Found::Short(l_flag) => match flag_val {
+										Some(l_flag) => match flag_val {
 											FlagValue::String(_) if l_flag.flag_type.is_string() => {
 												let record = (l_flag.get_name_clone(), flag_val);
 												c.local_flags_values.push(record);
@@ -623,7 +623,7 @@ impl Parser {
 										},
 										_ => {
 											match c.find_common_short_flag(&last) {
-												Found::Short(c_flag) => match flag_val {
+												Some(c_flag) => match flag_val {
 													FlagValue::String(_) if c_flag.flag_type.is_string() => {
 														let record = (c_flag.get_name_clone(), flag_val);
 														c.common_flags_values.push(record);
@@ -851,7 +851,7 @@ impl Parser {
 				let after_eq = long_flag.split_off(index + 1);
 				long_flag.pop();
 				match c.local_flags.find_long_flag(&long_flag) {
-					Found::Name(l_flag) => match l_flag.derive_flag_value_from_string(after_eq) {
+					LongFound::Name(l_flag) => match l_flag.derive_flag_value_from_string(after_eq) {
 						FlagValue::Invalid(after_eq) => {
 							let flag_arg =
 								MiddleArg::LongFlag(long_flag.clone(), FlagValue::Invalid(after_eq));
@@ -866,7 +866,7 @@ impl Parser {
 							c.local_flags_values.push((long_flag, val));
 						}
 					},
-					Found::Long(l_flag) => match l_flag.flag_type.get_value_from_string(after_eq) {
+					LongFound::Long(l_flag) => match l_flag.flag_type.get_value_from_string(after_eq) {
 						FlagValue::Invalid(after_eq) => {
 							let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::Invalid(after_eq));
 							let l_flag_name = l_flag.get_name_clone();
@@ -883,7 +883,8 @@ impl Parser {
 						}
 					},
 					_ => match c.common_flags.find_long_flag(&long_flag) {
-						Found::Name(c_flag) => match c_flag.flag_type.get_value_from_string(after_eq) {
+						LongFound::Name(c_flag) => match c_flag.flag_type.get_value_from_string(after_eq)
+						{
 							FlagValue::Invalid(after_eq) => {
 								let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::String(after_eq));
 								c.error_info_list.push((
@@ -895,7 +896,8 @@ impl Parser {
 							}
 							val => c.common_flags_values.push((long_flag, val)),
 						},
-						Found::Long(c_flag) => match c_flag.flag_type.get_value_from_string(after_eq) {
+						LongFound::Long(c_flag) => match c_flag.flag_type.get_value_from_string(after_eq)
+						{
 							FlagValue::Invalid(after_eq) => {
 								let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::String(after_eq));
 								c.error_info_list.push((
@@ -921,7 +923,7 @@ impl Parser {
 				self.parse_next_if_flag(c)
 			}
 			None => match c.local_flags.find_long_flag(&long_flag) {
-				Found::Name(l_flag) => match c.args.pop_front() {
+				LongFound::Name(l_flag) => match c.args.pop_front() {
 					Some(next_long_flag) if self.long_flag(&next_long_flag) => {
 						c.local_flags_values
 							.push((long_flag, l_flag.flag_type.get_value_if_no_value()));
@@ -949,7 +951,7 @@ impl Parser {
 						(None, c)
 					}
 				},
-				Found::Long(l_flag) => match c.args.pop_front() {
+				LongFound::Long(l_flag) => match c.args.pop_front() {
 					Some(next_long_flag) if self.long_flag(&next_long_flag) => {
 						c.local_flags_values.push((
 							l_flag.get_name_clone(),
@@ -986,7 +988,7 @@ impl Parser {
 					}
 				},
 				_ => match c.common_flags.find_long_flag(&long_flag) {
-					Found::Name(c_flag) => match c.args.pop_front() {
+					LongFound::Name(c_flag) => match c.args.pop_front() {
 						Some(next_long_flag) if self.long_flag(&next_long_flag) => {
 							c.common_flags_values
 								.push((long_flag, c_flag.flag_type.get_value_if_no_value()));
@@ -1014,7 +1016,7 @@ impl Parser {
 							(next_none, c)
 						}
 					},
-					Found::Long(c_flag) => match c.args.pop_front() {
+					LongFound::Long(c_flag) => match c.args.pop_front() {
 						Some(next_long_flag) if self.long_flag(&next_long_flag) => {
 							c.common_flags_values.push((
 								c_flag.get_name_clone(),
@@ -1087,7 +1089,7 @@ impl Parser {
 						let mut i = 0;
 						for s in short_flag.chars() {
 							match c.find_local_short_flag(&s) {
-								Found::Short(l_flag) => {
+								Some(l_flag) => {
 									let record = (
 										l_flag.get_name_clone(),
 										l_flag.derive_flag_value_if_no_value(),
@@ -1095,7 +1097,7 @@ impl Parser {
 									c.local_flags_values.push(record);
 								}
 								_ => match c.find_common_short_flag(&s) {
-									Found::Short(c_flag) => {
+									Some(c_flag) => {
 										let record = (
 											c_flag.get_name_clone(),
 											c_flag.derive_flag_value_if_no_value(),
@@ -1122,7 +1124,7 @@ impl Parser {
 						}
 						//最後のフラグと値を処理
 						match c.find_local_short_flag(&before_eq) {
-							Found::Short(l_flag) => {
+							Some(l_flag) => {
 								match l_flag.derive_flag_value_from_string(after_eq) {
 									FlagValue::Invalid(after_eq) => {
 										let l_flag = l_flag.get_name_clone();
@@ -1151,30 +1153,28 @@ impl Parser {
 							_ => {
 								//ローカルにヒットしなかった場合
 								match c.common_flags.find_short_flag(&before_eq) {
-									Found::Short(c_flag) => {
-										match c_flag.derive_flag_value_from_string(after_eq) {
-											FlagValue::Invalid(after_eq) => {
-												c.error_info_list.push((
-													MiddleArg::ShortFlag(
-														{
-															short_flag.push(before_eq);
-															short_flag
-														},
-														FlagValue::String(after_eq.clone()),
-													),
-													ParseError::NoExistShort(i),
-													ParseError::InvalidShort(i, c_flag.get_name_clone()),
-												));
-												c.push_back_to_parsing_args(MiddleArg::ShortFlag(
-													before_eq.to_string(),
-													FlagValue::String(after_eq),
-												));
-											}
-											val => {
-												c.local_flags_values.push((c_flag.get_name_clone(), val));
-											}
+									Some(c_flag) => match c_flag.derive_flag_value_from_string(after_eq) {
+										FlagValue::Invalid(after_eq) => {
+											c.error_info_list.push((
+												MiddleArg::ShortFlag(
+													{
+														short_flag.push(before_eq);
+														short_flag
+													},
+													FlagValue::String(after_eq.clone()),
+												),
+												ParseError::NoExistShort(i),
+												ParseError::InvalidShort(i, c_flag.get_name_clone()),
+											));
+											c.push_back_to_parsing_args(MiddleArg::ShortFlag(
+												before_eq.to_string(),
+												FlagValue::String(after_eq),
+											));
 										}
-									}
+										val => {
+											c.local_flags_values.push((c_flag.get_name_clone(), val));
+										}
+									},
 									_ => {
 										let f_val = FlagValue::String(after_eq);
 										c.error_info_list.push((
@@ -1208,7 +1208,7 @@ impl Parser {
 					Some(last) => {
 						for s in short_flag.chars() {
 							match c.find_local_short_flag(&s) {
-								Found::Short(l_flag) => {
+								Some(l_flag) => {
 									let record = (
 										l_flag.get_name_clone(),
 										l_flag.derive_flag_value_if_no_value(),
@@ -1216,7 +1216,7 @@ impl Parser {
 									c.local_flags_values.push(record);
 								}
 								_ => match c.find_common_short_flag(&s) {
-									Found::Short(c_flag) => {
+									Some(c_flag) => {
 										let record = (
 											c_flag.get_name_clone(),
 											c_flag.derive_flag_value_if_no_value(),
@@ -1240,7 +1240,7 @@ impl Parser {
 						}
 						//最後の１フラグを処理
 						match c.local_flags.find_short_flag(&last) {
-							Found::Short(l_flag) => match c.args.pop_front() {
+							Some(l_flag) => match c.args.pop_front() {
 								Some(next_long_flag) if self.long_flag(&next_long_flag) => {
 									c.local_flags_values.push((
 										l_flag.get_name_clone(),
@@ -1278,7 +1278,7 @@ impl Parser {
 								}
 							},
 							_ => match c.common_flags.find_short_flag(&last) {
-								Found::Short(c_flag) => match c.args.pop_front() {
+								Some(c_flag) => match c.args.pop_front() {
 									Some(next_long_flag) if self.long_flag(&next_long_flag) => {
 										self.parse_flags_start_with_long_flag(next_long_flag, c)
 									}

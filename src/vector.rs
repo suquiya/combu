@@ -124,34 +124,40 @@ pub mod flag {
 	use crate::Flag;
 
 	#[derive(Debug, Clone)]
-	pub enum Found<T> {
+	pub enum LongFound<T> {
 		Name(T),
-		Short(T),
 		Long(T),
 		None,
 	}
 
 	impl Vector<Flag> {
-		pub fn find_long_flag(&self, name_or_alias: &str) -> Found<&Flag> {
+		pub fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
 			match &self {
-				Vector(None) => Found::None,
+				Vector(None) => LongFound::None,
 				Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(name_or_alias)) {
 					None => match flags.iter().find(|flag| flag.is_long(name_or_alias)) {
-						None => Found::None,
-						Some(f) => Found::Long(f),
+						None => LongFound::None,
+						Some(f) => LongFound::Long(f),
 					},
-					Some(f) => Found::Name(f),
+					Some(f) => LongFound::Name(f),
 				},
 			}
 		}
 
-		pub fn find_short_flag(&self, short_alias: &char) -> Found<&Flag> {
+		pub fn find_short_flag(&self, short_alias: &char) -> Option<&Flag> {
 			match &self {
-				Vector(Some(flags)) => match flags.iter().find(|flag| flag.is_short(short_alias)) {
-					None => Found::None,
-					Some(f) => Found::Short(f),
+				Vector(Some(flags)) => flags.iter().find(|flag| flag.is_short(short_alias)),
+				Vector(None) => None,
+			}
+		}
+
+		pub fn find(&self, flag_name: &str) -> Option<&Flag> {
+			match &self {
+				Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(flag_name)) {
+					Some(f) => Some(f),
+					None => None,
 				},
-				Vector(None) => Found::None,
+				Vector(None) => None,
 			}
 		}
 	}

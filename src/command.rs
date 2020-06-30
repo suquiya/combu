@@ -31,6 +31,23 @@ impl Command {
 		Command::default()
 	}
 
+	pub fn with_name<T: Into<String>>(name: T) -> Command {
+		Command {
+			name: name.into(),
+			action: None,
+			authors: String::default(),
+			copyright: String::default(),
+			description: Option::default(),
+			usage: String::default(),
+			l_flags: Vector::default(),
+			c_flags: Vector::default(),
+			alias: Vector::default(),
+			version: String::default(),
+			sub: Vector::default(),
+			opt_values: Vector::default(),
+		}
+	}
+
 	#[allow(clippy::too_many_arguments)]
 	pub fn build_new(
 		name: String,
@@ -87,6 +104,7 @@ impl Command {
 						self.l_flags.take(),
 						current_path,
 					);
+					println!("single_run_context: {:?}", context);
 					context = Parser::default().parse_args_until_end(context);
 
 					action(context)
@@ -228,6 +246,9 @@ impl Run<Context> for Command {
 impl Command {
 	pub fn run_from_args(&mut self, raw_args: Vec<String>) {
 		println!("{:?}, len: {}", &raw_args, &raw_args.len());
+		if self.sub.is_none() {
+			return self.single_run(raw_args);
+		}
 		let mut args = VecDeque::from(raw_args.clone());
 		let current_path = args.pop_front().unwrap();
 		let head = args.pop_front();
@@ -400,6 +421,7 @@ impl Command {
 						None => match self.action {
 							None => println!("{} does not have its own action.", self.name),
 							Some(action) => {
+								args.push_front(arg);
 								let c = Context::new(
 									raw_args,
 									args,
@@ -425,8 +447,26 @@ impl Command {
 		}
 	}
 
-	pub fn run_with_context(&mut self, context: Context) {
-		println!("{:?}", context);
+	pub fn run_with_context(&mut self, mut context: Context) {
+		println!("run_with_context: {:?}", context);
+		if self.sub.is_none() {
+			context.local_flags = self.l_flags.take();
+			context.common_flags = {
+				let mut taken = self.c_flags.take();
+				taken.append(context.common_flags);
+				taken
+			};
+			let p = Parser::default();
+			context = p.parse_args_until_end(context);
+			match self.action {
+				Some(action) => {
+					action(context);
+				}
+				None => println!("no action is registered"),
+			}
+		} else {
+			//
+		}
 	}
 
 	pub fn assign_run(
@@ -536,7 +576,7 @@ impl Command {
 					)),
 					None => {
 						//サブコマンドはないのでそのままselfでaction
-						let mut c = Context::build_new(
+						let c = Context::build_new(
 							raw_args,
 							args,
 							self.c_flags.take(),
@@ -547,8 +587,13 @@ impl Command {
 							Some(inter_mediate_args),
 							Vector(None),
 						);
-						//TODO: inter_mediate_argsに入っているフラグをパースする処理
+
+						let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
 						c = p.parse_args_until_end(c);
+						if let Some(mut non_flag_args) = non_flag_args {
+							non_flag_args.append(&mut c.args);
+							c.args = non_flag_args;
+						}
 						match self.action {
 							Some(action) => {
 								action(c);
@@ -585,5 +630,122 @@ impl Command {
 				}
 			}
 		}
+	}
+}
+#[cfg(test)]
+mod tests {
+	use super::super::{Flag, FlagType};
+	use super::*;
+
+	#[test]
+	fn single_run() {
+		let mut arg = vec![
+			"current_path".to_string(),
+			"test".to_string(),
+			"test".to_string(),
+		];
+		let mut root = Command::new()
+			.action(|c| {
+				println!("test_action: {:?}", c);
+				let raw_args = vec![
+					"current_path".to_string(),
+					"test".to_string(),
+					"test".to_string(),
+				];
+				let expect_args = {
+					let mut vd = VecDeque::from(raw_args.clone());
+					vd.pop_front();
+					vd
+				};
+				assert_eq!(c.raw_args, raw_args);
+				assert_eq!(c.args, expect_args);
+				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+			})
+			.common_flag(Flag::new(
+				"common",
+				"sample common flag",
+				FlagType::default(),
+			))
+			.local_flag(Flag::new("local", "sample local flag", FlagType::default()));
+		root.single_run(arg.clone());
+
+		arg.push("--common=C_after".into());
+		arg.push("--local=L_after".into());
+		arg.insert(1, "--common=C_before".into());
+		arg.insert(1, "--local=L_before".into());
+		let mut root = Command::new()
+			.action(|c| {
+				println!("test_action: {:?}", c);
+				let raw_args: Vec<String> = vec![
+					"current_path".to_string(),
+					"--local=L_before".to_string(),
+					"--common=C_before".to_string(),
+					"test".to_string(),
+					"test".to_string(),
+					"--common=C_after".to_string(),
+					"--local=L_after".to_string(),
+				];
+				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
+				assert_eq!(c.raw_args, raw_args);
+				assert_eq!(c.args, expect_args);
+				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				let l_flag_values = Vector::from(vec![
+					(
+						"local".to_string(),
+						FlagValue::String("L_before".to_owned()),
+					),
+					("local".to_string(), FlagValue::String("L_after".into())),
+				]);
+				assert_eq!(c.local_flags_values, l_flag_values);
+				let c_flag_values = Vector::from(vec![
+					(
+						"common".to_string(),
+						FlagValue::String("C_before".to_owned()),
+					),
+					("common".to_string(), FlagValue::String("C_after".into())),
+				]);
+				assert_eq!(c.common_flags_values, c_flag_values);
+			})
+			.common_flag(Flag::new(
+				"common",
+				"sample common flag",
+				FlagType::default(),
+			))
+			.local_flag(Flag::new("local", "sample local flag", FlagType::default()));
+
+		root.single_run(arg);
+	}
+
+	#[test]
+	fn run_root() {
+		let arg = vec![
+			"current_path".to_string(),
+			"test".to_string(),
+			"test".to_string(),
+		];
+		let mut root = Command::new()
+			.action(|c| {
+				println!("test_action: {:?}", c);
+				let raw_args = vec![
+					"current_path".to_string(),
+					"test".to_string(),
+					"test".to_string(),
+				];
+				let expect_args = {
+					let mut vd = VecDeque::from(raw_args.clone());
+					vd.pop_front();
+					vd
+				};
+				assert_eq!(c.raw_args, raw_args);
+				assert_eq!(c.args, expect_args);
+				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+			})
+			.common_flag(Flag::new(
+				"common",
+				"sample common flag",
+				FlagType::default(),
+			))
+			.local_flag(Flag::new("local", "sample local flag", FlagType::default()));
+		root.run(arg.clone());
 	}
 }

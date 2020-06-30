@@ -11,9 +11,9 @@ fn main() {
 			"sample common flag",
 			FlagType::default(),
 		))
-		.local_flag(Flag::new("local", "sample local flag", FlagType::default()));
+		.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
+		.sub_command(Command::with_name("sub").action(|c| {
+			println!("sub_test: {:?}", c);
+		}));
 	root.run_with_auto_arg_collect();
-
-	let a: Option<isize> = Some(123);
-	println!("{}", a.is_some());
 }

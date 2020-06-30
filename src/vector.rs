@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialOrd, PartialEq)]
 pub struct Vector<T>(pub Option<Vec<T>>);
 
 impl<T> Default for Vector<T> {
@@ -43,7 +43,7 @@ impl<T> Vector<T> {
 		}
 	}
 
-	pub fn append(&mut self, mut other: Vec<T>) {
+	pub fn append_vec(&mut self, mut other: Vec<T>) {
 		match self {
 			Vector(None) => {
 				//let mut inner = vec![];
@@ -52,6 +52,20 @@ impl<T> Vector<T> {
 				*self = Vector(Some(other))
 			}
 			Vector(Some(ref mut vec)) => (*vec).append(&mut other),
+		}
+	}
+
+	pub fn append(&mut self, mut other: Vector<T>) {
+		match self {
+			Vector(None) => {
+				*self = other;
+			}
+			Vector(Some(ref mut vec)) => {
+				if let Vector(Some(ref mut o_vec)) = other {
+					//
+					(*vec).append(o_vec);
+				}
+			}
 		}
 	}
 

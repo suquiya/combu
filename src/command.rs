@@ -422,17 +422,19 @@ impl Command {
 							None => println!("{} does not have its own action.", self.name),
 							Some(action) => {
 								args.push_front(arg);
-								let c = Context::new(
+								let mut c = Context::new(
 									raw_args,
 									args,
 									self.c_flags.take(),
 									self.l_flags.take(),
 									current_path,
 								);
+								c = p.parse_args_until_end(c);
 								action(c);
 							}
 						},
 						Some(mut sub) => {
+							println!("{}", sub.name);
 							let common_flag = self.c_flags.take();
 							let c = Context::new(raw_args, args, common_flag, Vector(None), current_path);
 							sub.run(c);
@@ -448,7 +450,7 @@ impl Command {
 	}
 
 	pub fn run_with_context(&mut self, mut context: Context) {
-		println!("run_with_context: {:?}", context);
+		//println!("run_with_context: {:?}", context);
 		if self.sub.is_none() {
 			context.local_flags = self.l_flags.take();
 			context.common_flags = {
@@ -634,6 +636,7 @@ impl Command {
 }
 #[cfg(test)]
 mod tests {
+	use super::super::parser::ParseError;
 	use super::super::{Flag, FlagType};
 	use super::*;
 
@@ -722,6 +725,8 @@ mod tests {
 			"current_path".to_string(),
 			"test".to_string(),
 			"test".to_string(),
+			"--local".to_string(),
+			"test".to_string(),
 		];
 		let mut root = Command::new()
 			.action(|c| {
@@ -730,22 +735,164 @@ mod tests {
 					"current_path".to_string(),
 					"test".to_string(),
 					"test".to_string(),
+					"--local".to_string(),
+					"test".to_string(),
 				];
-				let expect_args = {
-					let mut vd = VecDeque::from(raw_args.clone());
-					vd.pop_front();
-					vd
-				};
+				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				assert_eq!(
+					c.get_local_flag_value_of("local"),
+					Some(FlagValue::String("test".into()))
+				);
+				assert_eq!(
+					c.get_flag_value_of("local"),
+					Some(FlagValue::String("test".into()))
+				);
+				assert_eq!(
+					c.get_flag_value_of("common"),
+					Some(FlagValue::String(String::default()))
+				);
 			})
 			.common_flag(Flag::new(
 				"common",
 				"sample common flag",
 				FlagType::default(),
 			))
-			.local_flag(Flag::new("local", "sample local flag", FlagType::default()));
+			.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
+			.sub_command(Command::with_name("sub").action(|_| println!("sub")));
+		root.run(arg.clone());
+	}
+
+	#[test]
+	fn run_sub() {
+		let arg = vec![
+			"current_path".to_string(),
+			"sub".to_string(),
+			"test".to_string(),
+			"--common".to_string(),
+			"test".to_string(),
+			"-c".to_string(),
+			"--local".to_string(),
+		];
+		let mut root = Command::new()
+			.action(|c| {
+				println!("test_action: {:?}", c);
+				panic!("not sub");
+			})
+			.common_flag(Flag::new(
+				"common",
+				"sample common flag",
+				FlagType::default(),
+			))
+			.common_flag(Flag::with_name("commons").short_alias('c'))
+			.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
+			.sub_command(Command::with_name("sub").action(|c| {
+				let raw_args = vec![
+					"current_path".to_string(),
+					"sub".to_string(),
+					"test".to_string(),
+					"--common".to_string(),
+					"test".to_string(),
+					"-c".to_string(),
+					"--local".to_string(),
+				];
+				let expect_args = VecDeque::from(vec!["test".to_string()]);
+				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				assert_eq!(c.raw_args, raw_args);
+				assert_eq!(c.args, expect_args);
+				assert_eq!(
+					c.get_flag_value_of("common"),
+					Some(FlagValue::String("test".into()))
+				);
+				assert_eq!(c.get_inputted_flag_value_of("commons"), None);
+				assert_eq!(
+					c.get_flag_value_of("commons"),
+					Some(FlagValue::String("".into()))
+				);
+				assert_eq!(c.get_flag_value_of("local"), None);
+			}));
+		root.run(arg.clone());
+	}
+
+	#[test]
+	fn test_flag_type() {
+		let arg = vec![
+			"current_path".to_string(),
+			"sub".to_string(),
+			"test".to_string(),
+			"--common".to_string(),
+			"test".to_string(),
+			"-c".to_string(),
+			"--local".to_string(),
+			"-y".to_string(),
+		];
+		let mut root = Command::new()
+			.action(|c| {
+				println!("test_action: {:?}", c);
+				panic!("not sub");
+			})
+			.common_flag(Flag::new(
+				"common",
+				"sample common flag",
+				FlagType::default(),
+			))
+			.common_flag(Flag::with_name("commons").short_alias('c'))
+			.common_flag(Flag::new_string("yes").short_alias('y'))
+			.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
+			.sub_command(
+				Command::with_name("sub")
+					.action(|c| {
+						println!("sub_action: {:?}", c);
+						let raw_args = vec![
+							"current_path".to_string(),
+							"sub".to_string(),
+							"test".to_string(),
+							"--common".to_string(),
+							"test".to_string(),
+							"-c".to_string(),
+							"--local".to_string(),
+							"-y".to_string(),
+						];
+						let expect_args = VecDeque::from(vec!["test".to_string()]);
+						assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+						assert_eq!(c.raw_args, raw_args);
+						assert_eq!(c.args, expect_args);
+						assert_eq!(
+							c.get_flag_value_of("common"),
+							Some(FlagValue::String("test".into()))
+						);
+						assert_eq!(c.get_inputted_flag_value_of("commons"), None);
+						assert_eq!(
+							c.get_flag_value_of("commons"),
+							Some(FlagValue::String("".into()))
+						);
+						assert_eq!(c.get_flag_value_of("local"), None);
+						assert_eq!(c.get_inputted_common_flag_value_of("yes"), None);
+						assert_eq!(
+							c.get_local_flag_value_of("yes"),
+							Some(FlagValue::Bool(true))
+						);
+						assert_eq!(c.get_flag_value_of("yes"), Some(FlagValue::Bool(true)));
+						let expect_error_args = {
+							let mut vd = VecDeque::new();
+							vd.push_back(MiddleArg::LongFlag("local".into(), FlagValue::None));
+							vd
+						};
+
+						assert_eq!(c.parsing_args.unwrap(), expect_error_args);
+						assert_eq!(
+							c.error_info_list,
+							Vector::from(vec![(
+								MiddleArg::LongFlag("local".into(), FlagValue::None),
+								ParseError::NoExistLong,
+								ParseError::NoExistLong
+							)])
+						)
+					})
+					.local_flag(Flag::new_bool("yes").short_alias('y')),
+			);
 		root.run(arg.clone());
 	}
 }

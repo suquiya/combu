@@ -117,29 +117,120 @@ impl Context {
 		}
 	}
 
-	pub fn take_flag_value(self) {
-		//
+	pub fn take_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
+		match self.take_local_flag_value_of(flag_name) {
+			None => self.take_common_flag_value_of(flag_name),
+			val => val,
+		}
 	}
 
-	pub fn get_common_flag_value_of(&self, flag_name: &str) -> Option<&FlagValue> {
+	pub fn take_inputted_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
+		match self.take_inputted_local_flag_value_of(flag_name) {
+			None => self.take_inputted_common_flag_value_of(flag_name),
+			val => val,
+		}
+	}
+
+	pub fn take_local_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
+		match self.take_inputted_common_flag_value_of(flag_name) {
+			None => match self.local_flags.find(flag_name) {
+				None => None,
+				Some(f) => Some(f.default_value.clone()),
+			},
+			val => val,
+		}
+	}
+
+	pub fn take_common_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
+		match self.take_inputted_common_flag_value_of(flag_name) {
+			None => match self.common_flags.find(flag_name) {
+				None => None,
+				Some(f) => Some(f.default_value.clone()),
+			},
+			val => val,
+		}
+	}
+
+	pub fn take_inputted_local_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
+		match self.local_flags_values {
+			Vector(None) => None,
+			Vector(Some(ref mut local)) => {
+				match local.iter().position(|(name, _)| name == flag_name) {
+					Some(index) => {
+						let (_, val) = local.remove(index);
+						Some(val)
+					}
+					None => None,
+				}
+			}
+		}
+	}
+
+	pub fn take_inputted_common_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
 		match self.common_flags_values {
-			Vector(None) => match self.common_flags.find(flag_name) {
-				Some(f) => Some(&f.default_value),
+			Vector(None) => None,
+			Vector(Some(ref mut common)) => {
+				match common.iter().position(|(name, _)| name == flag_name) {
+					Some(index) => {
+						let (_, val) = common.remove(index);
+						Some(val)
+					}
+					None => None,
+				}
+			}
+		}
+	}
+
+	pub fn get_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
+		match self.get_local_flag_value_of(flag_name) {
+			None => self.get_common_flag_value_of(flag_name),
+			flag_val => flag_val,
+		}
+	}
+
+	pub fn get_inputted_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
+		match self.get_inputted_local_flag_value_of(flag_name) {
+			None => self.get_inputted_common_flag_value_of(flag_name),
+			flag_val => flag_val,
+		}
+	}
+
+	pub fn get_common_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
+		match self.get_inputted_common_flag_value_of(flag_name) {
+			None => match self.common_flags.find(flag_name) {
+				Some(f) => Some(f.default_value.clone()),
 				None => None,
 			},
-			Vector(Some(ref common)) => match common.iter().find(|(name, _)| name == flag_name) {
+			val => val,
+		}
+	}
+
+	pub fn get_local_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
+		match self.get_inputted_local_flag_value_of(flag_name) {
+			None => match self.local_flags.find(flag_name) {
+				Some(f) => Some(f.default_value.clone()),
 				None => None,
-				Some((_, flag_val)) => Some(flag_val),
+			},
+			val => val,
+		}
+	}
+
+	pub fn get_inputted_local_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
+		match &self.local_flags_values {
+			Vector(None) => None,
+			Vector(Some(local)) => match local.iter().find(|(name, _)| name == flag_name) {
+				None => None,
+				Some((_, flag_val)) => Some(flag_val.to_owned()),
 			},
 		}
 	}
 
-	pub fn get_local_flag_value_of(&self, flag_name: &str) -> Option<&FlagValue> {
-		match self.local_flags_values {
+	pub fn get_inputted_common_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
+		match &self.common_flags_values {
 			Vector(None) => None,
-			Vector(Some(ref local)) => match local.iter().find(|(name, _)| name == flag_name) {
+			Vector(Some(common)) => match common.iter().find(|(name, _)| name == flag_name) {
 				None => None,
-				Some((_, flag_val)) => Some(flag_val),
+				Some((_, flag_val)) => Some(flag_val.to_owned()),
 			},
 		}
 	}

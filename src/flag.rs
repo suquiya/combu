@@ -29,7 +29,7 @@ impl FlagType {
 			//_ => "Unknown",
 		}
 	}
-	pub fn type_default(&self) -> FlagValue {
+	pub fn default_flag_value(&self) -> FlagValue {
 		match self {
 			FlagType::Bool => FlagValue::Bool(bool::default()),
 			FlagType::String => FlagValue::String(String::default()),
@@ -148,7 +148,7 @@ impl Default for Flag {
 }
 
 impl Flag {
-	pub fn new(name: &str, usage: &str, flag_type: FlagType) -> Flag {
+	pub fn new<T: Into<String>>(name: T, usage: T, flag_type: FlagType) -> Flag {
 		let default_value: FlagValue = match flag_type {
 			FlagType::Bool => FlagValue::Bool(bool::default()),
 			FlagType::String => FlagValue::String(String::default()),
@@ -156,8 +156,8 @@ impl Flag {
 			FlagType::Float => FlagValue::Float(f64::default()),
 		};
 		Flag {
-			name: String::from(name),
-			usage: String::from(usage),
+			name: name.into(),
+			usage: usage.into(),
 			long_alias: Vector::default(),
 			short_alias: Vector::default(),
 			flag_type,
@@ -178,7 +178,7 @@ impl Flag {
 		} else {
 			let flag_type_str = flag_type.name();
 			eprintln!("FlagType is {},but inputted default_value is not {}. default_value will be {}'s default.",flag_type_str,flag_type_str,flag_type_str);
-			flag_type.type_default()
+			flag_type.default_flag_value()
 		};
 		Flag {
 			name,
@@ -188,6 +188,45 @@ impl Flag {
 			flag_type,
 			default_value: calculated_default_value,
 		}
+	}
+
+	pub fn with_name<T: Into<String>>(name: T) -> Self {
+		Flag {
+			name: name.into(),
+			usage: String::default(),
+			short_alias: Vector::default(),
+			long_alias: Vector::default(),
+			flag_type: FlagType::default(),
+			default_value: FlagValue::String(String::default()),
+		}
+	}
+
+	pub fn with_name_and_type<T: Into<String>>(name: T, flag_type: FlagType) -> Self {
+		let default_value = flag_type.default_flag_value();
+		Flag {
+			name: name.into(),
+			usage: String::default(),
+			short_alias: Vector::default(),
+			long_alias: Vector::default(),
+			flag_type,
+			default_value,
+		}
+	}
+
+	pub fn new_bool<T: Into<String>>(name: T) -> Self {
+		Flag::with_name_and_type(name, FlagType::Bool)
+	}
+
+	pub fn new_string<T: Into<String>>(name: T) -> Self {
+		Flag::with_name_and_type(name, FlagType::String)
+	}
+
+	pub fn new_int<T: Into<String>>(name: T) -> Self {
+		Flag::with_name_and_type(name, FlagType::Int)
+	}
+
+	pub fn new_float<T: Into<String>>(name: T) -> Self {
+		Flag::with_name_and_type(name, FlagType::Float)
 	}
 
 	pub fn short_alias<T: Into<char>>(mut self, a: T) -> Self {

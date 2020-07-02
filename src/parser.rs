@@ -1349,7 +1349,7 @@ impl Parser {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub enum MiddleArg {
 	Normal(String),
 	LongFlag(String, FlagValue),
@@ -1417,7 +1417,7 @@ impl MiddleArg {
 }
 
 type Index = usize;
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum ParseError {
 	NoExistLong,
 	NoExistShort(Index),

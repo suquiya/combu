@@ -30,6 +30,10 @@ impl<T> Vector<T> {
 		Vector::default()
 	}
 
+	pub fn with_inner(inner_vec: Vec<T>) -> Self {
+		Vector(Some(inner_vec))
+	}
+
 	pub fn init(&mut self, value: Option<Vec<T>>) {
 		*self = Vector(value);
 	}

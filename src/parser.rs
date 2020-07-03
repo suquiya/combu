@@ -1280,9 +1280,17 @@ impl Parser {
 							_ => match c.common_flags.find_short_flag(&last) {
 								Some(c_flag) => match c.args.pop_front() {
 									Some(next_long_flag) if self.long_flag(&next_long_flag) => {
+										c.common_flags_values.push((
+											c_flag.get_name_clone(),
+											c_flag.derive_flag_value_if_no_value(),
+										));
 										self.parse_flags_start_with_long_flag(next_long_flag, c)
 									}
 									Some(next_short_flag) if self.flag(&next_short_flag) => {
+										c.common_flags_values.push((
+											c_flag.get_name_clone(),
+											c_flag.derive_flag_value_if_no_value(),
+										));
 										self.parse_flags_start_with_short_flag(next_short_flag, c)
 									}
 									Some(next_arg) => match c_flag.derive_flag_value_from_string(next_arg) {

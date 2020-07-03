@@ -766,7 +766,56 @@ mod tests {
 	}
 
 	#[test]
-	fn run_sub() {
+	fn run_node() {
+		let arg = vec![
+			"current_path".to_string(),
+			"sub".to_string(),
+			"test".to_string(),
+			"--common".to_string(),
+			"test".to_string(),
+			"-b".to_string(),
+			"--local".to_string(),
+		];
+		let mut root = Command::new()
+			.action(|c| {
+				println!("test_action: {:?}", c);
+				panic!("not sub");
+			})
+			.common_flag(Flag::new(
+				"common",
+				"sample common flag",
+				FlagType::default(),
+			))
+			.common_flag(Flag::new_bool("bool").short_alias('b'))
+			.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
+			.sub_command(Command::with_name("sub").action(|c| {
+				println!("{:?}", c);
+				let raw_args = vec![
+					"current_path".to_string(),
+					"sub".to_string(),
+					"test".to_string(),
+					"--common".to_string(),
+					"test".to_string(),
+					"-b".to_string(),
+					"--local".to_string(),
+				];
+				let expect_args = VecDeque::from(vec!["test".to_string()]);
+				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				assert_eq!(c.raw_args, raw_args);
+				assert_eq!(c.args, expect_args);
+				assert_eq!(
+					c.get_flag_value_of("common"),
+					Some(FlagValue::String("test".into()))
+				);
+				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(c.get_flag_value_of("commons"), None);
+				assert_eq!(c.get_flag_value_of("local"), None);
+			}));
+		root.run(arg.clone());
+	}
+
+	#[test]
+	fn run_leaf() {
 		let arg = vec![
 			"current_path".to_string(),
 			"sub".to_string(),
@@ -786,7 +835,7 @@ mod tests {
 				"sample common flag",
 				FlagType::default(),
 			))
-			.common_flag(Flag::with_name("commons").short_alias('c'))
+			.common_flag(Flag::with_name("cshort").short_alias('c'))
 			.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
 			.sub_command(Command::with_name("sub").action(|c| {
 				let raw_args = vec![
@@ -806,10 +855,13 @@ mod tests {
 					c.get_flag_value_of("common"),
 					Some(FlagValue::String("test".into()))
 				);
-				assert_eq!(c.get_inputted_flag_value_of("commons"), None);
 				assert_eq!(
-					c.get_flag_value_of("commons"),
-					Some(FlagValue::String("".into()))
+					c.get_inputted_flag_value_of("cshort").unwrap(),
+					FlagValue::None
+				);
+				assert_eq!(
+					c.get_flag_value_of("cshort").unwrap(),
+					FlagValue::String("".into())
 				);
 				assert_eq!(c.get_flag_value_of("local"), None);
 			}));
@@ -863,7 +915,10 @@ mod tests {
 							c.get_flag_value_of("common"),
 							Some(FlagValue::String("test".into()))
 						);
-						assert_eq!(c.get_inputted_flag_value_of("commons"), None);
+						assert_eq!(
+							c.get_inputted_flag_value_of("commons"),
+							Some(FlagValue::None)
+						);
 						assert_eq!(
 							c.get_flag_value_of("commons"),
 							Some(FlagValue::String("".into()))

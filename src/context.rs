@@ -197,7 +197,7 @@ impl Context {
 
 	pub fn get_common_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_inputted_common_flag_value_of(flag_name) {
-			None => match self.common_flags.find(flag_name) {
+			None | Some(FlagValue::None) => match self.common_flags.find(flag_name) {
 				Some(f) => Some(f.default_value.clone()),
 				None => None,
 			},
@@ -207,7 +207,7 @@ impl Context {
 
 	pub fn get_local_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_inputted_local_flag_value_of(flag_name) {
-			None => match self.local_flags.find(flag_name) {
+			None | Some(FlagValue::None) => match self.local_flags.find(flag_name) {
 				Some(f) => Some(f.default_value.clone()),
 				None => None,
 			},

@@ -193,8 +193,9 @@ impl Command {
 		}
 	}
 
+	///name_or_aliasに一致するサブコマンドがある場合、保持しているVectorからswap_removeで取り出して返す
 	pub fn take_sub(&mut self, name_or_alias: &str) -> Option<Command> {
-		match self.sub.take() {
+		match self.sub {
 			Vector(None) => None,
 			Vector(Some(ref mut inner)) => match inner.into_iter().position(|c| c.is(name_or_alias)) {
 				None => return None,
@@ -265,6 +266,7 @@ impl Command {
 					));
 				}
 				None => {
+					println!("no action is registered.");
 					println!("args: {:?}", raw_args);
 				}
 			}
@@ -278,13 +280,14 @@ impl Command {
 						p.middle_parse(args, VecDeque::new(), p.long_middle(long_flag));
 					//最初にフラグの形になっていない引数を求める
 					println!(
-						"middle_result {:?}",
+						"\r\nmiddle_result at 281 {:?}\r\n",
 						(&arg, &args, &inter_mediate_args, &last_flag_arg)
 					);
 					if let Some(arg) = arg {
 						match self.take_sub(&arg) {
 							//サブコマンド合致
 							Some(mut sub) => {
+								inter_mediate_args.push_back(last_flag_arg);
 								let context = Context::build_new(
 									raw_args,
 									args,
@@ -324,6 +327,12 @@ impl Command {
 											Some(inter_mediate_args),
 											Vector::default(),
 										);
+										let (mut context, non_flag_arg) =
+											p.parse_inter_mediate_args(context, false);
+										if let Some(mut non_flag_arg) = non_flag_arg {
+											non_flag_arg.append(&mut context.args);
+											context.args = non_flag_arg;
+										}
 										match self.action {
 											Some(action) => {
 												action(context);
@@ -413,6 +422,12 @@ impl Command {
 										Some(inter_mediate_args),
 										Vector(None),
 									);
+									let (mut context, non_flag_args) =
+										p.parse_inter_mediate_args(context, false);
+									if let Some(mut non_flag_args) = non_flag_args {
+										non_flag_args.append(&mut context.args);
+										context.args = non_flag_args;
+									}
 									match self.action {
 										Some(action) => {
 											action(context);
@@ -430,7 +445,7 @@ impl Command {
 				Some(arg) => {
 					//first arg is non-flag (normal) arg
 					println!("arg: {}", &arg);
-					//let common_flag = self.c_flags.take();
+
 					match self.take_sub(&arg) {
 						None => match self.action {
 							None => println!("{} does not have its own action.", self.name),
@@ -473,6 +488,11 @@ impl Command {
 				taken
 			};
 			let p = Parser::default();
+			let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
+			if let Some(mut non_flag_args) = non_flag_args {
+				non_flag_args.append(&mut context.args);
+				context.args = non_flag_args;
+			}
 			context = p.parse_args_until_end(context);
 			match self.action {
 				Some(action) => {
@@ -485,10 +505,12 @@ impl Command {
 			let p = Parser::default();
 			match context.args.pop_front() {
 				Some(long_flag) if p.long_flag(&long_flag) => {
-					panic!("not implemented");
+					let last = p.long_middle(long_flag);
+					self.assign_context(context, p, VecDeque::new(), last);
 				}
 				Some(short_flag) if p.flag(&short_flag) => {
-					panic!("not implemented");
+					let last = p.short_middle(short_flag);
+					self.assign_context(context, p, VecDeque::new(), last);
 				}
 				Some(arg) => {
 					println!("arg sub-sub: {}", &arg);
@@ -508,14 +530,27 @@ impl Command {
 								taken.append(context.common_flags);
 								taken
 							};
+							context.local_flags = self.l_flags.take();
 							match self.action {
 								None => {
 									println!("{} does not have its own action.", &self.name);
 								}
 								Some(action) => {
-									context.args.push_front(arg);
-									context = p.parse_args_until_end(context);
-									action(context);
+									let c = match p.parse_inter_mediate_args(context, true) {
+										(mut context, None) => {
+											context = p.parse_args_until_end(context);
+											context.args.push_front(arg);
+											context
+										}
+										(mut context, Some(mut non_flag_args)) => {
+											context = p.parse_args_until_end(context);
+											context.args.push_front(arg);
+											non_flag_args.append(&mut context.args);
+											context.args = non_flag_args;
+											context
+										}
+									};
+									action(c);
 								}
 							}
 						}
@@ -531,11 +566,153 @@ impl Command {
 								taken.append(context.common_flags);
 								taken
 							};
+
+							let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
+							if let Some(mut non_flag_args) = non_flag_args {
+								non_flag_args.append(&mut context.args);
+								context.args = non_flag_args;
+							}
 							action(context);
 						}
 						None => {
 							println!("no action is registered.");
 						}
+					}
+				}
+			}
+		}
+	}
+
+	pub fn assign_context(
+		&mut self,
+		mut c: Context,
+		p: Parser,
+		mut inter_mediate_args: VecDeque<MiddleArg>,
+		last: MiddleArg,
+	) {
+		println!(
+			"\r\nassign_context:::\r\nContext: {:?}, \r\ninter_mediate_args: {:?},\r\n prefix: {:?}\r\n",
+			c, inter_mediate_args, last
+		);
+		let (next_non_flag, args, _inter_mediate_args, last) =
+			p.middle_parse(c.args, inter_mediate_args, last);
+		inter_mediate_args = _inter_mediate_args;
+		println!("next_non_flag: {:?}", next_non_flag);
+		match next_non_flag {
+			Some(arg) => match self.take_sub(&arg) {
+				Some(mut sub) => {
+					c.args = args;
+					sub.run(c);
+				}
+				None => match &last {
+					MiddleArg::LongFlag(_, FlagValue::None)
+					| MiddleArg::ShortFlag(_, FlagValue::None) => {
+						inter_mediate_args.push_back(last);
+						inter_mediate_args.push_back(MiddleArg::Normal(arg));
+						c.args = args;
+						match c.args.pop_front() {
+							Some(long_flag) if p.long_flag(&long_flag) => {
+								let last = p.long_middle(long_flag);
+								self.assign_context(c, p, inter_mediate_args, last);
+							}
+							Some(short_flag) if p.flag(&short_flag) => {
+								let last = p.short_middle(short_flag);
+								self.assign_context(c, p, inter_mediate_args, last);
+							}
+							Some(arg) => match self.take_sub(&arg) {
+								Some(mut sub) => sub.run(c),
+								None => match self.action {
+									Some(action) => {
+										if let Some(mut parsing_args) = c.parsing_args {
+											parsing_args.append(&mut inter_mediate_args);
+											c.parsing_args = Some(parsing_args);
+										} else {
+											c.parsing_args = Some(inter_mediate_args);
+										}
+										c.local_flags = self.l_flags.take();
+										let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
+										c = p.parse_args_until_end(c);
+										c.args.push_front(arg);
+										if let Some(mut non_flag_args) = non_flag_args {
+											non_flag_args.append(&mut c.args);
+											c.args = non_flag_args;
+										}
+
+										action(c);
+									}
+									None => {
+										println!("no action registered.");
+									}
+								},
+							},
+							None => match self.action {
+								Some(action) => {
+									//println!("inter_mediate_args: {:?}\r\n", inter_mediate_args);
+									if let Some(mut parsing_args) = c.parsing_args {
+										parsing_args.append(&mut inter_mediate_args);
+										c.parsing_args = Some(parsing_args);
+									} else {
+										c.parsing_args = Some(inter_mediate_args);
+									}
+									c.local_flags = self.l_flags.take();
+									let (mut c, args) = p.parse_inter_mediate_args(c, false);
+
+									if let Some(mut args) = args {
+										args.append(&mut c.args);
+										c.args = args;
+									}
+									action(c);
+								}
+								None => {
+									println!("no action registered.");
+								}
+							},
+						}
+					}
+					_ => match self.action {
+						Some(action) => {
+							inter_mediate_args.push_back(last);
+							c.args = args;
+							c.local_flags = self.l_flags.take();
+							if let Some(mut parsing_args) = c.parsing_args {
+								parsing_args.append(&mut inter_mediate_args);
+								c.parsing_args = Some(parsing_args);
+							}
+							let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
+							c = p.parse_args_until_end(c);
+							c.args.push_front(arg);
+							if let Some(mut non_flag_args) = non_flag_args {
+								non_flag_args.append(&mut c.args);
+								c.args = non_flag_args;
+							}
+							action(c);
+						}
+						None => {
+							println!("no action is registered.");
+						}
+					},
+				},
+			},
+			None => {
+				match self.action {
+					Some(action) => {
+						inter_mediate_args.push_back(last);
+						c.args = args;
+						if let Some(mut parsing_args) = c.parsing_args {
+							parsing_args.append(&mut inter_mediate_args);
+							c.parsing_args = Some(parsing_args);
+						} else {
+							c.parsing_args = Some(inter_mediate_args);
+						}
+						let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
+						if let Some(non_flag_args) = non_flag_args {
+							//non_flag_args.append(&mut c.args);
+							c.args = non_flag_args;
+						}
+						action(c);
+					}
+					None => {
+						println!("no action is registered.");
 					}
 				}
 			}
@@ -601,6 +778,13 @@ impl Command {
 												Some(inter_mediate_args),
 												None.into(),
 											);
+											let (mut context, non_flag_args) =
+												p.parse_inter_mediate_args(context, false);
+											if let Some(mut non_flag_args) = non_flag_args {
+												non_flag_args.append(&mut context.args);
+												context.args = non_flag_args;
+											}
+
 											action(context)
 										}
 										_ => println!("no action is registered."),
@@ -646,6 +830,7 @@ impl Command {
 				//そのままself.runに放り込む
 				let (arg, _args, mut _inter_mediate_args, last_flag_arg) =
 					p.middle_parse(args, inter_mediate_args, p.short_middle(short_flag));
+				println!("next normal arg: {:?}", arg);
 				args = _args;
 				inter_mediate_args = _inter_mediate_args;
 				if let Some(arg) = arg {
@@ -929,10 +1114,26 @@ mod tests {
 	}
 	#[test]
 	fn run_root_with_flag_before_normal_arg() {
-		let mut arg = cnv_arg(vec!["current_path", "--local=test", "--common"]);
+		let mut arg = cnv_arg(vec!["current_path", "--local=test"]);
 		let root = base_root().sub_command(Command::with_name("sub").action(|c| {
 			panic!("not root, in sub: {:?}", c);
 		}));
+		arg.push("test".into());
+		root
+			.clone()
+			.action(|c| {
+				println!("c: {:?}", c);
+				assert_eq!(
+					cnv_arg(vec!["current_path", "--local=test", "test"]),
+					c.raw_args
+				);
+				assert_eq!(
+					c.get_flag_value_of("local").unwrap(),
+					FlagValue::String("test".into())
+				);
+			})
+			.run(arg.clone());
+		arg[2] = "--common".into();
 		root
 			.clone()
 			.action(|c| {
@@ -1142,7 +1343,7 @@ mod tests {
 
 	#[test]
 	fn run_node() {
-		let arg = cnv_arg(vec![
+		let mut arg = cnv_arg(vec![
 			"current_path",
 			"sub",
 			"test",
@@ -1153,43 +1354,279 @@ mod tests {
 			"-b",
 			"--local",
 		]);
-		let root = base_root()
-			.action(|c| {
-				println!("test_action: {:?}", c);
-				panic!("not sub");
-			});
-		root.sub_command(
-				Command::with_name("sub")
-					.action(|c| {
-						println!("{:?}", c);
-						let raw_args = cnv_arg(vec![
-							"current_path",
-							"sub",
-							"test",
-							"--common",
-							"test",
-							"--cstr",
-							"strt",
-							"-b",
-							"--local",
-						]);
-						let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
-						assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
-						assert_eq!(c.raw_args, raw_args);
-						assert_eq!(c.args, expect_args);
-						assert_eq!(
-							c.get_flag_value_of("common"),
-							Some(FlagValue::Bool(true))
-						);
-						assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
-						assert_eq!(c.get_flag_value_of("commons"), None);
-						assert_eq!(c.get_flag_value_of("local"), None);
-					})
-					.sub_command(Command::with_name("leaf").action(|c| {
-						println!("not node");
-						panic!("leaf: {:?}", c);
-					})),
-			).clone().run(arg.clone());
+		let root = base_root().action(|c| {
+			println!("test_action: {:?}", c);
+			panic!("not sub");
+		});
+		let sub = Command::with_name("sub")
+			.local_flag(Flag::new_bool("bool").short_alias('b'))
+			.local_flag(Flag::new_string("string").short_alias('s'))
+			.sub_command(Command::with_name("leaf").action(|c| {
+				println!("Context: {:?}", c);
+				panic!("in leaf")
+			}));
+		root
+			.clone()
+			.sub_command(sub.clone().action(|c| {
+				println!("{:?}", c);
+				let raw_args = cnv_arg(vec![
+					"current_path",
+					"sub",
+					"test",
+					"--common",
+					"test",
+					"--cstr",
+					"strt",
+					"-b",
+					"--local",
+				]);
+				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
+				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				assert_eq!(c.raw_args, raw_args);
+				assert_eq!(c.args, expect_args);
+				assert_eq!(c.get_flag_value_of("common"), Some(FlagValue::Bool(true)));
+				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(c.get_flag_value_of("commons"), None);
+				assert_eq!(c.get_flag_value_of("local"), None);
+			}))
+			.run(arg.clone());
+
+		println!("サブコマンド前フラグのテスト");
+		arg = cnv_arg(vec!["current_path", "--cstr=test", "-b", "sub"]);
+		root
+			.clone()
+			.sub_command(sub.clone().action(|c| {
+				println!("c: {:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec!["current_path", "--cstr=test", "-b", "sub"])
+				);
+				assert_eq!(
+					c.get_flag_value_of("cstr").unwrap(),
+					FlagValue::String("test".into())
+				);
+				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+			}))
+			.run(arg.clone());
+
+		println!("サブコマンド探しをする場合");
+		arg[1] = "--cstr".into();
+		arg.insert(2, "test".into());
+
+		root
+			.clone()
+			.sub_command(sub.clone().action(|c| {
+				println!("c:{:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec!["current_path", "--cstr", "test", "-b", "sub"])
+				);
+				assert_eq!(
+					c.get_flag_value_of("cstr").unwrap(),
+					FlagValue::String("test".into())
+				);
+				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+			}))
+			.run(arg.clone());
+
+		arg.remove(2);
+		arg[1] = "--cstr=test".into();
+		arg.push("test_arg".into());
+		arg.push("--cafter".into());
+		arg.push("test_arg2".into());
+		arg.push("--string".into());
+		arg.push("testStr".into());
+		root
+			.clone()
+			.sub_command(sub.clone().action(|c| {
+				println!("{:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec![
+						"current_path",
+						"--cstr=test",
+						"-b",
+						"sub",
+						"test_arg",
+						"--cafter",
+						"test_arg2",
+						"--string",
+						"testStr"
+					])
+				);
+				assert_eq!(c.args, cnv_arg(vec!["test_arg", "test_arg2"]));
+				assert_eq!(
+					c.get_flag_value_of("cstr").unwrap(),
+					FlagValue::String("test".into())
+				);
+				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.get_flag_value_of("cafter").unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(c.get_local_flag_value_of("cafter"), None);
+				assert_eq!(
+					c.get_flag_value_of("string").unwrap(),
+					FlagValue::String("testStr".into())
+				);
+			}))
+			.run(arg.clone());
+
+		println!("\r\n\r\nサブサブコマンドが存在する場合の判別系\r\n");
+		arg.remove(4);
+		root
+			.clone()
+			.sub_command(sub.clone().action(|c| {
+				println!("c: {:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec![
+						"current_path",
+						"--cstr=test",
+						"-b",
+						"sub",
+						"--cafter",
+						"test_arg2",
+						"--string",
+						"testStr"
+					])
+				);
+				assert_eq!(c.args, vec!["test_arg2".to_string()]);
+				assert_eq!(
+					c.get_common_flag_value_of("cstr").unwrap(),
+					FlagValue::String("test".into())
+				);
+				assert_eq!(
+					c.get_local_flag_value_of("string").unwrap(),
+					FlagValue::String("testStr".into())
+				);
+				assert_eq!(
+					c.get_inputted_common_flag_value_of("cafter").unwrap(),
+					FlagValue::Bool(true)
+				);
+			}))
+			.run(arg.clone());
+		println!("\r\n\r\nサブサブコマンドが存在する場合の判別系その2\r\n");
+		arg.push("ex_arg".into());
+		arg[5] = "test_arg".to_owned();
+
+		root
+			.clone()
+			.sub_command(sub.clone().action(|c| {
+				println!("C: {:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec![
+						"current_path",
+						"--cstr=test",
+						"-b",
+						"sub",
+						"--cafter",
+						"test_arg",
+						"--string",
+						"testStr",
+						"ex_arg"
+					])
+				);
+				assert_eq!(c.args, cnv_arg(vec!["test_arg", "ex_arg"]));
+			}))
+			.run(arg.clone());
+		arg[6] = "--string=testStr".into();
+		arg[8] = "test_arg2".into();
+		arg.remove(7);
+		arg.push("test_arg3".into());
+		arg.push("--common".into());
+		arg.push("test_arg4".into());
+
+		root
+			.clone()
+			.sub_command(sub.clone().action(|c| {
+				println!("C: {:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec![
+						"current_path",
+						"--cstr=test",
+						"-b",
+						"sub",
+						"--cafter",
+						"test_arg",
+						"--string=testStr",
+						"test_arg2",
+						"test_arg3",
+						"--common",
+						"test_arg4"
+					])
+				);
+				assert_eq!(
+					c.args,
+					vec![
+						"test_arg".to_owned(),
+						"test_arg2".to_owned(),
+						"test_arg3".to_owned(),
+						"test_arg4".to_owned()
+					]
+				);
+				assert_eq!(
+					c.get_common_flag_value_of("cstr").unwrap(),
+					FlagValue::String("test".into())
+				);
+				assert_eq!(
+					c.get_local_flag_value_of("bool").unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(
+					c.get_common_flag_value_of("cafter").unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(
+					c.get_flag_value_of("string").unwrap(),
+					FlagValue::String("testStr".into())
+				);
+			}))
+			.run(arg.clone());
+
+		arg.pop();
+		arg.remove(8);
+		arg.remove(7);
+		arg.remove(5);
+
+		root
+			.clone()
+			.sub_command(sub.clone().action(|c| {
+				println!("c: {:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec![
+						"current_path",
+						"--cstr=test",
+						"-b",
+						"sub",
+						"--cafter",
+						"--string=testStr",
+						"--common"
+					])
+				);
+				assert_eq!(c.args.len(), 0);
+				assert_eq!(
+					c.get_flag_value_of("cstr").unwrap(),
+					FlagValue::String("test".into())
+				);
+				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.get_flag_value_of("cafter").unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(
+					c.get_flag_value_of("string").unwrap(),
+					FlagValue::String("testStr".into())
+				);
+				assert_eq!(
+					c.get_flag_value_of("common").unwrap(),
+					FlagValue::Bool(true)
+				);
+			}))
+			.run(arg.clone());
 	}
 
 	#[test]
@@ -1248,11 +1685,17 @@ mod tests {
 									FlagValue::String("".into())
 								);
 								assert_eq!(c.get_flag_value_of("local").unwrap(), FlagValue::Bool(true));
+								assert_eq!(c.get_common_flag_value_of("local"), None);
 							})
 							.local_flag(Flag::new_bool("local").short_alias('l')),
 					),
 			);
 		root.run(arg.clone());
+	}
+
+	#[test]
+	fn run_leaf_with_flag_before_normal_flag() {
+		//
 	}
 
 	#[test]

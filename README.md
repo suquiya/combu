@@ -11,7 +11,7 @@ combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可�
 - [cobra](https://github.com/spf13/cobra) (Golang package for making cli)
 - [seahorse](https://github.com/ksk001100/seahorse) ([A minimal CLI framework written in Rust](https://github.com/ksk001100/seahorse/blob/master/README.md))
 
-# TODO(or Features to be implemented)
+# Features
 
 - Unix 形式でのフラグパース
 - サブコマンド（多重可能）
@@ -20,8 +20,12 @@ combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可�
 - コモンフラグ、ローカルフラグ形式
 - 独自でパース等を行いたい場合に再利用できる構造体の設定
   - 似たような CLI フレームワークを作りたいときに使用できる部品を用意
+  - サブコマンド前のフラグの受付
+
+# TODO(or Features to be implemented)
+
 - カスタマイズできるヘルプ表示
-- サブコマンド前のフラグの受付
+- デフォルトのヘルプ表示の実装
 - エラーハンドリングなどに関して、ある程度の自由度を持たせた設計
 - ドキュメントコメントの整備
 - テストの実装

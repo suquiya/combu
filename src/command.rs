@@ -89,7 +89,7 @@ impl Command {
 	}
 
 	pub fn single_run(&mut self, raw_args: Vec<String>) {
-		println!("single_run: {:?}", raw_args);
+		//println!("single_run: {:?}", raw_args);
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
@@ -104,7 +104,7 @@ impl Command {
 						self.l_flags.take(),
 						current_path,
 					);
-					println!("single_run_context: {:?}", context);
+					//println!("single_run_context: {:?}", context);
 					context = Parser::default().parse_args_until_end(context);
 
 					action(context)
@@ -246,7 +246,7 @@ impl Run<Context> for Command {
 
 impl Command {
 	pub fn run_from_args(&mut self, raw_args: Vec<String>) {
-		println!("{:?}, len: {}", &raw_args, &raw_args.len());
+		//println!("{:?}, len: {}", &raw_args, &raw_args.len());
 		if self.sub.is_none() {
 			return self.single_run(raw_args);
 		}
@@ -267,7 +267,7 @@ impl Command {
 				}
 				None => {
 					println!("no action is registered.");
-					println!("args: {:?}", raw_args);
+					//println!("args: {:?}", raw_args);
 				}
 			}
 		} else {
@@ -279,10 +279,10 @@ impl Command {
 					let (arg, args, mut inter_mediate_args, last_flag_arg) =
 						p.middle_parse(args, VecDeque::new(), p.long_middle(long_flag));
 					//最初にフラグの形になっていない引数を求める
-					println!(
+					/*println!(
 						"\r\nmiddle_result at 281 {:?}\r\n",
 						(&arg, &args, &inter_mediate_args, &last_flag_arg)
-					);
+					);*/
 					if let Some(arg) = arg {
 						match self.take_sub(&arg) {
 							//サブコマンド合致
@@ -444,7 +444,7 @@ impl Command {
 				}
 				Some(arg) => {
 					//first arg is non-flag (normal) arg
-					println!("arg: {}", &arg);
+					//println!("arg: {}", &arg);
 
 					match self.take_sub(&arg) {
 						None => match self.action {
@@ -463,7 +463,7 @@ impl Command {
 							}
 						},
 						Some(mut sub) => {
-							println!("{}", sub.name);
+							//println!("{}", sub.name);
 							let common_flag = self.c_flags.take();
 							let c = Context::new(raw_args, args, common_flag, Vector(None), current_path);
 							sub.run(c);
@@ -479,7 +479,7 @@ impl Command {
 	}
 
 	pub fn run_with_context(&mut self, mut context: Context) {
-		println!("run_with_context: {:?}", context);
+		//println!("run_with_context: {:?}", context);
 		if self.sub.is_none() {
 			context.local_flags = self.l_flags.take();
 			context.common_flags = {
@@ -513,10 +513,10 @@ impl Command {
 					self.assign_context(context, p, VecDeque::new(), last);
 				}
 				Some(arg) => {
-					println!("arg sub-sub: {}", &arg);
+					//println!("arg sub-sub: {}", &arg);
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
-							println!("{}", &sub.name);
+							//println!("{}", &sub.name);
 							context.common_flags = {
 								let mut taken = self.c_flags.take();
 								taken.append(context.common_flags);
@@ -590,14 +590,14 @@ impl Command {
 		mut inter_mediate_args: VecDeque<MiddleArg>,
 		last: MiddleArg,
 	) {
-		println!(
+		/*println!(
 			"\r\nassign_context:::\r\nContext: {:?}, \r\ninter_mediate_args: {:?},\r\n prefix: {:?}\r\n",
 			c, inter_mediate_args, last
-		);
+		);*/
 		let (next_non_flag, args, _inter_mediate_args, last) =
 			p.middle_parse(c.args, inter_mediate_args, last);
 		inter_mediate_args = _inter_mediate_args;
-		println!("next_non_flag: {:?}", next_non_flag);
+		//println!("next_non_flag: {:?}", next_non_flag);
 		match next_non_flag {
 			Some(arg) => match self.take_sub(&arg) {
 				Some(mut sub) => {
@@ -705,6 +705,11 @@ impl Command {
 						Some(action) => {
 							inter_mediate_args.push_back(last);
 							c.args = args;
+							c.common_flags = {
+								let mut taken = self.c_flags.take();
+								taken.append(c.common_flags);
+								taken
+							};
 							c.local_flags = self.l_flags.take();
 							if let Some(mut parsing_args) = c.parsing_args {
 								parsing_args.append(&mut inter_mediate_args);
@@ -736,7 +741,14 @@ impl Command {
 						} else {
 							c.parsing_args = Some(inter_mediate_args);
 						}
+						c.common_flags = {
+							let mut taken = self.c_flags.take();
+							taken.append(c.common_flags);
+							taken
+						};
+						c.local_flags = self.l_flags.take();
 						let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
+						//println!("after_parse_ima:{:?}", c);
 						if let Some(non_flag_args) = non_flag_args {
 							//non_flag_args.append(&mut c.args);
 							c.args = non_flag_args;
@@ -759,10 +771,10 @@ impl Command {
 		raw_args: Vec<String>,
 		current_path: String,
 	) {
-		println!("assign_run");
+		//println!("assign_run");
 		match args.pop_front() {
 			Some(long_flag) if p.long_flag(&long_flag) => {
-				println!("long_flag: {}", &long_flag);
+				//println!("long_flag: {}", &long_flag);
 				let (arg, _args, mut _inter_mediate_args, last_flag_arg) =
 					p.middle_parse(args, inter_mediate_args, p.long_middle(long_flag));
 				args = _args;
@@ -858,11 +870,11 @@ impl Command {
 				}
 			}
 			Some(short_flag) if p.flag(&short_flag) => {
-				println!("short_flag: {}", &short_flag);
+				//println!("short_flag: {}", &short_flag);
 				//そのままself.runに放り込む
 				let (arg, _args, mut _inter_mediate_args, last_flag_arg) =
 					p.middle_parse(args, inter_mediate_args, p.short_middle(short_flag));
-				println!("next normal arg: {:?}", arg);
+				//println!("next normal arg: {:?}", arg);
 				args = _args;
 				inter_mediate_args = _inter_mediate_args;
 				if let Some(arg) = arg {
@@ -924,7 +936,7 @@ impl Command {
 				}
 			}
 			Some(arg) => {
-				println!("non_flag_arg: {}", &arg);
+				//println!("non_flag_arg: {}", &arg);
 				//次が普通の引数だった場合サブコマンドか判定
 				match self.take_sub(&arg) {
 					Some(mut sub) => sub.run(Context::build_new(
@@ -1393,6 +1405,7 @@ mod tests {
 		let sub = Command::with_name("sub")
 			.local_flag(Flag::new_bool("bool").short_alias('b'))
 			.local_flag(Flag::new_string("string").short_alias('s'))
+			.common_flag(Flag::new_bool("cl"))
 			.sub_command(Command::with_name("leaf").action(|c| {
 				println!("Context: {:?}", c);
 				panic!("in leaf")

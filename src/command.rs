@@ -479,7 +479,7 @@ impl Command {
 	}
 
 	pub fn run_with_context(&mut self, mut context: Context) {
-		//println!("run_with_context: {:?}", context);
+		println!("run_with_context: {:?}", context);
 		if self.sub.is_none() {
 			context.local_flags = self.l_flags.take();
 			context.common_flags = {
@@ -601,7 +601,20 @@ impl Command {
 		match next_non_flag {
 			Some(arg) => match self.take_sub(&arg) {
 				Some(mut sub) => {
+					c.common_flags = {
+						let mut taken = self.c_flags.take();
+						taken.append(c.common_flags);
+						taken
+					};
 					c.args = args;
+					inter_mediate_args.push_back(last);
+					if let Some(mut parsing_args) = c.parsing_args {
+						parsing_args.append(&mut inter_mediate_args);
+						c.parsing_args = Some(parsing_args);
+					} else {
+						c.parsing_args = Some(inter_mediate_args);
+					}
+
 					sub.run(c);
 				}
 				None => match &last {
@@ -620,7 +633,20 @@ impl Command {
 								self.assign_context(c, p, inter_mediate_args, last);
 							}
 							Some(arg) => match self.take_sub(&arg) {
-								Some(mut sub) => sub.run(c),
+								Some(mut sub) => {
+									c.common_flags = {
+										let mut taken = self.c_flags.take();
+										taken.append(c.common_flags);
+										taken
+									};
+									if let Some(mut parsing_args) = c.parsing_args {
+										parsing_args.append(&mut inter_mediate_args);
+										c.parsing_args = Some(parsing_args);
+									} else {
+										c.parsing_args = Some(inter_mediate_args);
+									}
+									sub.run(c);
+								}
 								None => match self.action {
 									Some(action) => {
 										if let Some(mut parsing_args) = c.parsing_args {
@@ -629,7 +655,13 @@ impl Command {
 										} else {
 											c.parsing_args = Some(inter_mediate_args);
 										}
+
 										c.local_flags = self.l_flags.take();
+										c.common_flags = {
+											let mut taken = self.c_flags.take();
+											taken.append(c.common_flags);
+											taken
+										};
 										let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
 										c = p.parse_args_until_end(c);
 										c.args.push_front(arg);
@@ -1695,7 +1727,141 @@ mod tests {
 
 	#[test]
 	fn run_leaf_with_flag_before_normal_flag() {
-		//
+		let root = base_root().action(|c| {
+			panic!("root action: {:?} - not leaf", c);
+		});
+		let sub = Command::with_name("sub")
+			.local_flag(Flag::new_bool("sub_local"))
+			.local_flag(Flag::new_string("sub_lstr"))
+			.common_flag(Flag::new_bool("sub_common"))
+			.local_flag(Flag::new_string("sub_cstr"))
+			.action(|c| {
+				panic!("sub action: {:?} - not leaf", c);
+			});
+		let leaf = Command::with_name("leaf")
+			.common_flag(Flag::new_bool("cbool"))
+			.common_flag(Flag::new_string("cs"))
+			.local_flag(Flag::new_bool("lbool").short_alias('b'))
+			.local_flag(Flag::new_string("lsafter").short_alias('a'))
+			.local_flag(Flag::new_string("lsbefore").short_alias('s'));
+
+		let run_leaf: fn(Command, Command, Command, Action, Vec<String>) -> () =
+			|root, sub, leaf, action, args| {
+				root
+					.sub_command(sub.sub_command(leaf.action(action)))
+					.run(args)
+			};
+
+		let mut args = cnv_arg(vec!["current_path", "--lbool", "sub", "--lsbefore", "leaf"]);
+
+		run_leaf(
+			root.clone(),
+			sub.clone(),
+			leaf.clone(),
+			|c| {
+				println!("{:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec!["current_path", "--lbool", "sub", "--lsbefore", "leaf"])
+				);
+				assert_eq!(c.args, VecDeque::new());
+				assert_eq!(c.get_flag_value_of("lbool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.get_flag_value_of("lsbefore").unwrap(),
+					FlagValue::String("".into())
+				);
+			},
+			args.clone(),
+		);
+
+		args.push("arg".into());
+
+		run_leaf(
+			root.clone(),
+			sub.clone(),
+			leaf.clone(),
+			|c| {
+				println!("{:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec![
+						"current_path",
+						"--lbool",
+						"sub",
+						"--lsbefore",
+						"leaf",
+						"arg"
+					])
+				);
+				assert_eq!(c.args, VecDeque::from(vec![String::from("arg")]));
+				assert_eq!(c.get_flag_value_of("lbool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.get_flag_value_of("lsbefore").unwrap(),
+					FlagValue::String("".into())
+				)
+			},
+			args.clone(),
+		);
+		args.push("--cbool".into());
+		run_leaf(
+			root.clone(),
+			sub.clone(),
+			leaf.clone(),
+			|c| {
+				println!("{:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec![
+						"current_path",
+						"--lbool",
+						"sub",
+						"--lsbefore",
+						"leaf",
+						"arg",
+						"--cbool"
+					])
+				);
+				assert_eq!(c.get_flag_value_of("lbool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(c.args, VecDeque::from(vec!["arg".to_string()]));
+				assert_eq!(
+					c.get_flag_value_of("lsbefore").unwrap(),
+					FlagValue::String("".into())
+				);
+				assert_eq!(c.get_flag_value_of("cbool").unwrap(), FlagValue::Bool(true));
+			},
+			args.clone(),
+		);
+		args.pop();
+		args.insert(4, "before_arg".into());
+
+		run_leaf(
+			root.clone(),
+			sub.clone(),
+			leaf.clone(),
+			|c| {
+				println!("{:?}", c);
+				assert_eq!(
+					c.raw_args,
+					cnv_arg(vec![
+						"current_path",
+						"--lbool",
+						"sub",
+						"--lsbefore",
+						"before_arg",
+						"leaf",
+						"arg"
+					])
+				);
+				assert_eq!(c.args, VecDeque::from(vec!["arg".to_string()]));
+				assert_eq!(c.args, VecDeque::from(vec![String::from("arg")]));
+				assert_eq!(c.get_flag_value_of("lbool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.get_flag_value_of("lsbefore").unwrap(),
+					FlagValue::String("before_arg".into())
+				)
+			},
+			args.clone(),
+		);
 	}
 
 	#[test]

@@ -315,3 +315,16 @@ impl From<String> for Flag {
 		}
 	}
 }
+
+impl From<&str> for Flag {
+	fn from(name: &str) -> Self {
+		Flag {
+			name: name.into(),
+			usage: String::default(),
+			short_alias: Vector::default(),
+			long_alias: Vector::default(),
+			default_value: FlagValue::default(),
+			flag_type: FlagType::default(),
+		}
+	}
+}

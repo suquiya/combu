@@ -1,4 +1,3 @@
-mod action;
 pub mod command;
 mod context;
 pub mod parser;
@@ -6,7 +5,7 @@ pub mod parser;
 mod flag;
 pub mod vector;
 
-pub use action::Action;
+pub use command::Action;
 pub use command::Command;
 pub use context::Context;
 pub use flag::{Flag, FlagType, FlagValue};

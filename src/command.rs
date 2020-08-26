@@ -1,5 +1,3 @@
-use crate::Action;
-
 use crate::parser::MiddleArg;
 use crate::Context;
 use crate::Parser;
@@ -7,24 +5,37 @@ use crate::Vector;
 use crate::{Flag, FlagValue};
 
 use std::collections::VecDeque;
-
+///The struct for command
 #[derive(Clone, Default)]
 pub struct Command {
+	///Command name
 	pub name: String,
+	///Command action
 	pub action: Option<Action>,
+	///Command authors
 	pub authors: String,
+	///Command copyright
 	pub copyright: String,
+	///Command description
 	pub description: Option<String>,
+	///Command usage
 	pub usage: String,
+	///local flags of command
 	pub l_flags: Vector<Flag>,
+	///common flags of command
 	pub c_flags: Vector<Flag>,
+	///alias for command
 	pub alias: Vector<String>,
+	///Command version
 	pub version: String,
+	///container of sub-command
 	pub sub: Vector<Command>,
-	pub opt_values: Vector<KeyValuePair>,
+	///custom help fuction
+	pub help: Option<HelpFunc>,
 }
 
-pub type KeyValuePair = (String, String);
+pub type Action = fn(Context);
+pub type HelpFunc = fn(&Command) -> String;
 
 impl Command {
 	pub fn new() -> Command {
@@ -44,7 +55,7 @@ impl Command {
 			alias: Vector::default(),
 			version: String::default(),
 			sub: Vector::default(),
-			opt_values: Vector::default(),
+			help: None,
 		}
 	}
 
@@ -61,7 +72,6 @@ impl Command {
 		alias: Vector<String>,
 		version: String,
 		sub: Vector<Command>,
-		opt_values: Vector<(String, String)>,
 	) -> Command {
 		Command {
 			name,
@@ -75,7 +85,7 @@ impl Command {
 			alias,
 			version,
 			sub,
-			opt_values,
+			help: None,
 		}
 	}
 
@@ -118,7 +128,6 @@ impl Command {
 	}
 
 	pub fn show_help(&self) {
-		//TODO: implement help function
 		println!("show_help_function");
 	}
 
@@ -177,8 +186,8 @@ impl Command {
 		self
 	}
 
-	pub fn add_opt_prop(mut self, opt_prop: KeyValuePair) -> Self {
-		self.opt_values.push(opt_prop);
+	pub fn help(mut self, help_function: fn(&Command) -> String) -> Self {
+		self.help = Some(help_function);
 		self
 	}
 
@@ -223,7 +232,7 @@ impl From<String> for Command {
 			alias: Vector::default(),
 			version: String::default(),
 			sub: Vector::default(),
-			opt_values: Vector::default(),
+			help: None,
 		}
 	}
 }

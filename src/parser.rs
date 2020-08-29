@@ -1,4 +1,4 @@
-use crate::vector::flag::LongFound;
+use crate::vector::flag::{FlagSearch, LongFound};
 use crate::Context;
 use crate::FlagValue;
 use std::collections::VecDeque;

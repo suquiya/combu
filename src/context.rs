@@ -1,5 +1,5 @@
 use crate::parser::{ErrorInfo, MiddleArg};
-use crate::vector::flag::LongFound;
+use crate::vector::flag::{FlagSearch, LongFound};
 use crate::Vector;
 use crate::{Flag, FlagValue};
 use std::collections::VecDeque;
@@ -9,7 +9,8 @@ use std::path::{Path, PathBuf};
 pub struct Context {
 	pub raw_args: Vec<String>,
 	pub args: VecDeque<String>,
-	pub common_flags: Vector<Flag>,
+	pub common_flags: Vector<Vector<Flag>>,
+	pub routes: Vector<String>,
 	pub local_flags: Vector<Flag>,
 	pub current_path: PathBuf,
 	pub common_flags_values: Vector<(String, FlagValue)>,
@@ -19,19 +20,20 @@ pub struct Context {
 }
 
 impl Context {
-	pub fn new(
+	pub fn new<T: Into<PathBuf>>(
 		raw_args: Vec<String>,
 		args: VecDeque<String>,
 		common_flags: Vector<Flag>,
 		local_flags: Vector<Flag>,
-		current_path: String,
+		current_path: T,
 	) -> Context {
 		Context {
 			raw_args,
 			args,
-			common_flags,
+			common_flags: Vector(Some(vec![common_flags])),
+			routes: Vector::default(),
 			local_flags,
-			current_path: PathBuf::from(current_path),
+			current_path: current_path.into(),
 			common_flags_values: Vector::default(),
 			local_flags_values: Vector::default(),
 			parsing_args: None,
@@ -41,9 +43,10 @@ impl Context {
 	pub fn build_new(
 		raw_args: Vec<String>,
 		args: VecDeque<String>,
-		common_flags: Vector<Flag>,
+		common_flags: Vector<Vector<Flag>>,
 		local_flags: Vector<Flag>,
 		current_path: PathBuf,
+		routes: Vector<String>,
 		common_flags_values: Vector<(String, FlagValue)>,
 		local_flags_values: Vector<(String, FlagValue)>,
 		parsing_args: Option<VecDeque<MiddleArg>>,
@@ -53,6 +56,7 @@ impl Context {
 			raw_args,
 			args,
 			common_flags,
+			routes,
 			local_flags,
 			current_path,
 			common_flags_values,
@@ -248,6 +252,7 @@ impl<'a> From<Vec<String>> for Context {
 			args,
 			common_flags: Vector::default(),
 			local_flags: Vector::default(),
+			routes: Vector::default(),
 			current_path,
 			common_flags_values: Vector::default(),
 			local_flags_values: Vector::default(),

@@ -38,6 +38,10 @@ impl<T> Vector<T> {
 		*self = Vector(value);
 	}
 
+	pub fn with_first_elem(elem: T) -> Self {
+		Vector(Some(vec![elem]))
+	}
+
 	pub fn push(&mut self, push: T) {
 		match self {
 			Vector(None) => {
@@ -52,10 +56,24 @@ impl<T> Vector<T> {
 			Vector(None) => {
 				//let mut inner = vec![];
 				//inner.append(other);
-				//*self = Vector(Some(inner));
+				// self = Vector(Some(inner));
 				*self = Vector(Some(other))
 			}
 			Vector(Some(ref mut vec)) => (*vec).append(&mut other),
+		}
+	}
+
+	pub fn insert_front(&mut self, insert: T) {
+		match self {
+			Vector(None) => *self = Vector(Some(vec![insert])),
+			Vector(Some(ref mut vec)) => (*vec).insert(0, insert),
+		}
+	}
+
+	pub fn insert(&mut self, index: usize, insert: T) {
+		match self {
+			Vector(None) => *self = Vector(Some(vec![insert])),
+			Vector(Some(ref mut vec)) => (*vec).insert(index, insert),
 		}
 	}
 
@@ -123,6 +141,24 @@ impl<T> Vector<T> {
 	}
 }
 
+impl<T> From<Vector<T>> for Vector<Vector<T>> {
+	fn from(f: Vector<T>) -> Vector<Vector<T>> {
+		Vector(Some(vec![f]))
+	}
+}
+
+impl From<String> for Vector<String> {
+	fn from(f: String) -> Vector<String> {
+		Vector::with_first_elem(f)
+	}
+}
+
+impl From<&str> for Vector<String> {
+	fn from(str: &str) -> Self {
+		Vector::with_first_elem(str.into())
+	}
+}
+
 pub mod flag {
 	use super::Vector;
 	use crate::Flag;
@@ -134,8 +170,14 @@ pub mod flag {
 		None,
 	}
 
-	impl Vector<Flag> {
-		pub fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
+	pub trait FlagSearch {
+		fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag>;
+		fn find_short_flag(&self, name_or_alias: &char) -> Option<&Flag>;
+		fn find(&self, name_or_alias: &str) -> Option<&Flag>;
+	}
+
+	impl FlagSearch for Vector<Flag> {
+		fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
 			match &self {
 				Vector(None) => LongFound::None,
 				Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(name_or_alias)) {
@@ -148,20 +190,88 @@ pub mod flag {
 			}
 		}
 
-		pub fn find_short_flag(&self, short_alias: &char) -> Option<&Flag> {
+		fn find_short_flag(&self, short_alias: &char) -> Option<&Flag> {
 			match &self {
 				Vector(Some(flags)) => flags.iter().find(|flag| flag.is_short(short_alias)),
 				Vector(None) => None,
 			}
 		}
 
-		pub fn find(&self, flag_name: &str) -> Option<&Flag> {
+		fn find(&self, flag_name: &str) -> Option<&Flag> {
 			match &self {
 				Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(flag_name)) {
 					Some(f) => Some(f),
 					None => None,
 				},
 				Vector(None) => None,
+			}
+		}
+	}
+
+	impl<T: FlagSearch> FlagSearch for Vector<T> {
+		fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
+			match &self {
+				Vector(None) => LongFound::None,
+				Vector(Some(flags_list)) => {
+					let mut iter = flags_list.iter();
+					return loop {
+						let flags = iter.next();
+						if let Some(flags) = flags {
+							match flags.find_long_flag(name_or_alias) {
+								LongFound::None => {}
+								val => {
+									break val;
+								}
+							}
+						} else {
+							break LongFound::None;
+						}
+					};
+				}
+			}
+		}
+
+		fn find_short_flag(&self, name_or_alias: &char) -> Option<&Flag> {
+			match &self {
+				Vector(None) => None,
+				Vector(Some(flags_list)) => {
+					let mut iter = flags_list.iter();
+					return loop {
+						let flags = iter.next();
+						if let Some(flags) = flags {
+							match flags.find_short_flag(name_or_alias) {
+								None => {}
+								val => {
+									break val;
+								}
+							}
+						} else {
+							break None;
+						}
+					};
+				}
+			}
+		}
+
+		fn find(&self, name_or_alias: &str) -> Option<&Flag> {
+			match &self {
+				Vector(None) => None,
+				Vector(Some(flags_list)) => {
+					let mut iter = flags_list.iter();
+					return loop {
+						let flags = iter.next();
+						if let Some(flags) = flags {
+							match flags.find(name_or_alias) {
+								None => {}
+								val => {
+									break val;
+								}
+							}
+						} else {
+							break None;
+						}
+					};
+				}
 			}
 		}
 	}

@@ -1,4 +1,6 @@
+use crate::action::{ActionError, ActionResult};
 use crate::parser::MiddleArg;
+use crate::Action;
 use crate::Context;
 use crate::Parser;
 use crate::Vector;
@@ -34,8 +36,7 @@ pub struct Command {
 	pub help: Option<HelpFunc>,
 }
 
-pub type Action = fn(Context);
-pub type HelpFunc = fn(&Command) -> String;
+pub type HelpFunc = fn(&Command, &Context) -> String;
 
 impl Command {
 	pub fn new() -> Command {
@@ -103,7 +104,16 @@ impl Command {
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
-					action(Context::from(raw_args))
+					let current_path = raw_args[0].clone();
+					let req = action(Context::new(
+						raw_args,
+						VecDeque::new(),
+						self.c_flags.take(),
+						self.l_flags.take(),
+						current_path,
+					));
+
+					self.handle_result(req);
 				} else {
 					let mut args = VecDeque::from(raw_args.clone());
 					let current_path = args.pop_front().unwrap();
@@ -117,7 +127,8 @@ impl Command {
 					//println!("single_run_context: {:?}", context);
 					context = Parser::default().parse_args_until_end(context);
 
-					action(context)
+					let req = action(context);
+					self.handle_result(req);
 				}
 			}
 			None => match self.sub {
@@ -127,8 +138,27 @@ impl Command {
 		}
 	}
 
-	pub fn show_help(&self) {
-		println!("show_help_function");
+	pub fn show_help(&self, c: &Context) {
+		if let Some(help) = self.help {
+			println!("{}", help(&self, c));
+		} else {
+			println!("{}", self.default_help(c));
+		}
+	}
+
+	pub fn default_help(&self, c: &Context) -> String {
+		let mut help = String::new();
+		help += &format!("USAGE:\n\t{}\n\n", self.usage);
+
+		match (&c.local_flags, &c.common_flags) {
+			(Vector(Some(l_flags)), Vector(Some(c_flags))) => {}
+			(Vector(None), Vector(None)) => {}
+			(Vector(Some(l_flags)), Vector(None)) => help += &format!("OPTIONS: \n"),
+			(Vector(None), Vector(Some(c_flags))) => {}
+		}
+
+		println!("{}", &help);
+		return String::new();
 	}
 
 	pub fn name<T: Into<String>>(mut self, name: T) -> Command {
@@ -186,7 +216,7 @@ impl Command {
 		self
 	}
 
-	pub fn help(mut self, help_function: fn(&Command) -> String) -> Self {
+	pub fn help(mut self, help_function: HelpFunc) -> Self {
 		self.help = Some(help_function);
 		self
 	}
@@ -266,16 +296,25 @@ impl Command {
 			//引数がない場合
 			match self.action {
 				Some(action) => {
-					action(Context::new(
+					let req = action(Context::new(
 						raw_args,
 						args,
 						self.c_flags.take(),
 						self.l_flags.take(),
 						current_path,
 					));
+					self.handle_result(req);
 				}
 				None => {
 					println!("no action is registered.");
+					let c = Context::new(
+						raw_args,
+						args,
+						self.c_flags.take(),
+						self.l_flags.take(),
+						current_path,
+					);
+					self.show_help(&c);
 					//println!("args: {:?}", raw_args);
 				}
 			}
@@ -300,9 +339,10 @@ impl Command {
 								let context = Context::build_new(
 									raw_args,
 									args,
-									self.c_flags.take(),
+									vec![self.c_flags.take()].into(),
 									Vector::default(),
 									current_path.into(),
+									Vector::default(),
 									Vector::default(),
 									Vector::default(),
 									Some(inter_mediate_args),
@@ -328,9 +368,10 @@ impl Command {
 										let context = Context::build_new(
 											raw_args,
 											args,
-											self.c_flags.take(),
+											vec![self.c_flags.take()].into(),
 											self.l_flags.take(),
 											std::path::PathBuf::from(current_path),
+											Vector::default(),
 											Vector::default(),
 											Vector::default(),
 											Some(inter_mediate_args),
@@ -344,11 +385,11 @@ impl Command {
 										}
 										match self.action {
 											Some(action) => {
-												action(context);
+												self.handle_result(action(context));
 											}
 											None => {
 												println!("no action registered");
-												self.show_help();
+												self.show_help(&context);
 											}
 										}
 									}
@@ -360,9 +401,10 @@ impl Command {
 						let context = Context::build_new(
 							raw_args,
 							args,
-							self.c_flags.take(),
+							vec![self.c_flags.take()].into(),
 							self.l_flags.take(),
 							current_path.into(),
+							Vector::default(),
 							Vector(None),
 							Vector(None),
 							Some({
@@ -380,11 +422,11 @@ impl Command {
 										args
 									}
 								}
-								action(context);
+								self.handle_result(action(context));
 							}
 							_ => {
 								println!("no action registered");
-								self.show_help();
+								self.show_help(&context);
 							}
 						}
 					}
@@ -399,9 +441,10 @@ impl Command {
 								let context = Context::build_new(
 									raw_args,
 									args,
-									self.c_flags.take(),
+									vec![self.c_flags.take()].into(),
 									Vector(None),
 									current_path.into(),
+									Vector::default(),
 									Vector(None),
 									Vector(None),
 									Some(inter_mediate_args),
@@ -423,13 +466,14 @@ impl Command {
 									let context = Context::build_new(
 										raw_args,
 										args,
-										self.c_flags.take(),
+										vec![self.c_flags.take()].into(),
 										self.l_flags.take(),
 										current_path.into(),
-										Vector(None),
-										Vector(None),
+										Vector::default(),
+										Vector::default(),
+										Vector::default(),
 										Some(inter_mediate_args),
-										Vector(None),
+										Vector::default(),
 									);
 									let (mut context, non_flag_args) =
 										p.parse_inter_mediate_args(context, false);
@@ -439,11 +483,11 @@ impl Command {
 									}
 									match self.action {
 										Some(action) => {
-											action(context);
+											self.handle_result(action(context));
 										}
 										None => {
 											println!("no action registered");
-											self.show_help();
+											self.show_help(&context);
 										}
 									}
 								}
@@ -457,7 +501,17 @@ impl Command {
 
 					match self.take_sub(&arg) {
 						None => match self.action {
-							None => println!("{} does not have its own action.", self.name),
+							None => {
+								let c = Context::new(
+									raw_args,
+									args,
+									self.c_flags.take(),
+									Vector::default(),
+									current_path,
+								);
+								println!("{} does not have its own action.", self.name);
+								self.show_help(&c);
+							}
 							Some(action) => {
 								args.push_front(arg);
 								let mut c = Context::new(
@@ -468,7 +522,7 @@ impl Command {
 									current_path,
 								);
 								c = p.parse_args_until_end(c);
-								action(c);
+								self.handle_result(action(c));
 							}
 						},
 						Some(mut sub) => {
@@ -491,11 +545,7 @@ impl Command {
 		//println!("run_with_context: {:?}", context);
 		if self.sub.is_none() {
 			context.local_flags = self.l_flags.take();
-			context.common_flags = {
-				let mut taken = self.c_flags.take();
-				taken.append(context.common_flags);
-				taken
-			};
+			context.common_flags.insert_front(self.c_flags.take());
 			let p = Parser::default();
 			let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
 			if let Some(mut non_flag_args) = non_flag_args {
@@ -505,7 +555,7 @@ impl Command {
 			context = p.parse_args_until_end(context);
 			match self.action {
 				Some(action) => {
-					action(context);
+					self.handle_result(action(context));
 				}
 				None => println!("no action is registered"),
 			}
@@ -526,23 +576,16 @@ impl Command {
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
 							//println!("{}", &sub.name);
-							context.common_flags = {
-								let mut taken = self.c_flags.take();
-								taken.append(context.common_flags);
-								taken
-							};
+							context.common_flags.insert_front(self.c_flags.take());
 							sub.run(context);
 						}
 						None => {
-							context.common_flags = {
-								let mut taken = self.c_flags.take();
-								taken.append(context.common_flags);
-								taken
-							};
+							context.common_flags.insert_front(self.c_flags.take());
 							context.local_flags = self.l_flags.take();
 							match self.action {
 								None => {
 									println!("{} does not have its own action.", &self.name);
+									self.show_help(&context);
 								}
 								Some(action) => {
 									let c = match p.parse_inter_mediate_args(context, true) {
@@ -559,7 +602,7 @@ impl Command {
 											context
 										}
 									};
-									action(c);
+									self.handle_result(action(c));
 								}
 							}
 						}
@@ -570,18 +613,14 @@ impl Command {
 					match self.action {
 						Some(action) => {
 							context.local_flags = self.l_flags.take();
-							context.common_flags = {
-								let mut taken = self.c_flags.take();
-								taken.append(context.common_flags);
-								taken
-							};
+							context.common_flags.insert_front(self.c_flags.take());
 
 							let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
 							if let Some(mut non_flag_args) = non_flag_args {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
 							}
-							action(context);
+							self.handle_result(action(context));
 						}
 						None => {
 							println!("no action is registered.");
@@ -610,11 +649,7 @@ impl Command {
 		match next_non_flag {
 			Some(arg) => match self.take_sub(&arg) {
 				Some(mut sub) => {
-					c.common_flags = {
-						let mut taken = self.c_flags.take();
-						taken.append(c.common_flags);
-						taken
-					};
+					c.common_flags.insert_front(self.c_flags.take());
 					c.args = args;
 					inter_mediate_args.push_back(last);
 					if let Some(mut parsing_args) = c.parsing_args {
@@ -643,11 +678,7 @@ impl Command {
 							}
 							Some(arg) => match self.take_sub(&arg) {
 								Some(mut sub) => {
-									c.common_flags = {
-										let mut taken = self.c_flags.take();
-										taken.append(c.common_flags);
-										taken
-									};
+									c.common_flags.insert_front(self.c_flags.take());
 									if let Some(mut parsing_args) = c.parsing_args {
 										parsing_args.append(&mut inter_mediate_args);
 										c.parsing_args = Some(parsing_args);
@@ -666,11 +697,7 @@ impl Command {
 										}
 
 										c.local_flags = self.l_flags.take();
-										c.common_flags = {
-											let mut taken = self.c_flags.take();
-											taken.append(c.common_flags);
-											taken
-										};
+										c.common_flags.insert_front(self.c_flags.take());
 										let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
 										c = p.parse_args_until_end(c);
 										c.args.push_front(arg);
@@ -679,10 +706,12 @@ impl Command {
 											c.args = non_flag_args;
 										}
 
-										action(c);
+										self.handle_result(action(c))
 									}
 									None => {
 										println!("no action registered.");
+										let err = ActionError::new("No action registered".into(), c, None);
+										self.handle_result(Err(err))
 									}
 								},
 							},
@@ -702,7 +731,7 @@ impl Command {
 										args.append(&mut c.args);
 										c.args = args;
 									}
-									action(c);
+									self.handle_result(action(c));
 								}
 								None => {
 									println!("no action registered.");
@@ -714,11 +743,7 @@ impl Command {
 						Some(action) => {
 							inter_mediate_args.push_back(last);
 							c.args = args;
-							c.common_flags = {
-								let mut taken = self.c_flags.take();
-								taken.append(c.common_flags);
-								taken
-							};
+							c.common_flags.insert_front(self.c_flags.take());
 							c.local_flags = self.l_flags.take();
 							if let Some(mut parsing_args) = c.parsing_args {
 								parsing_args.append(&mut inter_mediate_args);
@@ -731,7 +756,7 @@ impl Command {
 								non_flag_args.append(&mut c.args);
 								c.args = non_flag_args;
 							}
-							action(c);
+							self.handle_result(action(c));
 						}
 						None => {
 							println!("no action is registered.");
@@ -750,11 +775,7 @@ impl Command {
 						} else {
 							c.parsing_args = Some(inter_mediate_args);
 						}
-						c.common_flags = {
-							let mut taken = self.c_flags.take();
-							taken.append(c.common_flags);
-							taken
-						};
+						c.common_flags.insert_front(self.c_flags.take());
 						c.local_flags = self.l_flags.take();
 						let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
 						//println!("after_parse_ima:{:?}", c);
@@ -762,7 +783,7 @@ impl Command {
 							//non_flag_args.append(&mut c.args);
 							c.args = non_flag_args;
 						}
-						action(c);
+						self.handle_result(action(c));
 					}
 					None => {
 						println!("no action is registered.");
@@ -795,9 +816,10 @@ impl Command {
 							sub.run(Context::build_new(
 								raw_args,
 								args,
-								self.c_flags.take(),
+								Vector::with_first_elem(self.c_flags.take()),
 								None.into(),
 								current_path.into(),
+								Vector(Some(vec![self.name.clone()])),
 								None.into(),
 								None.into(),
 								Some(inter_mediate_args),
@@ -823,9 +845,10 @@ impl Command {
 											let context = Context::build_new(
 												raw_args,
 												args,
-												self.c_flags.take(),
+												self.c_flags.take().into(),
 												self.l_flags.take(),
 												current_path.into(),
+												Vector::with_first_elem(self.name.clone()),
 												None.into(),
 												None.into(),
 												Some(inter_mediate_args),
@@ -838,7 +861,7 @@ impl Command {
 												context.args = non_flag_args;
 											}
 
-											action(context)
+											self.handle_result(action(context));
 										}
 										_ => println!("no action is registered."),
 									}
@@ -853,9 +876,10 @@ impl Command {
 					let context = Context::build_new(
 						raw_args,
 						args,
-						self.c_flags.take(),
+						self.c_flags.take().into(),
 						self.l_flags.take(),
 						current_path.into(),
+						Vector::default(),
 						Vector::default(),
 						Vector::default(),
 						Some(inter_mediate_args),
@@ -869,11 +893,11 @@ impl Command {
 
 					match self.action {
 						Some(action) => {
-							action(c);
+							self.handle_result(action(c));
 						}
 						None => {
 							println!("no action is registered");
-							self.show_help();
+							self.show_help(&c);
 						}
 					}
 				}
@@ -893,9 +917,10 @@ impl Command {
 							sub.run(Context::build_new(
 								raw_args,
 								args,
-								self.c_flags.take(),
+								self.c_flags.take().into(),
 								Vector::default(),
 								current_path.into(),
+								Vector::default(),
 								Vector::default(),
 								Vector::default(),
 								Some(inter_mediate_args),
@@ -916,9 +941,10 @@ impl Command {
 										let context = Context::build_new(
 											raw_args,
 											args,
-											self.c_flags.take(),
+											self.c_flags.take().into(),
 											self.l_flags.take(),
 											current_path.into(),
+											Vector::default(),
 											Vector::default(),
 											Vector::default(),
 											Some(inter_mediate_args),
@@ -932,11 +958,24 @@ impl Command {
 											non_flag_args.append(&mut context.args);
 											context.args = non_flag_args;
 										}
-										action(context);
+										self.handle_result(action(context));
 									}
 									_ => {
+										inter_mediate_args.push_back(last_flag_arg);
+										let context = Context::build_new(
+											raw_args,
+											args,
+											self.c_flags.take().into(),
+											self.l_flags.take(),
+											current_path.into(),
+											Vector::with_first_elem(self.name.clone()),
+											Vector::default(),
+											Vector::default(),
+											Some(inter_mediate_args),
+											Vector::default(),
+										);
 										println!("no action registerd");
-										self.show_help();
+										self.show_help(&context);
 									}
 								};
 							}
@@ -951,9 +990,10 @@ impl Command {
 					Some(mut sub) => sub.run(Context::build_new(
 						raw_args,
 						args,
-						self.c_flags.take(),
+						self.c_flags.take().into(),
 						None.into(),
 						current_path.into(),
+						self.name.clone().into(),
 						None.into(),
 						None.into(),
 						Some(inter_mediate_args),
@@ -965,9 +1005,10 @@ impl Command {
 						let c = Context::build_new(
 							raw_args,
 							args,
-							self.c_flags.take(),
+							self.c_flags.take().into(),
 							self.l_flags.take(),
 							current_path.into(),
+							Vector::default(),
 							Vector(None),
 							Vector(None),
 							Some(inter_mediate_args),
@@ -982,11 +1023,11 @@ impl Command {
 						}
 						match self.action {
 							Some(action) => {
-								action(c);
+								self.handle_result(action(c));
 							}
 							None => {
 								println!("no action is registered");
-								self.show_help();
+								self.show_help(&c);
 							}
 						}
 					}
@@ -997,13 +1038,14 @@ impl Command {
 				let context = Context::build_new(
 					raw_args,
 					args, //argsを使いまわしているが、実質空
-					self.c_flags.take(),
+					self.c_flags.take().into(),
 					self.l_flags.take(),
 					current_path.into(),
-					Vector(None),
-					Vector(None),
+					self.name.clone().into(),
+					Vector::default(),
+					Vector::default(),
 					Some(inter_mediate_args),
-					Vector(None),
+					Vector::default(),
 				);
 				match self.action {
 					Some(action) => {
@@ -1011,13 +1053,28 @@ impl Command {
 						if let Some(non_flag_args) = non_flag_args {
 							context.args = non_flag_args;
 						}
-						action(context);
+						self.handle_result(action(context));
 					}
 					None => {
 						println!("no action is registered.");
-						self.show_help();
+						self.show_help(&context);
 					}
 				}
+			}
+		}
+	}
+
+	pub fn handle_result(&self, req: Result<ActionResult, ActionError>) {
+		match req {
+			Ok(ActionResult::ShowHelpRequest(c)) => {
+				self.show_help(&c);
+			}
+			Err(err) => {
+				println!("error: {}", err);
+				self.show_help(&err.context);
+			}
+			Ok(ActionResult::Done) => {
+				//何もしない
 			}
 		}
 	}
@@ -1055,6 +1112,7 @@ mod tests {
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				return Ok(ActionResult::Done);
 			})
 			.common_flag(Flag::new(
 				"common",
@@ -1100,6 +1158,7 @@ mod tests {
 					("common".to_string(), FlagValue::String("C_after".into())),
 				]);
 				assert_eq!(c.common_flags_values, c_flag_values);
+				Ok(ActionResult::Done)
 			})
 			.common_flag(Flag::new(
 				"common",
@@ -1146,6 +1205,7 @@ mod tests {
 					c.get_flag_value_of("common"),
 					Some(FlagValue::String(String::default()))
 				);
+				Ok(ActionResult::Done)
 			})
 			.common_flag(Flag::new(
 				"common",
@@ -1153,7 +1213,10 @@ mod tests {
 				FlagType::default(),
 			))
 			.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
-			.sub_command(Command::with_name("sub").action(|_| println!("sub")));
+			.sub_command(Command::with_name("sub").action(|_| {
+				println!("sub");
+				Ok(ActionResult::Done)
+			}));
 		root.run(arg);
 	}
 
@@ -1184,6 +1247,7 @@ mod tests {
 					c.get_flag_value_of("local").unwrap(),
 					FlagValue::String("test".into())
 				);
+				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
 		arg[2] = "--common".into();
@@ -1203,6 +1267,7 @@ mod tests {
 					c.get_flag_value_of("common").unwrap(),
 					FlagValue::Bool(true)
 				);
+				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
 
@@ -1224,6 +1289,7 @@ mod tests {
 					c.get_flag_value_of("common").unwrap(),
 					FlagValue::Bool(true)
 				);
+				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
 
@@ -1269,6 +1335,7 @@ mod tests {
 					c.get_flag_value_of("lafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
 
@@ -1309,6 +1376,7 @@ mod tests {
 					c.get_flag_value_of("lafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
 
@@ -1350,6 +1418,7 @@ mod tests {
 					c.get_flag_value_of("lafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
 		arg[4] = "-a".into();
@@ -1390,6 +1459,7 @@ mod tests {
 					c.get_flag_value_of("lafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
 	}
@@ -1442,6 +1512,7 @@ mod tests {
 				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
 				assert_eq!(c.get_flag_value_of("commons"), None);
 				assert_eq!(c.get_flag_value_of("local"), None);
+				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
 
@@ -1460,6 +1531,7 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
 
@@ -1480,6 +1552,7 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
 
@@ -1523,6 +1596,7 @@ mod tests {
 					c.get_flag_value_of("string").unwrap(),
 					FlagValue::String("testStr".into())
 				);
+				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
 
@@ -1558,6 +1632,7 @@ mod tests {
 					c.get_inputted_common_flag_value_of("cafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
 		println!("\r\n\r\nサブサブコマンドが存在する場合の判別系その2\r\n");
@@ -1583,6 +1658,7 @@ mod tests {
 					])
 				);
 				assert_eq!(c.args, cnv_arg(vec!["test_arg", "ex_arg"]));
+				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
 		arg[6] = "--string=testStr".into();
@@ -1637,6 +1713,7 @@ mod tests {
 					c.get_flag_value_of("string").unwrap(),
 					FlagValue::String("testStr".into())
 				);
+				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
 
@@ -1679,6 +1756,7 @@ mod tests {
 					c.get_flag_value_of("common").unwrap(),
 					FlagValue::Bool(true)
 				);
+				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
 	}
@@ -1740,6 +1818,7 @@ mod tests {
 								);
 								assert_eq!(c.get_flag_value_of("local").unwrap(), FlagValue::Bool(true));
 								assert_eq!(c.get_common_flag_value_of("local"), None);
+								Ok(ActionResult::Done)
 							})
 							.local_flag(Flag::new_bool("local").short_alias('l')),
 					),
@@ -1792,6 +1871,7 @@ mod tests {
 					c.get_flag_value_of("lsbefore").unwrap(),
 					FlagValue::String("".into())
 				);
+				Ok(ActionResult::Done)
 			},
 			args.clone(),
 		);
@@ -1820,7 +1900,8 @@ mod tests {
 				assert_eq!(
 					c.get_flag_value_of("lsbefore").unwrap(),
 					FlagValue::String("".into())
-				)
+				);
+				Ok(ActionResult::Done)
 			},
 			args.clone(),
 		);
@@ -1850,6 +1931,7 @@ mod tests {
 					FlagValue::String("".into())
 				);
 				assert_eq!(c.get_flag_value_of("cbool").unwrap(), FlagValue::Bool(true));
+				Ok(ActionResult::Done)
 			},
 			args.clone(),
 		);
@@ -1880,7 +1962,8 @@ mod tests {
 				assert_eq!(
 					c.get_flag_value_of("lsbefore").unwrap(),
 					FlagValue::String("before_arg".into())
-				)
+				);
+				Ok(ActionResult::Done)
 			},
 			args.clone(),
 		);
@@ -1964,6 +2047,7 @@ mod tests {
 						ParseError::NoExistLong
 					)])
 				);
+				Ok(ActionResult::Done)
 			})
 			.local_flag(Flag::new_bool("yes").short_alias('y'))
 			.local_flag(Flag::new_int("int").short_alias('i'))
@@ -1991,4 +2075,14 @@ mod tests {
 			);
 		root.run(arg.clone());
 	}
+
+	/*#[test]
+	fn help_test() {
+		let root = base_root()
+			.usage("root usage")
+			.sub_command(Command::with_name("aaa").usage("aaa usage"))
+			.sub_command(Command::with_name("bbb").usage("bbb usage"));
+		assert_eq!(String::new(), root.default_help());
+		panic!("panic");
+	}*/
 }

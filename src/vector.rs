@@ -63,13 +63,6 @@ impl<T> Vector<T> {
 		}
 	}
 
-	pub fn insert_front(&mut self, insert: T) {
-		match self {
-			Vector(None) => *self = Vector(Some(vec![insert])),
-			Vector(Some(ref mut vec)) => (*vec).insert(0, insert),
-		}
-	}
-
 	pub fn insert(&mut self, index: usize, insert: T) {
 		match self {
 			Vector(None) => *self = Vector(Some(vec![insert])),
@@ -139,6 +132,13 @@ impl<T> Vector<T> {
 			Vector(inner) => inner,
 		}
 	}
+
+	pub fn get(&self, index: usize) -> Option<&T> {
+		match self {
+			Vector(None) => None,
+			Vector(Some(inner)) => inner.get(index),
+		}
+	}
 }
 
 impl<T> From<Vector<T>> for Vector<Vector<T>> {
@@ -156,6 +156,15 @@ impl From<String> for Vector<String> {
 impl From<&str> for Vector<String> {
 	fn from(str: &str) -> Self {
 		Vector::with_first_elem(str.into())
+	}
+}
+
+impl From<Option<String>> for Vector<String> {
+	fn from(t: Option<String>) -> Self {
+		match t {
+			None => Vector(None),
+			Some(t) => Vector::with_first_elem(t),
+		}
 	}
 }
 
@@ -215,7 +224,7 @@ pub mod flag {
 				Vector(Some(flags_list)) => {
 					let mut iter = flags_list.iter();
 					return loop {
-						let flags = iter.next();
+						let flags = iter.next_back();
 						if let Some(flags) = flags {
 							match flags.find_long_flag(name_or_alias) {
 								LongFound::None => {}
@@ -237,7 +246,7 @@ pub mod flag {
 				Vector(Some(flags_list)) => {
 					let mut iter = flags_list.iter();
 					return loop {
-						let flags = iter.next();
+						let flags = iter.next_back();
 						if let Some(flags) = flags {
 							match flags.find_short_flag(name_or_alias) {
 								None => {}
@@ -259,7 +268,7 @@ pub mod flag {
 				Vector(Some(flags_list)) => {
 					let mut iter = flags_list.iter();
 					return loop {
-						let flags = iter.next();
+						let flags = iter.next_back();
 						if let Some(flags) = flags {
 							match flags.find(name_or_alias) {
 								None => {}

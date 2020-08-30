@@ -150,13 +150,34 @@ impl Command {
 		let mut help = String::new();
 		help += &format!("USAGE:\n\t{}\n\n", self.usage);
 
-		match (&c.local_flags, &c.common_flags) {
-			(Vector(Some(l_flags)), Vector(Some(c_flags))) => {}
-			(Vector(None), Vector(None)) => {}
-			(Vector(Some(l_flags)), Vector(None)) => help += &format!("OPTIONS: \n"),
-			(Vector(None), Vector(Some(c_flags))) => {}
+		//フラグ処理
+		let l_flags: &Vector<Flag> = if c.local_flags.is_none() {
+			&self.l_flags
+		} else {
+			&c.local_flags
+		};
+		let c_flags: &Vector<Vector<Flag>>;
+		let vec_inner: Vector<Vector<Flag>>;
+		if self.c_flags.is_none() {
+			c_flags = &c.common_flags;
+		} else {
+			vec_inner = Vector(Some(vec![self.c_flags.clone()]));
+			c_flags = &vec_inner;
 		}
-
+		match (&l_flags, &c_flags) {
+			(&Vector(None), &Vector(None)) => {
+				//何もしない
+			}
+			(&Vector(None), &Vector(Some(_c_flags))) => {
+				//コモンフラグのみ存在
+			}
+			(&Vector(Some(_l_flags)), &Vector(None)) => {
+				//ローカルフラグのみ存在
+			}
+			(&Vector(Some(_l_flags)), &Vector(Some(_c_flags))) => {
+				//どちらのフラグもある
+			}
+		}
 		println!("{}", &help);
 		return String::new();
 	}
@@ -541,11 +562,19 @@ impl Command {
 		}
 	}
 
+	pub fn get_name_as_root(&mut self) -> Option<String> {
+		if self.name.is_empty() {
+			None
+		} else {
+			Some(self.name.clone())
+		}
+	}
+
 	pub fn run_with_context(&mut self, mut context: Context) {
 		//println!("run_with_context: {:?}", context);
 		if self.sub.is_none() {
 			context.local_flags = self.l_flags.take();
-			context.common_flags.insert_front(self.c_flags.take());
+			context.common_flags.push(self.c_flags.take());
 			let p = Parser::default();
 			let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
 			if let Some(mut non_flag_args) = non_flag_args {
@@ -553,6 +582,7 @@ impl Command {
 				context.args = non_flag_args;
 			}
 			context = p.parse_args_until_end(context);
+			context.routes.push(self.name.clone());
 			match self.action {
 				Some(action) => {
 					self.handle_result(action(context));
@@ -576,11 +606,11 @@ impl Command {
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
 							//println!("{}", &sub.name);
-							context.common_flags.insert_front(self.c_flags.take());
+							context.common_flags.push(self.c_flags.take());
 							sub.run(context);
 						}
 						None => {
-							context.common_flags.insert_front(self.c_flags.take());
+							context.common_flags.push(self.c_flags.take());
 							context.local_flags = self.l_flags.take();
 							match self.action {
 								None => {
@@ -613,7 +643,7 @@ impl Command {
 					match self.action {
 						Some(action) => {
 							context.local_flags = self.l_flags.take();
-							context.common_flags.insert_front(self.c_flags.take());
+							context.common_flags.push(self.c_flags.take());
 
 							let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
 							if let Some(mut non_flag_args) = non_flag_args {
@@ -649,7 +679,7 @@ impl Command {
 		match next_non_flag {
 			Some(arg) => match self.take_sub(&arg) {
 				Some(mut sub) => {
-					c.common_flags.insert_front(self.c_flags.take());
+					c.common_flags.push(self.c_flags.take());
 					c.args = args;
 					inter_mediate_args.push_back(last);
 					if let Some(mut parsing_args) = c.parsing_args {
@@ -678,7 +708,7 @@ impl Command {
 							}
 							Some(arg) => match self.take_sub(&arg) {
 								Some(mut sub) => {
-									c.common_flags.insert_front(self.c_flags.take());
+									c.common_flags.push(self.c_flags.take());
 									if let Some(mut parsing_args) = c.parsing_args {
 										parsing_args.append(&mut inter_mediate_args);
 										c.parsing_args = Some(parsing_args);
@@ -697,7 +727,7 @@ impl Command {
 										}
 
 										c.local_flags = self.l_flags.take();
-										c.common_flags.insert_front(self.c_flags.take());
+										c.common_flags.push(self.c_flags.take());
 										let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
 										c = p.parse_args_until_end(c);
 										c.args.push_front(arg);
@@ -743,7 +773,7 @@ impl Command {
 						Some(action) => {
 							inter_mediate_args.push_back(last);
 							c.args = args;
-							c.common_flags.insert_front(self.c_flags.take());
+							c.common_flags.push(self.c_flags.take());
 							c.local_flags = self.l_flags.take();
 							if let Some(mut parsing_args) = c.parsing_args {
 								parsing_args.append(&mut inter_mediate_args);
@@ -775,7 +805,7 @@ impl Command {
 						} else {
 							c.parsing_args = Some(inter_mediate_args);
 						}
-						c.common_flags.insert_front(self.c_flags.take());
+						c.common_flags.push(self.c_flags.take());
 						c.local_flags = self.l_flags.take();
 						let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
 						//println!("after_parse_ima:{:?}", c);
@@ -817,13 +847,13 @@ impl Command {
 								raw_args,
 								args,
 								Vector::with_first_elem(self.c_flags.take()),
-								None.into(),
+								Vector::default(),
 								current_path.into(),
-								Vector(Some(vec![self.name.clone()])),
-								None.into(),
-								None.into(),
+								self.get_name_as_root().into(),
+								Vector::default(),
+								Vector::default(),
 								Some(inter_mediate_args),
-								None.into(),
+								Vector::default(),
 							))
 						}
 						None => {
@@ -848,11 +878,11 @@ impl Command {
 												self.c_flags.take().into(),
 												self.l_flags.take(),
 												current_path.into(),
-												Vector::with_first_elem(self.name.clone()),
-												None.into(),
-												None.into(),
+												Vector(None),
+												Vector(None),
+												Vector(None),
 												Some(inter_mediate_args),
-												None.into(),
+												Vector::default(),
 											);
 											let (mut context, non_flag_args) =
 												p.parse_inter_mediate_args(context, false);
@@ -968,7 +998,7 @@ impl Command {
 											self.c_flags.take().into(),
 											self.l_flags.take(),
 											current_path.into(),
-											Vector::with_first_elem(self.name.clone()),
+											Vector(None),
 											Vector::default(),
 											Vector::default(),
 											Some(inter_mediate_args),
@@ -991,13 +1021,13 @@ impl Command {
 						raw_args,
 						args,
 						self.c_flags.take().into(),
-						None.into(),
+						Vector::default(),
 						current_path.into(),
-						self.name.clone().into(),
-						None.into(),
-						None.into(),
+						Vector(None),
+						Vector::default(),
+						Vector::default(),
 						Some(inter_mediate_args),
-						None.into(),
+						Vector::default(),
 					)),
 					None => {
 						//サブコマンドはないのでそのままselfでaction
@@ -1041,7 +1071,7 @@ impl Command {
 					self.c_flags.take().into(),
 					self.l_flags.take(),
 					current_path.into(),
-					self.name.clone().into(),
+					Vector(None),
 					Vector::default(),
 					Vector::default(),
 					Some(inter_mediate_args),
@@ -1205,6 +1235,7 @@ mod tests {
 					c.get_flag_value_of("common"),
 					Some(FlagValue::String(String::default()))
 				);
+				assert_eq!(c.routes, Vector(None));
 				Ok(ActionResult::Done)
 			})
 			.common_flag(Flag::new(
@@ -1247,6 +1278,7 @@ mod tests {
 					c.get_flag_value_of("local").unwrap(),
 					FlagValue::String("test".into())
 				);
+				assert_eq!(c.routes, Vector(None));
 				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
@@ -1267,6 +1299,7 @@ mod tests {
 					c.get_flag_value_of("common").unwrap(),
 					FlagValue::Bool(true)
 				);
+				assert_eq!(c.routes, Vector(None));
 				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
@@ -1289,6 +1322,7 @@ mod tests {
 					c.get_flag_value_of("common").unwrap(),
 					FlagValue::Bool(true)
 				);
+				assert_eq!(c.routes, Vector(None));
 				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
@@ -1335,6 +1369,7 @@ mod tests {
 					c.get_flag_value_of("lafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				assert_eq!(c.routes, Vector(None));
 				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
@@ -1376,6 +1411,7 @@ mod tests {
 					c.get_flag_value_of("lafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				assert_eq!(c.routes, Vector(None));
 				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
@@ -1418,6 +1454,7 @@ mod tests {
 					c.get_flag_value_of("lafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				assert_eq!(c.routes, Vector(None));
 				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
@@ -1459,6 +1496,7 @@ mod tests {
 					c.get_flag_value_of("lafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				assert_eq!(c.routes, Vector(None));
 				Ok(ActionResult::Done)
 			})
 			.run(arg.clone());
@@ -1512,6 +1550,7 @@ mod tests {
 				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
 				assert_eq!(c.get_flag_value_of("commons"), None);
 				assert_eq!(c.get_flag_value_of("local"), None);
+				assert_eq!(c.routes, "sub".to_owned().into());
 				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());

@@ -1,10 +1,9 @@
-# combu(WIP)
+# combu
 
-combu is a customizable cli framework(crate name was cmb, renamed to combu). Work In Progress, and Implimenting.
+combu is a customizable cli framework.
 The library name "combu" comes from command + 昆布(konbu, it means kelp in japanese).
 
 combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可能な CLI フレームワークです（一時クレートの名前が cmb だったこともありましたが、現在は combu です）。
-まだまだ実装中（WIP）で、使用できる段階ではありません。
 
 # Inspired
 

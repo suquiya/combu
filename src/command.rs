@@ -7,7 +7,9 @@ use crate::Vector;
 use crate::{Flag, FlagValue};
 
 use std::collections::VecDeque;
-///The struct for command
+///The struct for command information store and command execution
+///This can be root and edge
+///コマンドの情報格納＆実行用構造体
 #[derive(Clone, Default)]
 pub struct Command {
 	///Command name
@@ -36,6 +38,7 @@ pub struct Command {
 	pub help: Option<HelpFunc>,
 }
 
+/// HelpFunc shows type alias for help function
 pub type HelpFunc = fn(
 	command: &Command,
 	context: &Context,
@@ -43,10 +46,12 @@ pub type HelpFunc = fn(
 ) -> String;
 
 impl Command {
+	/// Creare new instance of Command
 	pub fn new() -> Command {
 		Command::default()
 	}
 
+	/// Create new instance of Command with name
 	pub fn with_name<T: Into<String>>(name: T) -> Command {
 		Command {
 			name: name.into(),
@@ -64,6 +69,7 @@ impl Command {
 		}
 	}
 
+	/// Create new instance of Command with more options
 	#[allow(clippy::too_many_arguments)]
 	pub fn build_new(
 		name: String,
@@ -94,6 +100,7 @@ impl Command {
 		}
 	}
 
+	/// Run command with collecting args automatically
 	pub fn run_with_auto_arg_collect(mut self) {
 		//let args: Vec<String> = std::env::args().collect();
 		//self.run(args);
@@ -103,6 +110,7 @@ impl Command {
 		};
 	}
 
+	/// Run command as single(do not have sub) command
 	pub fn single_run(&mut self, raw_args: Vec<String>) {
 		match self.action.take() {
 			Some(action) => {
@@ -160,6 +168,7 @@ impl Command {
 		}
 	}
 
+	/// Show command's help
 	pub fn show_help(&self, c: &Context) {
 		if let Some(help) = self.help {
 			println!(
@@ -173,6 +182,7 @@ impl Command {
 		}
 	}
 
+	/// Returuns default help as String
 	pub fn default_help<'a>(&self, c: &Context) -> String {
 		let mut help = String::new();
 		let indent_size: usize = 3;
@@ -402,66 +412,80 @@ impl Command {
 		return help;
 	}
 
+	/// Set Command's name
 	pub fn name<T: Into<String>>(mut self, name: T) -> Command {
 		self.name = name.into();
 		self
 	}
 
+	/// Set command's usage
 	pub fn usage<T: Into<String>>(mut self, usage: T) -> Self {
 		self.usage = usage.into();
 		self
 	}
 
+	/// Set command's action
 	pub fn action(mut self, action: Action) -> Self {
 		self.action = Some(action);
 		self
 	}
 
+	/// Set command's authors
 	pub fn authors<T: Into<String>>(mut self, authors: T) -> Self {
 		self.authors = authors.into();
 		self
 	}
 
+	/// Set command's copyright
 	pub fn copyright<T: Into<String>>(mut self, copyright: T) -> Self {
 		self.copyright = copyright.into();
 		self
 	}
 
+	/// Add a local flag to command
 	pub fn local_flag(mut self, flag: Flag) -> Self {
 		self.l_flags.push(flag);
 		self
 	}
 
+	/// Add a common flag to command
 	pub fn common_flag(mut self, flag: Flag) -> Self {
 		self.c_flags.push(flag);
 		self
 	}
 
+	/// Set command's description
 	pub fn desctiption<T: Into<String>>(mut self, description: T) -> Self {
 		self.description = Some(description.into());
 		self
 	}
 
+	/// Set command's version
 	pub fn version<T: Into<String>>(mut self, version: T) -> Self {
 		self.version = version.into();
 		self
 	}
 
+	/// Add command's sub command
 	pub fn sub_command(mut self, sub_command: Command) -> Self {
 		self.sub.push(sub_command);
 		self
 	}
 
+	/// Add command's alias
 	pub fn alias<T: Into<String>>(mut self, a: T) -> Self {
 		self.alias.push(a.into());
 		self
 	}
 
+	/// Set custom help function
 	pub fn help(mut self, help_function: HelpFunc) -> Self {
 		self.help = Some(help_function);
 		self
 	}
 
+	/// Returns true if name_or_alias matches command's name or one of alias at least
+	/// name_or_aliasがコマンド名かエイリアスのうち少なくとも一つにマッチした場合trueを返す
 	pub fn is(&self, name_or_alias: &str) -> bool {
 		if name_or_alias == self.name {
 			true
@@ -473,7 +497,8 @@ impl Command {
 		}
 	}
 
-	///name_or_aliasに一致するサブコマンドがある場合、保持しているVectorからswap_removeで取り出して返す
+	/// Take sub command matches name_or_alias.
+	/// name_or_aliasに一致するサブコマンドがある場合、保持しているVectorからswap_removeで取り出して返す
 	pub fn take_sub(&mut self, name_or_alias: &str) -> Option<Command> {
 		match self.sub {
 			Vector(None) => None,
@@ -484,10 +509,12 @@ impl Command {
 		}
 	}
 
+	/// Returns true if this command has sub command(s).
 	pub fn has_sub(&self) -> bool {
 		self.sub.has_inner_vec()
 	}
 
+	/// Returns init Vector for Context's route
 	pub fn derive_route_init_vector(&self) -> Vector<String> {
 		if self.name.is_empty() {
 			Vector(None)
@@ -516,7 +543,9 @@ impl From<String> for Command {
 	}
 }
 
+/// Trait for implementation Run function.
 pub trait Run<T> {
+	/// run function
 	fn run(&mut self, args: T);
 }
 
@@ -533,8 +562,8 @@ impl Run<Context> for Command {
 }
 
 impl Command {
+	/// Run commands with raw_args
 	pub fn run_from_args(&mut self, raw_args: Vec<String>) {
-		//println!("{:?}, len: {}", &raw_args, &raw_args.len());
 		if self.sub.is_none() {
 			return self.single_run(raw_args);
 		}
@@ -798,6 +827,7 @@ impl Command {
 		}
 	}
 
+	/// Run command with context
 	pub fn run_with_context(&mut self, mut context: Context) {
 		if self.sub.is_none() {
 			context.local_flags = self.l_flags.take();

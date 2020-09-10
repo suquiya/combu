@@ -18,13 +18,13 @@ pub struct ActionError {
 }
 
 impl ActionError {
-	pub fn new(
-		description: String,
+	pub fn new<T: Into<String>>(
+		description: T,
 		context: Context,
 		related_error: Option<Box<dyn Error>>,
 	) -> Self {
 		Self {
-			description,
+			description: description.into(),
 			context,
 			related_error,
 		}

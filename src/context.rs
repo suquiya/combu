@@ -3,7 +3,6 @@ use crate::vector::flag::{FlagSearch, LongFound};
 use crate::Vector;
 use crate::{Flag, FlagValue};
 use std::collections::VecDeque;
-use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct Context {
@@ -12,7 +11,7 @@ pub struct Context {
 	pub common_flags: Vector<Vector<Flag>>,
 	pub routes: Vector<String>,
 	pub local_flags: Vector<Flag>,
-	pub current_path: PathBuf,
+	pub current_path: String,
 	pub common_flags_values: Vector<(String, FlagValue)>,
 	pub local_flags_values: Vector<(String, FlagValue)>,
 	pub parsing_args: Option<VecDeque<MiddleArg>>,
@@ -20,20 +19,21 @@ pub struct Context {
 }
 
 impl Context {
-	pub fn new<T: Into<PathBuf>>(
+	pub fn new(
 		raw_args: Vec<String>,
 		args: VecDeque<String>,
 		common_flags: Vector<Flag>,
 		local_flags: Vector<Flag>,
-		current_path: T,
+		routes: Vector<String>,
+		current_path: String,
 	) -> Context {
 		Context {
 			raw_args,
 			args,
 			common_flags: Vector(Some(vec![common_flags])),
-			routes: Vector::default(),
+			routes: routes.into(),
 			local_flags,
-			current_path: current_path.into(),
+			current_path,
 			common_flags_values: Vector::default(),
 			local_flags_values: Vector::default(),
 			parsing_args: None,
@@ -45,7 +45,7 @@ impl Context {
 		args: VecDeque<String>,
 		common_flags: Vector<Vector<Flag>>,
 		local_flags: Vector<Flag>,
-		current_path: PathBuf,
+		current_path: String,
 		routes: Vector<String>,
 		common_flags_values: Vector<(String, FlagValue)>,
 		local_flags_values: Vector<(String, FlagValue)>,
@@ -80,11 +80,11 @@ impl Context {
 		self.args.pop_front()
 	}
 
-	pub fn current(&self) -> &Path {
+	pub fn current(&self) -> &str {
 		&self.current_path
 	}
 
-	pub fn change_current(mut self, path: PathBuf) {
+	pub fn change_current(mut self, path: String) {
 		self.current_path = path;
 	}
 
@@ -244,8 +244,8 @@ impl<'a> From<Vec<String>> for Context {
 	fn from(raw_args: Vec<String>) -> Context {
 		let args = VecDeque::from(raw_args.clone());
 		let current_path = match raw_args.get(0) {
-			Some(str) => PathBuf::from(str),
-			None => PathBuf::new(),
+			Some(str) => String::from(str),
+			None => String::new(),
 		};
 		Context {
 			raw_args,

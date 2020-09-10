@@ -3,7 +3,7 @@ use crate::Vector;
 #[derive(Clone, Debug)]
 pub struct Flag {
 	pub name: String,
-	pub usage: String,
+	pub description: String,
 	pub short_alias: Vector<char>,
 	pub long_alias: Vector<String>,
 	pub default_value: FlagValue,
@@ -138,7 +138,7 @@ impl Default for Flag {
 	fn default() -> Flag {
 		Flag {
 			name: String::default(),
-			usage: String::default(),
+			description: String::default(),
 			short_alias: Vector::default(),
 			long_alias: Vector::default(),
 			flag_type: FlagType::default(),
@@ -148,7 +148,7 @@ impl Default for Flag {
 }
 
 impl Flag {
-	pub fn new<T: Into<String>>(name: T, usage: T, flag_type: FlagType) -> Flag {
+	pub fn new<T: Into<String>>(name: T, description: T, flag_type: FlagType) -> Flag {
 		let default_value: FlagValue = match flag_type {
 			FlagType::Bool => FlagValue::Bool(bool::default()),
 			FlagType::String => FlagValue::String(String::default()),
@@ -157,7 +157,7 @@ impl Flag {
 		};
 		Flag {
 			name: name.into(),
-			usage: usage.into(),
+			description: description.into(),
 			long_alias: Vector::default(),
 			short_alias: Vector::default(),
 			flag_type,
@@ -167,7 +167,7 @@ impl Flag {
 
 	pub fn build_new(
 		name: String,
-		usage: String,
+		description: String,
 		short_alias: Vector<char>,
 		long_alias: Vector<String>,
 		flag_type: FlagType,
@@ -182,7 +182,7 @@ impl Flag {
 		};
 		Flag {
 			name,
-			usage,
+			description,
 			short_alias,
 			long_alias,
 			flag_type,
@@ -193,7 +193,7 @@ impl Flag {
 	pub fn with_name<T: Into<String>>(name: T) -> Self {
 		Flag {
 			name: name.into(),
-			usage: String::default(),
+			description: String::default(),
 			short_alias: Vector::default(),
 			long_alias: Vector::default(),
 			flag_type: FlagType::default(),
@@ -205,7 +205,7 @@ impl Flag {
 		let default_value = flag_type.default_flag_value();
 		Flag {
 			name: name.into(),
-			usage: String::default(),
+			description: String::default(),
 			short_alias: Vector::default(),
 			long_alias: Vector::default(),
 			flag_type,
@@ -250,8 +250,8 @@ impl Flag {
 		self
 	}
 
-	pub fn usage<T: Into<String>>(mut self, usage: T) -> Self {
-		self.usage = usage.into();
+	pub fn description<T: Into<String>>(mut self, description: T) -> Self {
+		self.description = description.into();
 		self
 	}
 
@@ -301,13 +301,40 @@ impl Flag {
 	pub fn derive_flag_value_if_no_value(&self) -> FlagValue {
 		self.flag_type.get_value_if_no_value()
 	}
+
+	pub fn help(&self, append_to: String, name_and_alias_min_width: usize) -> String {
+		let mut help = append_to;
+		let first_help_width = help.len();
+
+		if let Vector(Some(short_alias)) = &self.short_alias {
+			help = short_alias
+				.iter()
+				.fold(help, |help, s| format!("{}-{},", help, s));
+		} else {
+			help += "   ";
+		}
+		help = help + " --" + &self.name;
+		if let Vector(Some(long_alias)) = &self.long_alias {
+			help = long_alias.iter().fold(help, |help, l| {
+				//ロングフラグ出力
+				format!("{}, --{}", help, l)
+			})
+		};
+		let name_and_alias_width = help.len() - first_help_width;
+
+		if name_and_alias_width < name_and_alias_min_width {
+			help += &" ".repeat(name_and_alias_min_width - name_and_alias_width);
+		}
+
+		help + "\t" + &self.description + "\n"
+	}
 }
 
 impl From<String> for Flag {
 	fn from(name: String) -> Self {
 		Flag {
 			name,
-			usage: String::default(),
+			description: String::default(),
 			short_alias: Vector::default(),
 			long_alias: Vector::default(),
 			default_value: FlagValue::default(),
@@ -320,7 +347,7 @@ impl From<&str> for Flag {
 	fn from(name: &str) -> Self {
 		Flag {
 			name: name.into(),
-			usage: String::default(),
+			description: String::default(),
 			short_alias: Vector::default(),
 			long_alias: Vector::default(),
 			default_value: FlagValue::default(),

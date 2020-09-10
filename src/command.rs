@@ -36,7 +36,11 @@ pub struct Command {
 	pub help: Option<HelpFunc>,
 }
 
-pub type HelpFunc = fn(&Command, &Context) -> String;
+pub type HelpFunc = fn(
+	command: &Command,
+	context: &Context,
+	default_help: fn(&Command, &Context) -> String,
+) -> String;
 
 impl Command {
 	pub fn new() -> Command {
@@ -100,7 +104,6 @@ impl Command {
 	}
 
 	pub fn single_run(&mut self, raw_args: Vec<String>) {
-		//println!("single_run: {:?}", raw_args);
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
@@ -110,10 +113,11 @@ impl Command {
 						VecDeque::new(),
 						self.c_flags.take(),
 						self.l_flags.take(),
+						self.derive_route_init_vector(),
 						current_path,
 					));
 
-					self.handle_result(req);
+					self.handle_action_result(req);
 				} else {
 					let mut args = VecDeque::from(raw_args.clone());
 					let current_path = args.pop_front().unwrap();
@@ -122,17 +126,35 @@ impl Command {
 						args,
 						self.c_flags.take(),
 						self.l_flags.take(),
+						self.derive_route_init_vector(),
 						current_path,
 					);
 					//println!("single_run_context: {:?}", context);
 					context = Parser::default().parse_args_until_end(context);
 
 					let req = action(context);
-					self.handle_result(req);
+					self.handle_action_result(req)
 				}
 			}
 			None => match self.sub {
-				Vector(None) => println!("no action is registerd."),
+				Vector(None) => {
+					let mut args: VecDeque<String> = raw_args.clone().into();
+					let current_path = args.pop_front().unwrap();
+					let c_flags = self.c_flags.take();
+					let l_flags = self.l_flags.take();
+					self.handle_action_result(Err(ActionError::new(
+						"No action is registered.",
+						Context::new(
+							raw_args,
+							args,
+							c_flags,
+							l_flags,
+							self.derive_route_init_vector(),
+							current_path,
+						),
+						None,
+					)));
+				}
 				_ => self.run(raw_args),
 			},
 		}
@@ -140,15 +162,30 @@ impl Command {
 
 	pub fn show_help(&self, c: &Context) {
 		if let Some(help) = self.help {
-			println!("{}", help(&self, c));
+			println!(
+				"{}",
+				help(&self, c, |command, context| {
+					command.default_help(context)
+				})
+			);
 		} else {
 			println!("{}", self.default_help(c));
 		}
 	}
 
-	pub fn default_help(&self, c: &Context) -> String {
+	pub fn default_help<'a>(&self, c: &Context) -> String {
 		let mut help = String::new();
-		help += &format!("USAGE:\n\t{}\n\n", self.usage);
+		let indent_size: usize = 3;
+		let sp = String::from(" ");
+		let indent: String = sp.repeat(indent_size);
+		match &self.description {
+			Some(description) => {
+				help.push_str(description);
+				help.push_str("\n\n");
+			}
+			_ => {}
+		}
+		help += &format!("Usage:\n{}{}\n\n", &indent, self.usage);
 
 		//フラグ処理
 		let l_flags: &Vector<Flag> = if c.local_flags.is_none() {
@@ -158,28 +195,213 @@ impl Command {
 		};
 		let c_flags: &Vector<Vector<Flag>>;
 		let vec_inner: Vector<Vector<Flag>>;
+
+		//コモンフラグが残っていた場合
 		if self.c_flags.is_none() {
 			c_flags = &c.common_flags;
 		} else {
 			vec_inner = Vector(Some(vec![self.c_flags.clone()]));
 			c_flags = &vec_inner;
 		}
-		match (&l_flags, &c_flags) {
-			(&Vector(None), &Vector(None)) => {
-				//何もしない
-			}
-			(&Vector(None), &Vector(Some(_c_flags))) => {
-				//コモンフラグのみ存在
-			}
-			(&Vector(Some(_l_flags)), &Vector(None)) => {
-				//ローカルフラグのみ存在
-			}
-			(&Vector(Some(_l_flags)), &Vector(Some(_c_flags))) => {
-				//どちらのフラグもある
-			}
+
+		//どちらのフラグもある
+		//TODO: 有効なフラグを整理して表示できるようにしたい(この下のかっこ部分を消しても支障のない状態にする)
+		//TODO: ショートエイリアス、ロングエイリアスが複数ある場合に備える
+
+		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the formaer flag's value): \n");
+		let head: String;
+		let common_label;
+		let name_and_alias_field_min_width: usize = 7;
+		if c.common_flags.sum_of_length() > 0 {
+			//コモンフラグが設定されている場合
+			head = indent.repeat(2);
+			common_label = true;
+		} else {
+			//設定されていない場合、ローカルフラグだけなのでラベルはいらない
+			head = indent.clone();
+			common_label = false;
 		}
-		println!("{}", &help);
-		return String::new();
+
+		if let Vector(Some(l_flags)) = l_flags {
+			if !common_label {
+				help.push_str(&indent);
+				help.push_str("Local: \n");
+			}
+			help = l_flags.iter().fold(help, |help, l_flag| {
+				l_flag.help(help + &head, name_and_alias_field_min_width + 5)
+			});
+		}
+		let depth = c_flags.len();
+		if let Vector(Some(c_flags)) = c_flags {
+			if common_label {
+				help = help + &indent + "Common";
+			}
+			let self_common_index = depth - 1;
+			let route_without_root = depth > c.routes.len();
+			let mut common_head = true;
+			help = c_flags
+				.iter()
+				.enumerate()
+				.rfold(help, |help, (index, c_flags)| {
+					//コモンフラグ書き出し
+					if let Vector(Some(c_flags)) = c_flags {
+						let mut help = help;
+						if common_label {
+							if index < self_common_index {
+								let mut from_owned: String;
+								let from = if route_without_root {
+									if index < 1 {
+										let cur_path = std::path::Path::new(c.current());
+										from_owned = cur_path
+											.file_stem()
+											.unwrap_or(std::ffi::OsStr::new("root"))
+											.to_str()
+											.unwrap_or("root")
+											.to_owned();
+										match cur_path.extension() {
+											None => {}
+											Some(val) => {
+												from_owned += &format!("[.{}]", val.to_str().unwrap_or("exe"))
+											}
+										}
+
+										&from_owned
+									} else {
+										c.routes.get(index - 1).unwrap()
+									}
+								} else {
+									c.routes.get(index).unwrap()
+								};
+								if common_head {
+									help += &format!("[inherited from {}]: \n", from)
+								} else {
+									common_head = false;
+									help += &format!("{}[inherited from {}]: \n", &indent, from)
+								}
+							} else {
+								help += &format!(
+								"(common flags are available in this command and sub command{} under this): \n",
+								{
+									if self.sub.len() < 2 {
+										""
+									} else {
+										"s"
+									}
+								}
+								);
+								common_head = false;
+							}
+						}
+
+						help = c_flags.iter().fold(help, |help, c_flag| {
+							c_flag.help(help + &head, name_and_alias_field_min_width)
+						});
+						help
+					} else {
+						help
+					}
+				});
+		}
+		help += "\n";
+
+		//TODO: 長いコマンド文字列があってもいいようにスタイリングする
+		if let Vector(Some(sub_commands)) = &self.sub {
+			help += &format!(
+				"Sub Command{}: \n",
+				if sub_commands.len() < 2 { "" } else { "s" }
+			);
+			help = sub_commands.iter().fold(help, |help, sub_command| {
+				//サブコマンドの説明出力
+				let mut help = help + &indent + &sub_command.name;
+				let mut name_and_alias_width = sub_command.name.len();
+				if let Vector(Some(alias)) = &sub_command.alias {
+					let (h_str, w) = alias
+						.iter()
+						.fold((help, name_and_alias_width), |(help, w), alias| {
+							(help + ", " + alias, w + 2 + alias.len())
+						});
+					help = h_str;
+					name_and_alias_width = w;
+				}
+				if name_and_alias_width < name_and_alias_field_min_width {
+					help += &sp.repeat(name_and_alias_field_min_width - name_and_alias_width);
+				}
+
+				help = if let Some(description) = &sub_command.description {
+					help + "\t" + description
+				} else {
+					help
+				};
+				help + "\n"
+			});
+			let loc_owned: String;
+			let location: &str = {
+				if self.name.is_empty() {
+					let path = std::path::Path::new(c.current());
+					let mut l: String = path
+						.file_stem()
+						.unwrap_or(std::ffi::OsStr::new("root"))
+						.to_str()
+						.unwrap_or("root")
+						.to_owned();
+					match path.extension() {
+						None => {}
+						Some(ext) => {
+							l = l + "[." + ext.to_str().unwrap_or("exe") + "]";
+						}
+					}
+					loc_owned = l;
+					&loc_owned
+				} else {
+					//セルフネームがある
+					if depth < 2 {
+						//コモンフラグが1コマンド分しかない→現在はルートコマンド
+						&self.name
+					} else {
+						loc_owned = if let Vector(Some(routes)) = &c.routes {
+							routes.iter().rfold(
+								{
+									if depth > routes.len() {
+										let path = std::path::Path::new(c.current());
+										let mut l = path
+											.file_stem()
+											.unwrap_or(std::ffi::OsStr::new("root"))
+											.to_str()
+											.unwrap_or("root")
+											.to_owned();
+										match path.extension() {
+											None => {}
+											Some(val) => {
+												l = l + "[." + val.to_str().unwrap_or("exe") + "]";
+											}
+										}
+										l
+									} else {
+										String::new()
+									}
+								},
+								|str, route| {
+									//現在どのコマンドに対応しているか
+									str + &sp + route
+								},
+							)
+						} else {
+							panic!("Routes of context should be not none under sub command.")
+						};
+						&loc_owned
+					}
+				}
+			};
+			help = help
+				+ "\n" + &format!(
+				//"See '{0} help <subcommand>' or '{0} <subcommand> --help' for more information.",
+				"{0} <subcommand> --help for more information.",
+				location
+			);
+		}
+		help += "\n";
+
+		return help;
 	}
 
 	pub fn name<T: Into<String>>(mut self, name: T) -> Command {
@@ -267,6 +489,14 @@ impl Command {
 	pub fn has_sub(&self) -> bool {
 		self.sub.has_inner_vec()
 	}
+
+	pub fn derive_route_init_vector(&self) -> Vector<String> {
+		if self.name.is_empty() {
+			Vector(None)
+		} else {
+			Vector(Some(vec![self.name.clone()]))
+		}
+	}
 }
 
 impl From<String> for Command {
@@ -322,9 +552,10 @@ impl Command {
 						args,
 						self.c_flags.take(),
 						self.l_flags.take(),
+						self.derive_route_init_vector(),
 						current_path,
 					));
-					self.handle_result(req);
+					self.handle_action_result(req);
 				}
 				None => {
 					println!("no action is registered.");
@@ -333,6 +564,7 @@ impl Command {
 						args,
 						self.c_flags.take(),
 						self.l_flags.take(),
+						self.derive_route_init_vector(),
 						current_path,
 					);
 					self.show_help(&c);
@@ -363,7 +595,7 @@ impl Command {
 									vec![self.c_flags.take()].into(),
 									Vector::default(),
 									current_path.into(),
-									Vector::default(),
+									self.derive_route_init_vector(),
 									Vector::default(),
 									Vector::default(),
 									Some(inter_mediate_args),
@@ -391,8 +623,8 @@ impl Command {
 											args,
 											vec![self.c_flags.take()].into(),
 											self.l_flags.take(),
-											std::path::PathBuf::from(current_path),
-											Vector::default(),
+											current_path,
+											self.derive_route_init_vector(),
 											Vector::default(),
 											Vector::default(),
 											Some(inter_mediate_args),
@@ -406,7 +638,7 @@ impl Command {
 										}
 										match self.action {
 											Some(action) => {
-												self.handle_result(action(context));
+												self.handle_action_result(action(context));
 											}
 											None => {
 												println!("no action registered");
@@ -425,7 +657,7 @@ impl Command {
 							vec![self.c_flags.take()].into(),
 							self.l_flags.take(),
 							current_path.into(),
-							Vector::default(),
+							self.derive_route_init_vector(),
 							Vector(None),
 							Vector(None),
 							Some({
@@ -443,7 +675,7 @@ impl Command {
 										args
 									}
 								}
-								self.handle_result(action(context));
+								self.handle_action_result(action(context));
 							}
 							_ => {
 								println!("no action registered");
@@ -465,7 +697,7 @@ impl Command {
 									vec![self.c_flags.take()].into(),
 									Vector(None),
 									current_path.into(),
-									Vector::default(),
+									self.derive_route_init_vector(),
 									Vector(None),
 									Vector(None),
 									Some(inter_mediate_args),
@@ -490,7 +722,7 @@ impl Command {
 										vec![self.c_flags.take()].into(),
 										self.l_flags.take(),
 										current_path.into(),
-										Vector::default(),
+										self.derive_route_init_vector(),
 										Vector::default(),
 										Vector::default(),
 										Some(inter_mediate_args),
@@ -504,7 +736,7 @@ impl Command {
 									}
 									match self.action {
 										Some(action) => {
-											self.handle_result(action(context));
+											self.handle_action_result(action(context));
 										}
 										None => {
 											println!("no action registered");
@@ -517,9 +749,6 @@ impl Command {
 					}
 				}
 				Some(arg) => {
-					//first arg is non-flag (normal) arg
-					//println!("arg: {}", &arg);
-
 					match self.take_sub(&arg) {
 						None => match self.action {
 							None => {
@@ -528,6 +757,7 @@ impl Command {
 									args,
 									self.c_flags.take(),
 									Vector::default(),
+									self.derive_route_init_vector(),
 									current_path,
 								);
 								println!("{} does not have its own action.", self.name);
@@ -540,16 +770,24 @@ impl Command {
 									args,
 									self.c_flags.take(),
 									self.l_flags.take(),
+									self.derive_route_init_vector(),
 									current_path,
 								);
 								c = p.parse_args_until_end(c);
-								self.handle_result(action(c));
+								self.handle_action_result(action(c));
 							}
 						},
 						Some(mut sub) => {
 							//println!("{}", sub.name);
 							let common_flag = self.c_flags.take();
-							let c = Context::new(raw_args, args, common_flag, Vector(None), current_path);
+							let c = Context::new(
+								raw_args,
+								args,
+								common_flag,
+								Vector(None),
+								self.derive_route_init_vector(),
+								current_path,
+							);
 							sub.run(c);
 						}
 					}
@@ -562,16 +800,7 @@ impl Command {
 		}
 	}
 
-	pub fn get_name_as_root(&mut self) -> Option<String> {
-		if self.name.is_empty() {
-			None
-		} else {
-			Some(self.name.clone())
-		}
-	}
-
 	pub fn run_with_context(&mut self, mut context: Context) {
-		//println!("run_with_context: {:?}", context);
 		if self.sub.is_none() {
 			context.local_flags = self.l_flags.take();
 			context.common_flags.push(self.c_flags.take());
@@ -585,12 +814,13 @@ impl Command {
 			context.routes.push(self.name.clone());
 			match self.action {
 				Some(action) => {
-					self.handle_result(action(context));
+					self.handle_action_result(action(context));
 				}
 				None => println!("no action is registered"),
 			}
 		} else {
 			//サブコマンドと一致するかを捜査
+			context.routes.push(self.name.clone());
 			let p = Parser::default();
 			match context.args.pop_front() {
 				Some(long_flag) if p.long_flag(&long_flag) => {
@@ -632,7 +862,7 @@ impl Command {
 											context
 										}
 									};
-									self.handle_result(action(c));
+									self.handle_action_result(action(c));
 								}
 							}
 						}
@@ -650,7 +880,7 @@ impl Command {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
 							}
-							self.handle_result(action(context));
+							self.handle_action_result(action(context));
 						}
 						None => {
 							println!("no action is registered.");
@@ -736,12 +966,12 @@ impl Command {
 											c.args = non_flag_args;
 										}
 
-										self.handle_result(action(c))
+										self.handle_action_result(action(c));
 									}
 									None => {
 										println!("no action registered.");
-										let err = ActionError::new("No action registered".into(), c, None);
-										self.handle_result(Err(err))
+										let err = ActionError::new("No action registered", c, None);
+										self.handle_action_result(Err(err));
 									}
 								},
 							},
@@ -761,7 +991,7 @@ impl Command {
 										args.append(&mut c.args);
 										c.args = args;
 									}
-									self.handle_result(action(c));
+									self.handle_action_result(action(c));
 								}
 								None => {
 									println!("no action registered.");
@@ -786,7 +1016,7 @@ impl Command {
 								non_flag_args.append(&mut c.args);
 								c.args = non_flag_args;
 							}
-							self.handle_result(action(c));
+							self.handle_action_result(action(c));
 						}
 						None => {
 							println!("no action is registered.");
@@ -813,7 +1043,7 @@ impl Command {
 							//non_flag_args.append(&mut c.args);
 							c.args = non_flag_args;
 						}
-						self.handle_result(action(c));
+						self.handle_action_result(action(c));
 					}
 					None => {
 						println!("no action is registered.");
@@ -849,7 +1079,7 @@ impl Command {
 								Vector::with_first_elem(self.c_flags.take()),
 								Vector::default(),
 								current_path.into(),
-								self.get_name_as_root().into(),
+								self.derive_route_init_vector(),
 								Vector::default(),
 								Vector::default(),
 								Some(inter_mediate_args),
@@ -878,7 +1108,7 @@ impl Command {
 												self.c_flags.take().into(),
 												self.l_flags.take(),
 												current_path.into(),
-												Vector(None),
+												self.derive_route_init_vector(),
 												Vector(None),
 												Vector(None),
 												Some(inter_mediate_args),
@@ -891,7 +1121,7 @@ impl Command {
 												context.args = non_flag_args;
 											}
 
-											self.handle_result(action(context));
+											self.handle_action_result(action(context));
 										}
 										_ => println!("no action is registered."),
 									}
@@ -909,7 +1139,7 @@ impl Command {
 						self.c_flags.take().into(),
 						self.l_flags.take(),
 						current_path.into(),
-						Vector::default(),
+						self.derive_route_init_vector(),
 						Vector::default(),
 						Vector::default(),
 						Some(inter_mediate_args),
@@ -923,7 +1153,7 @@ impl Command {
 
 					match self.action {
 						Some(action) => {
-							self.handle_result(action(c));
+							self.handle_action_result(action(c));
 						}
 						None => {
 							println!("no action is registered");
@@ -950,7 +1180,7 @@ impl Command {
 								self.c_flags.take().into(),
 								Vector::default(),
 								current_path.into(),
-								Vector::default(),
+								self.derive_route_init_vector(),
 								Vector::default(),
 								Vector::default(),
 								Some(inter_mediate_args),
@@ -974,7 +1204,7 @@ impl Command {
 											self.c_flags.take().into(),
 											self.l_flags.take(),
 											current_path.into(),
-											Vector::default(),
+											self.derive_route_init_vector(),
 											Vector::default(),
 											Vector::default(),
 											Some(inter_mediate_args),
@@ -988,7 +1218,7 @@ impl Command {
 											non_flag_args.append(&mut context.args);
 											context.args = non_flag_args;
 										}
-										self.handle_result(action(context));
+										self.handle_action_result(action(context));
 									}
 									_ => {
 										inter_mediate_args.push_back(last_flag_arg);
@@ -998,7 +1228,7 @@ impl Command {
 											self.c_flags.take().into(),
 											self.l_flags.take(),
 											current_path.into(),
-											Vector(None),
+											self.derive_route_init_vector(),
 											Vector::default(),
 											Vector::default(),
 											Some(inter_mediate_args),
@@ -1023,7 +1253,7 @@ impl Command {
 						self.c_flags.take().into(),
 						Vector::default(),
 						current_path.into(),
-						Vector(None),
+						self.derive_route_init_vector(),
 						Vector::default(),
 						Vector::default(),
 						Some(inter_mediate_args),
@@ -1038,9 +1268,9 @@ impl Command {
 							self.c_flags.take().into(),
 							self.l_flags.take(),
 							current_path.into(),
+							self.derive_route_init_vector(),
 							Vector::default(),
-							Vector(None),
-							Vector(None),
+							Vector::default(),
 							Some(inter_mediate_args),
 							Vector(None),
 						);
@@ -1053,7 +1283,7 @@ impl Command {
 						}
 						match self.action {
 							Some(action) => {
-								self.handle_result(action(c));
+								self.handle_action_result(action(c));
 							}
 							None => {
 								println!("no action is registered");
@@ -1071,7 +1301,7 @@ impl Command {
 					self.c_flags.take().into(),
 					self.l_flags.take(),
 					current_path.into(),
-					Vector(None),
+					self.derive_route_init_vector(),
 					Vector::default(),
 					Vector::default(),
 					Some(inter_mediate_args),
@@ -1083,7 +1313,7 @@ impl Command {
 						if let Some(non_flag_args) = non_flag_args {
 							context.args = non_flag_args;
 						}
-						self.handle_result(action(context));
+						self.handle_action_result(action(context));
 					}
 					None => {
 						println!("no action is registered.");
@@ -1094,19 +1324,21 @@ impl Command {
 		}
 	}
 
-	pub fn handle_result(&self, req: Result<ActionResult, ActionError>) {
+	pub fn handle_action_result(&self, req: Result<ActionResult, ActionError>) {
 		match req {
 			Ok(ActionResult::ShowHelpRequest(c)) => {
 				self.show_help(&c);
+				//Ok(ActionResult::Done)
 			}
 			Err(err) => {
 				println!("error: {}", err);
 				self.show_help(&err.context);
+				//Err(err)
 			}
-			Ok(ActionResult::Done) => {
-				//何もしない
+			_ => {
+				//Doneの場合 - 何もしない
 			}
-		}
+		};
 	}
 }
 #[cfg(test)]
@@ -1141,7 +1373,8 @@ mod tests {
 				};
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
-				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				assert_eq!(c.current_path, String::from("current_path"));
+				assert_eq!(c.routes, Vector(None));
 				return Ok(ActionResult::Done);
 			})
 			.common_flag(Flag::new(
@@ -1156,7 +1389,7 @@ mod tests {
 		arg.push("--local=L_after".into());
 		arg.insert(1, "--common=C_before".into());
 		arg.insert(1, "--local=L_before".into());
-		let mut root = Command::new()
+		let mut root = Command::with_name("root")
 			.action(|c| {
 				println!("test_action: {:?}", c);
 				let raw_args: Vec<String> = vec![
@@ -1171,7 +1404,8 @@ mod tests {
 				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
-				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				assert_eq!(c.current_path, String::from("current_path"));
+				assert_eq!(c.routes, Vector(Some(vec!["root".to_string()])));
 				let l_flag_values = Vector::from(vec![
 					(
 						"local".to_string(),
@@ -1222,7 +1456,7 @@ mod tests {
 				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
-				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				assert_eq!(c.current_path, String::from("current_path"));
 				assert_eq!(
 					c.get_local_flag_value_of("local"),
 					Some(FlagValue::String("test".into()))
@@ -1543,7 +1777,7 @@ mod tests {
 					"--local",
 				]);
 				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
-				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				assert_eq!(c.current_path, String::from("current_path"));
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(c.get_flag_value_of("common"), Some(FlagValue::Bool(true)));
@@ -1559,6 +1793,7 @@ mod tests {
 		arg = cnv_arg(vec!["current_path", "--cstr=test", "-b", "sub"]);
 		root
 			.clone()
+			.name("root")
 			.sub_command(sub.clone().action(|c| {
 				println!("c: {:?}", c);
 				assert_eq!(
@@ -1570,6 +1805,10 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.routes,
+					Vector(Some(vec!["root".to_string(), "sub".to_string()]))
+				);
 				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
@@ -1591,6 +1830,7 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
 				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
@@ -1635,6 +1875,7 @@ mod tests {
 					c.get_flag_value_of("string").unwrap(),
 					FlagValue::String("testStr".into())
 				);
+				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
 				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
@@ -1671,6 +1912,7 @@ mod tests {
 					c.get_inputted_common_flag_value_of("cafter").unwrap(),
 					FlagValue::Bool(true)
 				);
+				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
 				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
@@ -1697,6 +1939,7 @@ mod tests {
 					])
 				);
 				assert_eq!(c.args, cnv_arg(vec!["test_arg", "ex_arg"]));
+				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
 				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
@@ -1752,6 +1995,7 @@ mod tests {
 					c.get_flag_value_of("string").unwrap(),
 					FlagValue::String("testStr".into())
 				);
+				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
 				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
@@ -1795,6 +2039,7 @@ mod tests {
 					c.get_flag_value_of("common").unwrap(),
 					FlagValue::Bool(true)
 				);
+				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
 				Ok(ActionResult::Done)
 			}))
 			.run(arg.clone());
@@ -1840,7 +2085,7 @@ mod tests {
 								];
 								//let expect_args = VecDeque::from(vec!["test".to_string()]);
 								let expect_args = VecDeque::new();
-								assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+								assert_eq!(c.current_path, String::from("current_path"));
 								assert_eq!(c.raw_args, raw_args);
 								assert_eq!(c.args, expect_args);
 								assert_eq!(
@@ -1857,6 +2102,10 @@ mod tests {
 								);
 								assert_eq!(c.get_flag_value_of("local").unwrap(), FlagValue::Bool(true));
 								assert_eq!(c.get_common_flag_value_of("local"), None);
+								assert_eq!(
+									c.routes,
+									Vector(Some(vec!["sub".to_string(), "leaf".to_string()]))
+								);
 								Ok(ActionResult::Done)
 							})
 							.local_flag(Flag::new_bool("local").short_alias('l')),
@@ -1895,7 +2144,7 @@ mod tests {
 		let mut args = cnv_arg(vec!["current_path", "--lbool", "sub", "--lsbefore", "leaf"]);
 
 		run_leaf(
-			root.clone(),
+			root.clone().name("root"),
 			sub.clone(),
 			leaf.clone(),
 			|c| {
@@ -1909,6 +2158,14 @@ mod tests {
 				assert_eq!(
 					c.get_flag_value_of("lsbefore").unwrap(),
 					FlagValue::String("".into())
+				);
+				assert_eq!(
+					c.routes,
+					Vector(Some(vec![
+						"root".to_string(),
+						"sub".to_owned(),
+						"leaf".to_owned()
+					]))
 				);
 				Ok(ActionResult::Done)
 			},
@@ -1940,6 +2197,10 @@ mod tests {
 					c.get_flag_value_of("lsbefore").unwrap(),
 					FlagValue::String("".into())
 				);
+				assert_eq!(
+					c.routes,
+					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
+				);
 				Ok(ActionResult::Done)
 			},
 			args.clone(),
@@ -1970,6 +2231,10 @@ mod tests {
 					FlagValue::String("".into())
 				);
 				assert_eq!(c.get_flag_value_of("cbool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.routes,
+					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
+				);
 				Ok(ActionResult::Done)
 			},
 			args.clone(),
@@ -2001,6 +2266,10 @@ mod tests {
 				assert_eq!(
 					c.get_flag_value_of("lsbefore").unwrap(),
 					FlagValue::String("before_arg".into())
+				);
+				assert_eq!(
+					c.routes,
+					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
 				Ok(ActionResult::Done)
 			},
@@ -2045,7 +2314,7 @@ mod tests {
 					"10.0".to_string(),
 				];
 				let expect_args = VecDeque::from(vec!["test".to_string()]);
-				assert_eq!(c.current_path, std::path::PathBuf::from("current_path"));
+				assert_eq!(c.current_path, String::from("current_path"));
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(

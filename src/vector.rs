@@ -51,6 +51,13 @@ impl<T> Vector<T> {
 		}
 	}
 
+	pub fn len(&self) -> usize {
+		match self {
+			Vector(None) => 0,
+			Vector(Some(inner)) => inner.len(),
+		}
+	}
+
 	pub fn append_vec(&mut self, mut other: Vec<T>) {
 		match self {
 			Vector(None) => {
@@ -164,6 +171,28 @@ impl From<Option<String>> for Vector<String> {
 		match t {
 			None => Vector(None),
 			Some(t) => Vector::with_first_elem(t),
+		}
+	}
+}
+
+impl<T> Vector<Vector<T>> {
+	pub fn sum_of_length(&self) -> usize {
+		match self {
+			Vector(None) => 0,
+			Vector(Some(list)) => list.iter().fold(0, |acc, item| acc + item.len()),
+		}
+	}
+
+	pub fn length_of_last(&self) -> usize {
+		match self {
+			Vector(None) => 0,
+			Vector(Some(list)) => {
+				if let Some(last) = list.last() {
+					last.len()
+				} else {
+					0
+				}
+			}
 		}
 	}
 }

@@ -18,14 +18,14 @@ combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可�
 - No dependencies(combu depends on only std library)
 - seahorse を参考にした Bool, String, Int, Float の型つきフラグ
 - コモンフラグ、ローカルフラグ形式
+- サブコマンド前のフラグの受付
 - 独自でパース等を行いたい場合に再利用できる構造体の設定
   - 似たような CLI フレームワークを作りたいときに使用できる部品を用意
-  - サブコマンド前のフラグの受付
 
 # TODO(or Features to be implemented)
 
 - カスタマイズできるヘルプ表示
-- デフォルトのヘルプ表示の実装(Now impl)
 - エラーハンドリングなどに関して、ある程度の自由度を持たせた設計
 - ドキュメントコメントの整備
 - テストの実装(command.rs のみ実装中)
+- コマンド構築にあたってのプリセット実装

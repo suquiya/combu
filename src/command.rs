@@ -206,7 +206,6 @@ impl Command {
 
 		//どちらのフラグもある
 		//TODO: 有効なフラグを整理して表示できるようにしたい(この下のかっこ部分を消しても支障のない状態にする)
-		//TODO: ショートエイリアス、ロングエイリアスが複数ある場合に備える
 
 		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the formaer flag's value): \n");
 		let head: String;
@@ -304,7 +303,6 @@ impl Command {
 		}
 		help += "\n";
 
-		//TODO: 長いコマンド文字列があってもいいようにスタイリングする
 		if let Vector(Some(sub_commands)) = &self.sub {
 			help += &format!(
 				"Sub Command{}: \n",

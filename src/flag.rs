@@ -148,6 +148,7 @@ impl FlagValue {
 		Some(flag_type) == self.get_type()
 	}
 
+	/// Gets bool FlagValue from string
 	pub fn get_bool_value_from_string(val: String) -> FlagValue {
 		match val.as_str() {
 			"true" => FlagValue::Bool(true),
@@ -156,6 +157,7 @@ impl FlagValue {
 		}
 	}
 
+	/// Gets string from self
 	pub fn get_string(self) -> String {
 		match self {
 			FlagValue::String(val) => val,

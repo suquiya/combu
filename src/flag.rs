@@ -1,25 +1,38 @@
 use crate::Vector;
 
+/// Struct for Flag setting's information
 #[derive(Clone, Debug)]
 pub struct Flag {
+	/// This flag's name
 	pub name: String,
+	/// This flag's description
 	pub description: String,
+	/// Vector of this flag's short alias
 	pub short_alias: Vector<char>,
+	/// Vector of this flag's long alias
 	pub long_alias: Vector<String>,
+	/// This flag's default value
 	pub default_value: FlagValue,
+	/// This flag's flag_type
 	pub flag_type: FlagType,
 }
 
+/// Enum shows FlagType
 #[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum FlagType {
+	/// Variant shows bool
 	Bool,
+	/// Variant shows string
 	String,
+	/// Variant shows int
 	Int,
+	/// Variant shows float
 	Float,
 	//Unknown,
 }
 
 impl FlagType {
+	/// Get this FlagType variant's name as str
 	pub fn name<'a>(&self) -> &'a str {
 		match self {
 			FlagType::Bool => "Bool",
@@ -29,6 +42,7 @@ impl FlagType {
 			//_ => "Unknown",
 		}
 	}
+	/// Get this FlagType variant's default value
 	pub fn default_flag_value(&self) -> FlagValue {
 		match self {
 			FlagType::Bool => FlagValue::Bool(bool::default()),
@@ -37,10 +51,15 @@ impl FlagType {
 			FlagType::Float => FlagValue::Float(f64::default()),
 		}
 	}
+
+	/// If val's type is &self, returns true
+	/// valが&selfが示すタイプと一致するか判定する
 	pub fn is_type_of(&self, val: &FlagValue) -> bool {
 		Some(self) == val.get_type()
 	}
 
+	/// Get FlagValue from val as &self type.
+	/// valを&self型とした場合のFlagValueを取得する
 	pub fn get_value_from_string(&self, val: String) -> FlagValue {
 		match self {
 			FlagType::Bool => FlagValue::get_bool_value_from_string(val),
@@ -56,6 +75,8 @@ impl FlagType {
 		}
 	}
 
+	/// Returns &self type value in case of no specified value.
+	/// フラグとして指定された値がなかった場合、&self型のフラグはどの値として扱うかを取得する
 	pub fn get_value_if_no_value(&self) -> FlagValue {
 		match &self {
 			FlagType::Bool => FlagValue::Bool(true),
@@ -63,10 +84,12 @@ impl FlagType {
 		}
 	}
 
+	/// Returns true if &self equals FlagType::String
 	pub fn is_string(&self) -> bool {
 		*self == FlagType::String
 	}
 
+	/// Returns true if &self equals FlagType::Bool
 	pub fn is_bool(&self) -> bool {
 		*self == FlagType::Bool
 	}
@@ -78,13 +101,20 @@ impl Default for FlagType {
 	}
 }
 
+/// Enum for storage FlagValue
 #[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum FlagValue {
+	/// Variant shows bool flag value
 	Bool(bool),
+	/// Variant shows string flag value
 	String(String),
+	/// Variant shows int flag value
 	Int(isize),
+	/// Variant for float flag value
 	Float(f64),
+	/// Variant for invalid flag value
 	Invalid(String),
+	/// Variant for no flag value
 	None,
 }
 
@@ -101,6 +131,8 @@ impl From<String> for FlagValue {
 }
 
 impl FlagValue {
+	/// Get &self's corresponding type of FlagType. Returns None if  &self is a invalid flag value.
+	/// FlagValueに対応するFlagTypeを取得する
 	pub fn get_type(&self) -> Option<&FlagType> {
 		match self {
 			FlagValue::Bool(_) => Some(&FlagType::Bool),
@@ -110,6 +142,8 @@ impl FlagValue {
 			_ => None,
 		}
 	}
+
+	/// Returns true if &self's FlagType is flag_type.
 	pub fn is_type(&self, flag_type: &FlagType) -> bool {
 		Some(flag_type) == self.get_type()
 	}
@@ -148,7 +182,8 @@ impl Default for Flag {
 }
 
 impl Flag {
-	pub fn new<T: Into<String>>(name: T, description: T, flag_type: FlagType) -> Flag {
+	/// Creates a new instance of Flag
+	pub fn new<T: Into<String>>(name: T, flag_type: FlagType, description: T) -> Flag {
 		let default_value: FlagValue = match flag_type {
 			FlagType::Bool => FlagValue::Bool(bool::default()),
 			FlagType::String => FlagValue::String(String::default()),
@@ -165,6 +200,7 @@ impl Flag {
 		}
 	}
 
+	/// Builds a new instance of Flags with all options.
 	pub fn build_new(
 		name: String,
 		description: String,
@@ -190,6 +226,7 @@ impl Flag {
 		}
 	}
 
+	/// Creates a new instance of Flag with name
 	pub fn with_name<T: Into<String>>(name: T) -> Self {
 		Flag {
 			name: name.into(),
@@ -201,6 +238,7 @@ impl Flag {
 		}
 	}
 
+	/// Creates a new instance of Flag with name and type
 	pub fn with_name_and_type<T: Into<String>>(name: T, flag_type: FlagType) -> Self {
 		let default_value = flag_type.default_flag_value();
 		Flag {
@@ -213,31 +251,39 @@ impl Flag {
 		}
 	}
 
+	/// Creates a new instance of bool Flag
 	pub fn new_bool<T: Into<String>>(name: T) -> Self {
 		Flag::with_name_and_type(name, FlagType::Bool)
 	}
 
+	/// Creates a new instance of string Flag
 	pub fn new_string<T: Into<String>>(name: T) -> Self {
 		Flag::with_name_and_type(name, FlagType::String)
 	}
 
+	/// Creates a new instance of int Flag
 	pub fn new_int<T: Into<String>>(name: T) -> Self {
 		Flag::with_name_and_type(name, FlagType::Int)
 	}
 
+	/// Creates a new instance of float Flag
 	pub fn new_float<T: Into<String>>(name: T) -> Self {
 		Flag::with_name_and_type(name, FlagType::Float)
 	}
 
+	/// Add an short alias to this Flag
 	pub fn short_alias<T: Into<char>>(mut self, a: T) -> Self {
 		self.short_alias.push(a.into());
 		self
 	}
+
+	/// Add an alias to this Flag
 	pub fn alias<T: Into<String>>(mut self, a: T) -> Self {
 		self.long_alias.push(a.into());
 		self
 	}
 
+	/// Set this flag's default value
 	pub fn default_value(mut self, default_value: FlagValue) -> Self {
 		if self.flag_type.is_type_of(&default_value) {
 			self.default_value = default_value
@@ -250,15 +296,18 @@ impl Flag {
 		self
 	}
 
+	/// Set this flag's description
 	pub fn description<T: Into<String>>(mut self, description: T) -> Self {
 		self.description = description.into();
 		self
 	}
 
+	/// Returns true if &self's name equals name of arg.
 	pub fn is(&self, name: &str) -> bool {
 		self.name == name
 	}
 
+	/// Returns true is alias equals one of short alias
 	pub fn is_short(&self, alias: &char) -> bool {
 		match &self.short_alias {
 			Vector(None) => false,
@@ -266,7 +315,8 @@ impl Flag {
 		}
 	}
 
-	pub fn any_short(&self, aliases: std::str::Chars) -> Vector<usize> {
+	/// Returns positions alias in aliases matches one of short alias.
+	pub fn any_short(&self, aliases: std::str::Chars<'_>) -> Vector<usize> {
 		match &self.short_alias {
 			Vector(None) => Vector(None),
 			_ => {
@@ -281,6 +331,7 @@ impl Flag {
 		}
 	}
 
+	/// Returns true is alias equals one of long alias
 	pub fn is_long(&self, alias: &str) -> bool {
 		match &self.long_alias {
 			Vector(None) => false,
@@ -288,20 +339,27 @@ impl Flag {
 		}
 	}
 
+	/// Get this Flag's name's clone
 	pub fn get_name_clone(&self) -> String {
 		self.name.clone()
 	}
 
+	/// Derives this Flag's value from arg
+	/// Alias of self.flag_type.get_value_from_string(arg)
 	#[inline]
 	pub fn derive_flag_value_from_string(&self, arg: String) -> FlagValue {
 		self.flag_type.get_value_from_string(arg)
 	}
 
+	/// Derives this Flag's value in case of no value
+	/// Alias of self.flag_type.get_value_if_no_value()
 	#[inline]
 	pub fn derive_flag_value_if_no_value(&self) -> FlagValue {
 		self.flag_type.get_value_if_no_value()
 	}
 
+	/// Add help for this flag to append_to. name_and_alias_min_width means min width of name and alias' field.  
+	/// Flagに対するヘルプをappend_toに追加する。nameとalias表示部分のずれをある程度吸収できるようにその部分の最小幅をname_and_alias_min_widthで指定する
 	pub fn help(&self, append_to: String, name_and_alias_min_width: usize) -> String {
 		let mut help = append_to;
 		let first_help_width = help.len();

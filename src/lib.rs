@@ -3,7 +3,7 @@
 #![warn(rust_2018_idioms)]
 #![warn(clippy::missing_docs_in_private_items)]
 
-//! combu is crate for creating cli
+/*! combu is crate for creating cli */
 
 /// action is a module about Action
 pub mod action;

@@ -1410,10 +1410,10 @@ mod tests {
 			})
 			.common_flag(Flag::new(
 				"common",
-				"sample common flag",
 				FlagType::default(),
+				"sample common flag",
 			))
-			.local_flag(Flag::new("local", "sample local flag", FlagType::default()));
+			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"));
 		root.single_run(arg.clone());
 
 		arg.push("--common=C_after".into());
@@ -1457,10 +1457,10 @@ mod tests {
 			})
 			.common_flag(Flag::new(
 				"common",
-				"sample common flag",
 				FlagType::default(),
+				"sample common flag",
 			))
-			.local_flag(Flag::new("local", "sample local flag", FlagType::default()));
+			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"));
 
 		root.single_run(arg);
 	}
@@ -1505,10 +1505,10 @@ mod tests {
 			})
 			.common_flag(Flag::new(
 				"common",
-				"sample common flag",
 				FlagType::default(),
+				"sample common flag",
 			))
-			.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
+			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.sub_command(Command::with_name("sub").action(|_| {
 				println!("sub");
 				Ok(ActionResult::Done)
@@ -2093,9 +2093,9 @@ mod tests {
 				println!("test_action: {:?}", c);
 				panic!("not sub");
 			})
-			.common_flag(Flag::new("common", "sample common flag", FlagType::String))
+			.common_flag(Flag::new("common", FlagType::String, "sample common flag"))
 			.common_flag(Flag::with_name("cshort").short_alias('c'))
-			.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
+			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.sub_command(
 				Command::with_name("sub")
 					.action(|c| {
@@ -2398,12 +2398,12 @@ mod tests {
 			})
 			.common_flag(Flag::new(
 				"common",
-				"sample common flag",
 				FlagType::default(),
+				"sample common flag",
 			))
 			.common_flag(Flag::with_name("commons").short_alias('c'))
 			.common_flag(Flag::new_string("yes").short_alias('y'))
-			.local_flag(Flag::new("local", "sample local flag", FlagType::default()))
+			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.sub_command(
 				Command::with_name("sub")
 					.action(|c| {

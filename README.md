@@ -9,6 +9,7 @@ combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可�
 
 - [cobra](https://github.com/spf13/cobra) (Golang package for making cli)
 - [seahorse](https://github.com/ksk001100/seahorse) ([A minimal CLI framework written in Rust](https://github.com/ksk001100/seahorse/blob/master/README.md))
+- [clap](https://github.com/clap-rs/clap)(Rust crate for making cli)
 
 # Features
 
@@ -25,6 +26,6 @@ combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可�
 # TODO(or Features to be implemented)
 
 - エラーハンドリングなどに関して、ある程度の自由度を持たせた設計
-- ドキュメントコメントの整備
-- テストの実装(command.rs のみ実装中)
+- ドキュメントコメントの整備(now implementing...)
+- テストの実装(`command.rs` のみ実装中)
 - コマンド構築にあたってのプリセット実装

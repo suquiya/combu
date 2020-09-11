@@ -128,6 +128,7 @@ impl Context {
 		self.common_flags.find_short_flag(short_alias)
 	}
 
+	/// Add(Push back) middle_arg to this context's parsing_args
 	pub fn push_back_to_parsing_args(&mut self, middle_arg: MiddleArg) {
 		match self.parsing_args {
 			None => {
@@ -141,6 +142,8 @@ impl Context {
 		}
 	}
 
+	/// Takes flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
+	/// contextからフラグ値を取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はデフォルト値のコピー）そのものを返す
 	pub fn take_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
 		match self.take_local_flag_value_of(flag_name) {
 			None => self.take_common_flag_value_of(flag_name),
@@ -148,6 +151,8 @@ impl Context {
 		}
 	}
 
+	/// Takes inputted flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
+	/// contextからフラグ値を（ユーザによりargに指定（入力）されている場合）取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はNoneを）そのものを返す
 	pub fn take_inputted_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
 		match self.take_inputted_local_flag_value_of(flag_name) {
 			None => self.take_inputted_common_flag_value_of(flag_name),
@@ -155,6 +160,8 @@ impl Context {
 		}
 	}
 
+	/// Takes flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
+	/// contextからローカルフラグの値を取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はデフォルト値のコピー）そのものを返す
 	pub fn take_local_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
 		match self.take_inputted_common_flag_value_of(flag_name) {
 			None => match self.local_flags.find(flag_name) {
@@ -165,6 +172,8 @@ impl Context {
 		}
 	}
 
+	/// Takes inputted flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
+	/// contextからコモンフラグの値を取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はデフォルト値のコピー）そのものを返す
 	pub fn take_common_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
 		match self.take_inputted_common_flag_value_of(flag_name) {
 			None => match self.common_flags.find(flag_name) {
@@ -175,6 +184,8 @@ impl Context {
 		}
 	}
 
+	/// Takes inputted local flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
+	/// contextからローカルフラグ値を（ユーザによりargに指定（入力）されている場合）取得する。Getとは違い、参照ではなくcontextに格納されているものそのもの（格納されていない場合はNone）を返す
 	pub fn take_inputted_local_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
 		match self.local_flags_values {
 			Vector(None) => None,
@@ -190,6 +201,8 @@ impl Context {
 		}
 	}
 
+	/// Takes inputted local flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
+	/// contextからコモンフラグ値を（ユーザによりargに指定（入力）されている場合）取得する。Getとは違い、参照ではなくcontextに格納されているものそのもの（格納されていない場合はNone）を返す
 	pub fn take_inputted_common_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
 		match self.common_flags_values {
 			Vector(None) => None,
@@ -205,6 +218,8 @@ impl Context {
 		}
 	}
 
+	/// Gets FlagValue's clone of the flag matches flag_name from context.
+	/// contextからフラグ値のcloneを取得する。フラグが設定されていない場合はNoneを返す
 	pub fn get_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_local_flag_value_of(flag_name) {
 			None => self.get_common_flag_value_of(flag_name),
@@ -212,6 +227,8 @@ impl Context {
 		}
 	}
 
+	/// Gets FlagValue's clone of the inputted flag matches flag_name from context.
+	/// contextからユーザから指定された場合のフラグ値のcloneを取得する。ユーザから入力されていない場合はNoneを返す。
 	pub fn get_inputted_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_inputted_local_flag_value_of(flag_name) {
 			None => self.get_inputted_common_flag_value_of(flag_name),
@@ -219,6 +236,8 @@ impl Context {
 		}
 	}
 
+	/// Gets FlagValue's clone of the common flag matches flag_name from context. If it is not defined, Returns None.
+	/// contextからユーザから指定された場合のコモンフラグ値のcloneを取得する。ユーザから入力されていないが定義されている場合はデフォルト値のクローンを返す。定義もされていない場合はNoneを返す。
 	pub fn get_common_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_inputted_common_flag_value_of(flag_name) {
 			None | Some(FlagValue::None) => match self.common_flags.find(flag_name) {
@@ -229,6 +248,8 @@ impl Context {
 		}
 	}
 
+	/// Gets FlagValue's clone of the common flag matches flag_name from context. If it is not defined, Returns None.
+	/// contextからユーザから指定された場合のローカルフラグ値のcloneを取得する。ユーザから入力されていないが定義されている場合はデフォルト値のクローンを返す。定義もされていない場合はNoneを返す。
 	pub fn get_local_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_inputted_local_flag_value_of(flag_name) {
 			None | Some(FlagValue::None) => match self.local_flags.find(flag_name) {
@@ -239,6 +260,8 @@ impl Context {
 		}
 	}
 
+	/// Gets the flag value of the local flag matches flag_name if inputted. If it is not defined or not inputted, returns None.
+	/// flag_nameとnameが一致するローカルフラグがあり、それがユーザからコマンド引数で指定されていた場合、その値のクローンをSomeで包んで返す。flag_nameと一致するnameをどのローカルフラグも持たないか、ユーザがコマンド引数で指定していない場合はNoneを返す。
 	pub fn get_inputted_local_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match &self.local_flags_values {
 			Vector(None) => None,
@@ -249,6 +272,8 @@ impl Context {
 		}
 	}
 
+	/// Gets the flag value of the common flag whose name matches flag_name. If it is not defined or not inputted, returns None.
+	/// flag_nameとnameが一致するコモンフラグがあり、それがユーザからコマンド引数で指定されていた場合、その値のクローンをSomeで包んで返す。flag_nameと一致するnameをどのコモンフラグも持たないか、ユーザがコマンド引数で指定していない場合はNoneを返す。
 	pub fn get_inputted_common_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match &self.common_flags_values {
 			Vector(None) => None,

@@ -197,6 +197,7 @@ impl<T> Vector<Vector<T>> {
 	}
 }
 
+/// Inner module of Vector. This module about Vector and Flag.
 pub mod flag {
 	use super::Vector;
 	use crate::Flag;

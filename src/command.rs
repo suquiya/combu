@@ -919,6 +919,8 @@ impl Command {
 		}
 	}
 
+	/// Assign context to sub command or command's own action.
+	/// コンテキストのargsを見てもサブコマンド行きかコマンドでそのまま処理すればいいか分からなかった時の処理用
 	pub fn assign_context(
 		&mut self,
 		mut c: Context,
@@ -926,10 +928,6 @@ impl Command {
 		mut inter_mediate_args: VecDeque<MiddleArg>,
 		last: MiddleArg,
 	) {
-		/*println!(
-			"\r\nassign_context:::\r\nContext: {:?}, \r\ninter_mediate_args: {:?},\r\n prefix: {:?}\r\n",
-			c, inter_mediate_args, last
-		);*/
 		let (next_non_flag, args, _inter_mediate_args, last) =
 			p.middle_parse(c.args, inter_mediate_args, last);
 		inter_mediate_args = _inter_mediate_args;
@@ -1081,6 +1079,8 @@ impl Command {
 		}
 	}
 
+	/// Assign subcomannd's run or command's own action with no context
+	/// コンテキストが生成されていないときに、run_from_args内で第一引数からサブコマンドかそうでないか分からなかった時に再帰処理を行って割り当てを行う関数
 	pub fn assign_run(
 		&mut self,
 		mut args: VecDeque<String>,
@@ -1352,6 +1352,9 @@ impl Command {
 		}
 	}
 
+	/// Handle action's result (Result<ActionResult, ActionError>).
+	///Implemented: show help / show help following show error
+	/// アクションの結果であるResult<ActionResult, ActionError>をハンドルする関数。現在はhelp表示もしくはエラーを表示したのちのヘルプ表示のみ
 	pub fn handle_action_result(&self, req: Result<ActionResult, ActionError>) {
 		match req {
 			Ok(ActionResult::ShowHelpRequest(c)) => {

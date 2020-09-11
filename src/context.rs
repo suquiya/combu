@@ -4,21 +4,37 @@ use crate::Vector;
 use crate::{Flag, FlagValue};
 use std::collections::VecDeque;
 
+/// Storage information for command execution.
+/// This storage raw args, non-flag args, flag values, and etc.
+/// コマンドからrunを通ってactionにたどり着くまでの情報およびパース結果を格納する構造体。
+/// フラグの値、たどってきたルートなどを保管。
 #[derive(Debug)]
 pub struct Context {
+	/// raw args
 	pub raw_args: Vec<String>,
+	/// non-flag args
 	pub args: VecDeque<String>,
+	/// common_flags of its own and inherited
 	pub common_flags: Vector<Vector<Flag>>,
+	/// routes of from root to end
 	pub routes: Vector<String>,
+	/// local flags
 	pub local_flags: Vector<Flag>,
+	/// current_path (String, not PathBuf)
 	pub current_path: String,
+	/// storage of result of parsing common flags values
 	pub common_flags_values: Vector<(String, FlagValue)>,
+	/// storage of result of parsing local flags values
 	pub local_flags_values: Vector<(String, FlagValue)>,
+	/// On parsing, storage of parsing args.
+	/// In edge(action), storage of error args
 	pub parsing_args: Option<VecDeque<MiddleArg>>,
+	/// error inforamation list of parsing
 	pub error_info_list: Vector<ErrorInfo>,
 }
 
 impl Context {
+	/// Creates a new instance of Context
 	pub fn new(
 		raw_args: Vec<String>,
 		args: VecDeque<String>,
@@ -40,6 +56,8 @@ impl Context {
 			error_info_list: Vector::default(),
 		}
 	}
+
+	/// Creates a new instance of Context with all options.
 	pub fn build_new(
 		raw_args: Vec<String>,
 		args: VecDeque<String>,
@@ -66,43 +84,45 @@ impl Context {
 		}
 	}
 
-	pub fn root<'a>() -> Option<Context> {
-		None
-	}
-
+	/// Set args
 	pub fn args(mut self, args: VecDeque<String>) -> Self {
 		self.args = args;
 		self
 	}
 
-	#[inline]
-	pub fn next_arg(&mut self) -> Option<String> {
-		self.args.pop_front()
-	}
-
+	/// Get current_path as &str
 	pub fn current(&self) -> &str {
 		&self.current_path
 	}
 
+	/// Change current_path's value
 	pub fn change_current(mut self, path: String) {
 		self.current_path = path;
 	}
 
+	/// Find long form of local flag matches name_or_alias
+	/// ロングフォームがname_or_aliasと一致するローカルフラグを検索してその結果を返す
 	#[inline]
 	pub fn find_local_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
 		self.local_flags.find_long_flag(name_or_alias)
 	}
 
+	/// Find short form of local flag matches name_or_alias
+	/// ショートフォームがname_or_aliasと一致するローカルフラグを検索してその結果を返す
 	#[inline]
 	pub fn find_local_short_flag(&self, short_alias: &char) -> Option<&Flag> {
 		self.local_flags.find_short_flag(short_alias)
 	}
 
+	/// Find long form of common flag matches name_or_alias
+	/// ロングフォームがname_or_aliasと一致するコモンフラグを検索してその結果を返す
 	#[inline]
 	pub fn find_common_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
 		self.common_flags.find_long_flag(name_or_alias)
 	}
 
+	/// Find short form of common flag matches name_or_alias
+	/// ショートフォームがname_or_aliasと一致するコモンフラグを検索してその結果を返す
 	#[inline]
 	pub fn find_common_short_flag(&self, short_alias: &char) -> Option<&Flag> {
 		self.common_flags.find_short_flag(short_alias)

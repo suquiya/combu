@@ -809,7 +809,7 @@ impl Parser {
 
 		loop {
 			//println!("{:?}", c);
-			match c.next_arg() {
+			match c.args.pop_front() {
 				None => {
 					break;
 				}

@@ -288,4 +288,4 @@ cargo run --example multi -- s 1 2 3 4 5
 
 # License
 
-This is licensed under [MIT License](https://github.com/suquiya/combu/blob/master/README.md)
+This is licensed under [MIT License](https://github.com/suquiya/combu/blob/master/LICENSE)

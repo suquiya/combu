@@ -168,6 +168,19 @@ impl FlagValue {
 			FlagValue::None => String::default(),
 		}
 	}
+
+	/// Returns true if self is FlagValue::Bool(true)
+	pub fn is_bool_true(&self) -> bool {
+		self == &FlagValue::Bool(true)
+	}
+
+	/// Returns inner bool value. If self is not FlagValue::Bool(val), panic will occur.
+	pub fn get_bool(&self) -> bool {
+		match self {
+			FlagValue::Bool(val) => *val,
+			_ => panic!("get_bool mut use against FlagValue::Bool"),
+		}
+	}
 }
 
 impl Default for Flag {

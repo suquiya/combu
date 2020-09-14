@@ -288,4 +288,4 @@ cargo run --example multi -- s 1 2 3 4 5
 
 # License
 
-This is licensed under [BSD 3-Clause "New" or "Revised" License](https://github.com/suquiya/combu/blob/master/LICENSE)
+This is licensed under [MIT LICENSE](https://github.com/suquiya/combu/blob/master/LICENSE)

@@ -10,7 +10,7 @@ combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可�
 
 [Here](https://docs.rs/combu/)
 
-# Usage
+# Installation to your project
 
 Combu exists on crates.io.
 To use combu,
@@ -25,7 +25,59 @@ Or (if you installed [cargo-edit](https://crates.io/crates/cargo-edit))
 cargo add combu
 ```
 
+# Quick Start
+
 # Example
+
+## Simple (command not has subcommand)
+
+### Code
+
+```rust
+use combu::{ActionError, ActionResult, Command, Context, Flag, FlagValue};
+use std::env;
+
+fn main() {
+	Command::with_name("single")
+		.action(act)
+		.local_flag(Flag::new_bool("reverse").short_alias('r'))
+		.single_run(env::args().collect::<Vec<String>>());
+}
+
+fn act(c: Context) -> Result<ActionResult, ActionError> {
+	let r = c.get_flag_value_of("reverse").unwrap();
+
+	println!(
+		"{:?}",
+		match r {
+			FlagValue::Bool(true) => {
+				c.args
+					.iter()
+					.rev()
+					.fold(String::new(), |concated, arg| concated + arg)
+			}
+			_ => {
+				c.args
+					.iter()
+					.fold(String::new(), |concated, arg| concated + arg)
+			}
+		}
+	);
+	Ok(ActionResult::Done)
+}
+
+```
+
+### Run
+
+```
+$ cargo run --example single a b c d e
+abcde
+$ cargo run --example single a b c d e -r
+edcba
+```
+
+## Sub command
 
 # Inspired
 

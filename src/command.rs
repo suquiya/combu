@@ -310,8 +310,8 @@ impl Command {
 						help
 					}
 				});
+			help += "\n";
 		}
-		help += "\n";
 
 		if let Vector(Some(sub_commands)) = &self.sub {
 			help += &format!(
@@ -406,8 +406,8 @@ impl Command {
 				"{0} <subcommand> --help for more information.",
 				location
 			);
+			help += "\n";
 		}
-		help += "\n";
 
 		return help;
 	}

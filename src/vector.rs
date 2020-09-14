@@ -1,3 +1,4 @@
+/// struct Vector is a new type pattern of Option<Vec<T>>
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
 pub struct Vector<T>(pub Option<Vec<T>>);
 
@@ -26,22 +27,27 @@ impl<T: Clone> From<&Vec<T>> for Vector<T> {
 }
 
 impl<T> Vector<T> {
+	/// Creates a new Vector.
 	pub fn new() -> Self {
 		Vector::default()
 	}
 
+	/// Creates a new Vetocr with inner.
 	pub fn with_inner(inner_vec: Vec<T>) -> Self {
 		Vector(Some(inner_vec))
 	}
 
+	/// Initialize this. After initialization, this inner Option<Vec<T>> becomes value.
 	pub fn init(&mut self, value: Option<Vec<T>>) {
 		*self = Vector(value);
 	}
 
+	/// Creates a new Vector with first element.
 	pub fn with_first_elem(elem: T) -> Self {
 		Vector(Some(vec![elem]))
 	}
 
+	/// Pushes push:T to this.
 	pub fn push(&mut self, push: T) {
 		match self {
 			Vector(None) => {
@@ -51,6 +57,7 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Returns this Vector.
 	pub fn len(&self) -> usize {
 		match self {
 			Vector(None) => 0,
@@ -58,6 +65,7 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Append other(Vec<T>) to this inner.
 	pub fn append_vec(&mut self, mut other: Vec<T>) {
 		match self {
 			Vector(None) => {
@@ -70,6 +78,7 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Insert T into this inner.
 	pub fn insert(&mut self, index: usize, insert: T) {
 		match self {
 			Vector(None) => *self = Vector(Some(vec![insert])),
@@ -77,6 +86,7 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Appends other to this.
 	pub fn append(&mut self, mut other: Vector<T>) {
 		match self {
 			Vector(None) => {
@@ -91,6 +101,7 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Returns true if this inner is None.
 	pub fn is_none(&self) -> bool {
 		match self {
 			Vector(None) => true,
@@ -98,6 +109,7 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Returns true if ths has inner vec(as Some(Vec<T>)).
 	pub fn has_inner_vec(&self) -> bool {
 		match self {
 			Vector(None) => false,
@@ -105,10 +117,12 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Sets None as inner.
 	pub fn set_none(&mut self) {
 		(*self) = Vector(None);
 	}
 
+	/// Clears inner vec. If inner is None, does nothing.
 	pub fn clear(&mut self) {
 		match self {
 			Vector(None) => {}
@@ -116,6 +130,7 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Gets inner.
 	pub fn inner(&self) -> Option<&Vec<T>> {
 		match &self {
 			Vector(None) => None,
@@ -123,16 +138,19 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Gets inner as mutable form.
 	pub fn inner_mut(&mut self) -> &mut Option<Vec<T>> {
 		let Vector(inner) = self;
 		inner
 	}
 
+	/// Takes inner and returns Vector that stores the inner.
 	pub fn take(&mut self) -> Vector<T> {
 		let Vector(inner) = self;
 		Vector(inner.take())
 	}
 
+	/// Gets inner reference.
 	pub fn inner_ref(self) -> Option<Vec<T>> {
 		match self {
 			Vector(None) => None,
@@ -140,6 +158,7 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Returns a reference to an element has index(usize).
 	pub fn get(&self, index: usize) -> Option<&T> {
 		match self {
 			Vector(None) => None,
@@ -176,6 +195,7 @@ impl From<Option<String>> for Vector<String> {
 }
 
 impl<T> Vector<Vector<T>> {
+	/// Returns the sum of inner Vectors' len.
 	pub fn sum_of_length(&self) -> usize {
 		match self {
 			Vector(None) => 0,
@@ -183,6 +203,7 @@ impl<T> Vector<Vector<T>> {
 		}
 	}
 
+	/// Returns the len fo last of inner Vectors.
 	pub fn length_of_last(&self) -> usize {
 		match self {
 			Vector(None) => 0,
@@ -202,17 +223,25 @@ pub mod flag {
 	use super::Vector;
 	use crate::Flag;
 
+	/// Enum for result of search long flag.
 	#[derive(Debug, Clone)]
 	pub enum LongFound<T> {
+		/// Shows hit inner long flag's name.
 		Name(T),
+		/// Shows hit inner long flag's long alias.
 		Long(T),
+		/// Shows hit no long flag.
 		None,
 	}
 
+	/// A trait for the ability to search flags for three forms.
 	pub trait FlagSearch {
+		/// Finds long frag.
 		fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag>;
-		fn find_short_flag(&self, name_or_alias: &char) -> Option<&Flag>;
-		fn find(&self, name_or_alias: &str) -> Option<&Flag>;
+		/// Finds short flag.
+		fn find_short_flag(&self, short_alias: &char) -> Option<&Flag>;
+		/// Finds flag that has specidied name.
+		fn find(&self, name: &str) -> Option<&Flag>;
 	}
 
 	impl FlagSearch for Vector<Flag> {

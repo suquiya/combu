@@ -1,6 +1,6 @@
 [package]
 name = "combu"
-version = "0.1.5"
+version = "0.1.6-alpha.0"
 authors = ["suquiya <22910980+suquiya@users.noreply.github.com>"]
 description = "Combu is yet another mini cli framework. (WIP, implementing)"
 edition = "2018"

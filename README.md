@@ -1,9 +1,31 @@
 # combu
 
-combu is a customizable cli framework.
+[combu](https://crates.io/crates/combu) is a customizable cli framework.
 The library name "combu" comes from command + 昆布(konbu, it means kelp in japanese).
+Crate.io's page is [here](https://crates.io/crates/combu).
 
 combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可能な CLI フレームワークです（一時クレートの名前が cmb だったこともありましたが、現在は combu です）。
+
+# Documentation
+
+[Here](https://docs.rs/combu/)
+
+# Usage
+
+Combu exists on crates.io.
+To use combu,
+
+```toml
+combu="0.1.2"
+```
+
+Or (if you installed [cargo-edit](https://crates.io/crates/cargo-edit))
+
+```bash
+cargo add combu
+```
+
+# Example
 
 # Inspired
 

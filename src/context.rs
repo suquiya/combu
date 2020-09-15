@@ -283,6 +283,11 @@ impl Context {
 			},
 		}
 	}
+
+	/// Returns true help flag exist in parsing result storaged in this.
+	pub fn is_help_flag_true(&self) -> bool {
+		Some(FlagValue::Bool(true)) == self.get_flag_value_of("help")
+	}
 }
 
 impl<'a> From<Vec<String>> for Context {

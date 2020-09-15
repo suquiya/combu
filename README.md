@@ -16,7 +16,7 @@ Combu exists on crates.io.
 To use combu,
 
 ```toml
-combu="0.1.2"
+combu="0.1.6"
 ```
 
 Or (if you installed [cargo-edit](https://crates.io/crates/cargo-edit))
@@ -278,11 +278,11 @@ cargo run --example multi -- s 1 2 3 4 5
 - 独自でパース等を行いたい場合に再利用できる構造体の設定
   - 似たような CLI フレームワークを作りたいときに使用できる部品を用意
 - カスタマイズできるヘルプ表示(一応)
+- エラーハンドリングなどに関して、ある程度の自由度を持たせた設計
 
 # TODO(or Features to be implemented)
 
-- エラーハンドリングなどに関して、ある程度の自由度を持たせた設計
-- ドキュメントコメントの整備(now implementing...)
+- ドキュメントコメントを分かりやすくする(いつになるかは無期限未定)
 - テストの実装(`command.rs` のみ実装中)
 - コマンド構築にあたってのプリセット実装
 

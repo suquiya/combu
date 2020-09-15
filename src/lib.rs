@@ -12,15 +12,20 @@ pub mod command;
 
 mod context;
 /// flag is a module about flag
-mod flag;
+pub mod flag;
 /// parser is a module about command args parser
 pub mod parser;
 /// vector is a moudle about vector
 pub mod vector;
 
+pub use action::ActionResult::Done;
+pub use action::ActionResult::ShowHelpRequest;
 pub use action::{Action, ActionError, ActionResult};
 pub use command::Command;
 pub use context::Context;
 pub use flag::{Flag, FlagType, FlagValue};
 pub use parser::Parser;
 pub use vector::Vector;
+
+/// Macros for combu
+pub mod macros;

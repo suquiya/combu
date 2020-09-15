@@ -1,22 +1,19 @@
-use combu::{ActionError, ActionResult, Command, Context, Flag, FlagValue};
+use combu::{action_result, check_help, done, preset_root};
+use combu::{Command, Context, Flag};
 use std::env;
 
 fn main() {
-	Command::new()
-		.name(env!("CARGO_PKG_NAME"))
-		.authors(env!("CARGO_PKG_AUTHORS"))
-		.version(env!("CARGO_PKG_VERSION"))
+	preset_root!(act)
 		.usage(env!("CARGO_PKG_NAME").to_string() + " [args]")
 		.common_flag(Flag::new_bool("help").short_alias('h'))
-		.action(act)
 		.run_from_args(env::args().collect())
 }
 
-fn act(c: Context) -> Result<ActionResult, ActionError> {
-	if Some(FlagValue::Bool(true)) == c.get_flag_value_of("help") {
-		return Ok(ActionResult::ShowHelpRequest(c));
-	}
+fn act(c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
+{
+	check_help!(c);
 	println!("Hello, combu - {:?}", c.args);
 
-	Ok(ActionResult::Done)
+	done!()
+	// Or use combu::Done and Ok(Done)
 }

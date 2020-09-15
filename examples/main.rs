@@ -1,11 +1,11 @@
 use combu::command::*;
-use combu::{ActionResult, Flag, FlagType};
+use combu::{Done, Flag, FlagType, ShowHelpRequest};
 
 fn main() {
 	let root = Command::new()
 		.action(|c| {
 			println!("root_action: {:?}", c);
-			Ok(ActionResult::ShowHelpRequest(c))
+			Ok(ShowHelpRequest(c))
 		})
 		.usage("root usage")
 		.desctiption("example main")
@@ -18,14 +18,14 @@ fn main() {
 				.desctiption("sub command")
 				.action(|c| {
 					println!("sub_action: {:?}", c);
-					Ok(ActionResult::ShowHelpRequest(c))
+					Ok(ShowHelpRequest(c))
 				})
 				.alias("s")
 				.common_flag(Flag::with_name("scommon"))
 				.sub_command(Command::with_name("leaf").action(|c| {
 					println!("leaf_action: {:?}", c);
 					println!("common: {:?}", c.get_flag_value_of("common"));
-					Ok(ActionResult::Done)
+					Ok(Done)
 				})),
 		)
 		.sub_command(Command::with_name("sub2").desctiption("sub command 2"))

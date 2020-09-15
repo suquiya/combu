@@ -51,6 +51,29 @@ impl Command {
 		Command::default()
 	}
 
+	/// Create new instance of Command with name,authors,version
+	pub fn with_base<T: Into<String>>(
+		name: T,
+		authors: T,
+		version: T,
+		description: T,
+		action: Option<Action>,
+	) -> Command {
+		Command::build_new(
+			name.into(),
+			action,
+			authors.into(),
+			String::default(),
+			Some(description.into()),
+			String::default(),
+			Vector::default(),
+			Vector::default(),
+			Vector::default(),
+			version.into(),
+			Vector::default(),
+		)
+	}
+
 	/// Create new instance of Command with name
 	pub fn with_name<T: Into<String>>(name: T) -> Command {
 		Command {
@@ -2425,3 +2448,7 @@ mod tests {
 		panic!("panic");
 	}*/
 }
+
+/*mod presets {
+	use super::{Command, Vector};
+}*/

@@ -428,3 +428,33 @@ impl From<&str> for Flag {
 		}
 	}
 }
+
+/// Flag's presets
+pub mod presets {
+	use super::Flag;
+
+	/// Creates preset help flag
+	pub fn help_flag() -> Flag {
+		Flag::new_bool("help").short_alias('h')
+	}
+
+	/// Creates preset version flag
+	pub fn version_flag() -> Flag {
+		Flag::new_bool("version").short_alias('v')
+	}
+
+	/// Creates preset authors flag
+	pub fn authors_flag() -> Flag {
+		Flag::new_bool("authors").short_alias('a')
+	}
+
+	/// Creates preset license flag
+	pub fn license_flag() -> Flag {
+		Flag::new_bool("license").short_alias('l')
+	}
+
+	/// Creates yes flag
+	pub fn yes_flag() -> Flag {
+		Flag::new_bool("yes").short_alias('y')
+	}
+}

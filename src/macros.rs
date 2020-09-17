@@ -108,15 +108,11 @@ macro_rules! preset_root {
 
 #[macro_export]
 /// Takes string inner.
-macro_rules! take_string {
-	($var:ident) => {{
-		let mut empty = String::new();
-		std::mem::swap(&mut $var, &mut empty);
-		empty
-		}};
+macro_rules! take {
+	($var:ident) => {
+		core::mem::take(&mut $var)
+	};
 	($var:expr) => {{
-		let mut empty = String::new();
-		std::mem::swap(&mut $var, &mut empty);
-		empty
+		core::mem::take(&mut $var)
 		}};
 }

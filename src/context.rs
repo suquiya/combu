@@ -4,6 +4,7 @@ use crate::Vector;
 use crate::{Flag, FlagValue};
 use std::collections::VecDeque;
 
+//TODO: 現在のauthor, version, licenseを抱えて下るようにする
 /// Storage information for command execution.
 /// This storage raw args, non-flag args, flag values, and etc.
 /// コマンドからrunを通ってactionにたどり着くまでの情報およびパース結果を格納する構造体。
@@ -31,6 +32,12 @@ pub struct Context {
 	pub parsing_args: Option<VecDeque<MiddleArg>>,
 	/// error inforamation list of parsing
 	pub error_info_list: Vector<ErrorInfo>,
+	/// version
+	pub now_cmd_version: String,
+	/// licence information
+	pub now_license: Option<(String, String)>,
+	/// copyright
+	pub now_copyright: String,
 }
 
 impl Context {
@@ -42,6 +49,9 @@ impl Context {
 		local_flags: Vector<Flag>,
 		routes: Vector<String>,
 		current_path: String,
+		now_cmd_version: String,
+		now_copyright: String,
+		now_license: Option<(String, String)>,
 	) -> Context {
 		Context {
 			raw_args,
@@ -54,6 +64,9 @@ impl Context {
 			local_flags_values: Vector::default(),
 			parsing_args: None,
 			error_info_list: Vector::default(),
+			now_cmd_version,
+			now_copyright,
+			now_license,
 		}
 	}
 
@@ -69,6 +82,9 @@ impl Context {
 		local_flags_values: Vector<(String, FlagValue)>,
 		parsing_args: Option<VecDeque<MiddleArg>>,
 		error_info_list: Vector<ErrorInfo>,
+		now_cmd_version: String,
+		now_copyright: String,
+		now_license: Option<(String, String)>,
 	) -> Context {
 		Context {
 			raw_args,
@@ -81,6 +97,9 @@ impl Context {
 			local_flags_values,
 			parsing_args,
 			error_info_list,
+			now_cmd_version,
+			now_copyright,
+			now_license,
 		}
 	}
 
@@ -284,9 +303,9 @@ impl Context {
 		}
 	}
 
-	/// Returns true help flag exist in parsing result storaged in this.
-	pub fn is_help_flag_true(&self) -> bool {
-		Some(FlagValue::Bool(true)) == self.get_flag_value_of("help")
+	/// Returns flag has specified name is true flag.
+	pub fn is_flag_true(&self, name: &str) -> bool {
+		Some(FlagValue::Bool(true)) == self.get_flag_value_of(name)
 	}
 }
 
@@ -308,6 +327,9 @@ impl<'a> From<Vec<String>> for Context {
 			local_flags_values: Vector::default(),
 			parsing_args: None,
 			error_info_list: Vector::default(),
+			now_cmd_version: String::default(),
+			now_license: Some((String::default(), String::default())),
+			now_copyright: String::default(),
 		}
 	}
 }

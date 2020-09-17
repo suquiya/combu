@@ -111,12 +111,12 @@ macro_rules! preset_root {
 macro_rules! take_string {
 	($var:ident) => {{
 		let mut empty = String::new();
-		std::mem::swap($var, &mut empty);
+		std::mem::swap(&mut $var, &mut empty);
 		empty
 		}};
 	($var:expr) => {{
 		let mut empty = String::new();
-		std::mem::swap($var, &mut empty);
+		std::mem::swap(&mut $var, &mut empty);
 		empty
 		}};
 }

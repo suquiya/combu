@@ -105,14 +105,3 @@ macro_rules! preset_root {
 			Some($action))
 	}
 }
-
-#[macro_export]
-/// Takes string inner.
-macro_rules! take {
-	($var:ident) => {
-		core::mem::take(&mut $var)
-	};
-	($var:expr) => {{
-		core::mem::take(&mut $var)
-		}};
-}

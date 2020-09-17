@@ -1,9 +1,10 @@
 use crate::{
 	action::{ActionError, ActionResult},
 	parser::MiddleArg,
-	take, Action, Context, Flag, FlagValue, Parser, Vector,
+	Action, Context, Flag, FlagValue, Parser, Vector,
 };
 
+use core::mem::take;
 use std::collections::VecDeque;
 ///The struct for command information store and command execution
 ///This can be root and edge
@@ -150,8 +151,8 @@ impl Command {
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
 						current_path,
-						take!(self.version),
-						take!(self.copyright),
+						take(&mut self.version),
+						take(&mut self.copyright),
 						self.license.take(),
 					));
 
@@ -166,8 +167,8 @@ impl Command {
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
 						current_path,
-						take!(self.version),
-						take!(self.copyright),
+						take(&mut self.version),
+						take(&mut self.copyright),
 						self.license.take(),
 					);
 					//println!("single_run_context: {:?}", context);
@@ -183,8 +184,8 @@ impl Command {
 					let current_path = args.pop_front().unwrap();
 					let c_flags = self.c_flags.take();
 					let l_flags = self.l_flags.take();
-					let version = take!(self.version);
-					let copyright = take!(self.copyright);
+					let version = take(&mut self.version);
+					let copyright = take(&mut self.copyright);
 					let license = self.license.take();
 					self.handle_action_result(Err(ActionError::new(
 						"No action is registered.",
@@ -621,8 +622,8 @@ impl Command {
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
 						current_path,
-						take!(self.version),
-						take!(self.copyright),
+						take(&mut self.version),
+						take(&mut self.copyright),
 						self.license.take(),
 					));
 					self.handle_action_result(req);
@@ -636,8 +637,8 @@ impl Command {
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
 						current_path,
-						take!(self.version),
-						take!(self.copyright),
+						take(&mut self.version),
+						take(&mut self.copyright),
 						self.license.take(),
 					);
 					self.show_help(&c);
@@ -673,8 +674,8 @@ impl Command {
 									Vector::default(),
 									Some(inter_mediate_args),
 									Vector::default(),
-									take!(self.version),
-									take!(self.copyright),
+									take(&mut self.version),
+									take(&mut self.copyright),
 									self.license.take(),
 								);
 								sub.run_with_context(context);
@@ -705,8 +706,8 @@ impl Command {
 											Vector::default(),
 											Some(inter_mediate_args),
 											Vector::default(),
-											take!(self.version),
-											take!(self.copyright),
+											take(&mut self.version),
+											take(&mut self.copyright),
 											self.license.take(),
 										);
 										let (mut context, non_flag_arg) =
@@ -744,8 +745,8 @@ impl Command {
 								inter_mediate_args
 							}),
 							Vector(None),
-							take!(self.version),
-							take!(self.copyright),
+							take(&mut self.version),
+							take(&mut self.copyright),
 							self.license.take(),
 						);
 						match self.action {
@@ -784,8 +785,8 @@ impl Command {
 									Vector(None),
 									Some(inter_mediate_args),
 									Vector(None),
-									take!(self.version),
-									take!(self.copyright),
+									take(&mut self.version),
+									take(&mut self.copyright),
 									self.license.take(),
 								);
 								sub.run_with_context(context);
@@ -812,8 +813,8 @@ impl Command {
 										Vector::default(),
 										Some(inter_mediate_args),
 										Vector::default(),
-										take!(self.version),
-										take!(self.copyright),
+										take(&mut self.version),
+										take(&mut self.copyright),
 										self.license.take(),
 									);
 									let (mut context, non_flag_args) =
@@ -847,8 +848,8 @@ impl Command {
 									Vector::default(),
 									self.derive_route_init_vector(),
 									current_path,
-									take!(self.version),
-									take!(self.copyright),
+									take(&mut self.version),
+									take(&mut self.copyright),
 									self.license.take(),
 								);
 								println!("{} does not have its own action.", self.name);
@@ -863,8 +864,8 @@ impl Command {
 									self.l_flags.take(),
 									self.derive_route_init_vector(),
 									current_path,
-									take!(self.version),
-									take!(self.copyright),
+									take(&mut self.version),
+									take(&mut self.copyright),
 									self.license.take(),
 								);
 								c = p.parse_args_until_end(c);
@@ -881,8 +882,8 @@ impl Command {
 								Vector(None),
 								self.derive_route_init_vector(),
 								current_path,
-								take!(self.version),
-								take!(self.copyright),
+								take(&mut self.version),
+								take(&mut self.copyright),
 								self.license.take(),
 							);
 							sub.run(c);
@@ -1182,8 +1183,8 @@ impl Command {
 								Vector::default(),
 								Some(inter_mediate_args),
 								Vector::default(),
-								take!(self.version),
-								take!(self.copyright),
+								take(&mut self.version),
+								take(&mut self.copyright),
 								self.license.take(),
 							))
 						}
@@ -1214,8 +1215,8 @@ impl Command {
 												Vector(None),
 												Some(inter_mediate_args),
 												Vector::default(),
-												take!(self.version),
-												take!(self.copyright),
+												take(&mut self.version),
+												take(&mut self.copyright),
 												self.license.take(),
 											);
 											let (mut context, non_flag_args) =
@@ -1248,8 +1249,8 @@ impl Command {
 						Vector::default(),
 						Some(inter_mediate_args),
 						Vector::default(),
-						take!(self.version),
-						take!(self.copyright),
+						take(&mut self.version),
+						take(&mut self.copyright),
 						self.license.take(),
 					);
 					let (mut c, non_flag_args) = p.parse_inter_mediate_args(context, false);
@@ -1292,8 +1293,8 @@ impl Command {
 								Vector::default(),
 								Some(inter_mediate_args),
 								Vector::default(),
-								take!(self.version),
-								take!(self.copyright),
+								take(&mut self.version),
+								take(&mut self.copyright),
 								self.license.take(),
 							))
 						}
@@ -1319,8 +1320,8 @@ impl Command {
 											Vector::default(),
 											Some(inter_mediate_args),
 											Vector::default(),
-											take!(self.version),
-											take!(self.copyright),
+											take(&mut self.version),
+											take(&mut self.copyright),
 											self.license.take(),
 										);
 										let (mut context, non_flag_args) =
@@ -1346,8 +1347,8 @@ impl Command {
 											Vector::default(),
 											Some(inter_mediate_args),
 											Vector::default(),
-											take!(self.version),
-											take!(self.copyright),
+											take(&mut self.version),
+											take(&mut self.copyright),
 											self.license.take(),
 										);
 										println!("no action registerd");
@@ -1374,8 +1375,8 @@ impl Command {
 						Vector::default(),
 						Some(inter_mediate_args),
 						Vector::default(),
-						take!(self.version),
-						take!(self.copyright),
+						take(&mut self.version),
+						take(&mut self.copyright),
 						self.license.take(),
 					)),
 					None => {
@@ -1392,8 +1393,8 @@ impl Command {
 							Vector::default(),
 							Some(inter_mediate_args),
 							Vector(None),
-							take!(self.version),
-							take!(self.copyright),
+							take(&mut self.version),
+							take(&mut self.copyright),
 							self.license.take(),
 						);
 
@@ -1428,8 +1429,8 @@ impl Command {
 					Vector::default(),
 					Some(inter_mediate_args),
 					Vector::default(),
-					take!(self.version),
-					take!(self.copyright),
+					take(&mut self.version),
+					take(&mut self.copyright),
 					self.license.take(),
 				);
 				match self.action {

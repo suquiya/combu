@@ -1,6 +1,7 @@
-use crate::vector::flag::{FlagSearch, LongFound};
-use crate::Context;
-use crate::FlagValue;
+use crate::{
+	vector::flag::{FlagSearch, LongFound},
+	Context, FlagValue,
+};
 use std::collections::VecDeque;
 
 /// Struct of information for parse

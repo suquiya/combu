@@ -18,9 +18,9 @@ pub mod parser;
 /// vector is a moudle about vector
 pub mod vector;
 
-pub use action::ActionResult::Done;
-pub use action::ActionResult::ShowHelpRequest;
-pub use action::{Action, ActionError, ActionResult};
+pub use action::{
+	Action, ActionError, ActionResult, ActionResult::Done, ActionResult::ShowHelpRequest,
+};
 pub use command::Command;
 pub use context::Context;
 pub use flag::{Flag, FlagType, FlagValue};

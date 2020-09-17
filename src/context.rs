@@ -1,7 +1,8 @@
-use crate::parser::{ErrorInfo, MiddleArg};
-use crate::vector::flag::{FlagSearch, LongFound};
-use crate::Vector;
-use crate::{Flag, FlagValue};
+use crate::{
+	parser::{ErrorInfo, MiddleArg},
+	vector::flag::{FlagSearch, LongFound},
+	Flag, FlagValue, Vector,
+};
 use std::collections::VecDeque;
 
 //TODO: 現在のauthor, version, licenseを抱えて下るようにする

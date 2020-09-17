@@ -1,6 +1,5 @@
 use crate::Context;
-use std::error::Error;
-use std::fmt;
+use std::{error::Error, fmt};
 
 ///Action is type for command action. It returns Result<ActionResult, ActionError>.
 pub type Action = fn(Context) -> Result<ActionResult, ActionError>;

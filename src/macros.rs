@@ -12,7 +12,10 @@ macro_rules! check_help {
 /// Checks context has version flag. If the context has help flag, show version and exit.
 macro_rules! check_version {
 	($context:ident) => {
-		if $context.is_flag_true("version") {}
+		if $context.is_flag_true("version") {
+			println!($context.version);
+			return $crate::done!();
+			}
 	};
 }
 
@@ -20,15 +23,37 @@ macro_rules! check_version {
 /// Checks context has authors flag. If the context has author flag, show authors and exit.
 macro_rules! check_authors {
 	($context:ident) => {
-		if $context.is_flag_true("authors") {}
+		if $context.is_flag_true("authors") {
+			println!($context.authors);
+			return $crate::done!();
+			}
+	};
+}
+
+#[macro_export]
+/// Gets license file path of crate from cargo.toml.
+macro_rules! crate_license_file {
+	() => {
+		env!("CARGO_PKG_LICENSE_NAME")
+	};
+}
+
+#[macro_export]
+/// Gets license information from cargo.toml.
+macro_rules! include_license_file {
+	() => {
+		include_str!($crate: crate_license_file)
 	};
 }
 
 #[macro_export]
 /// Checks context has license flag. If the context has license flag, show authors and exit.
 macro_rules! check_license {
-	($context:ident) => {
-		if $context.is_flag_true("license") {}
+	($context:ident, $license_func:expr) => {
+		if $context.is_flag_true("license") {
+			$license_func;
+			return done!();
+			}
 	};
 }
 
@@ -36,7 +61,9 @@ macro_rules! check_license {
 /// Checks context has license flag. If the context has license flag, show authors and exit.
 macro_rules! check_copyright {
 	($context:ident) => {
-		if $context.is_flag_true("copyright") {}
+		if $context.is_flag_true("copyright") {
+			println!("{}", $context.copyright);
+			}
 	};
 }
 
@@ -45,6 +72,8 @@ macro_rules! check_copyright {
 macro_rules! check_preset_flags {
 	($context:ident) => {
 		$crate::check_help($context)
+		$crate::check_authors($context)
+		$crate::check_version($context)
 	};
 }
 
@@ -65,22 +94,55 @@ macro_rules! done {
 }
 
 #[macro_export]
+/// Gets crate name from cargo.toml.
+macro_rules! crate_name {
+	() => {
+		env!("CARGO_PKG_NAME")
+	};
+}
+
+#[macro_export]
+/// Gets crate's authors from cargo.toml.
+macro_rules! crate_authors {
+	() => {
+		env!("CARGO_PKG_AUTHORS")
+	};
+}
+
+#[macro_export]
+///Gets crate's version from cargo.toml
+macro_rules! crate_version {
+	() => {
+		env!("CARGO_PKG_VERSION")
+	};
+}
+
+#[macro_export]
+///Gets crate's description from cargo.toml
+macro_rules! crate_description {
+	() => {
+		env!("CARGO_PKG_DESCRIPTION")
+	};
+}
+
+#[macro_export]
 /// Macro for convinience to create root command.
 macro_rules! root_from_crate {
 	() => {
 		Command::with_base(
-			env!("CARGO_PKG_NAME"),
-			env!("CARGO_PKG_AUTHORS"),
-			env!("CARGO_PKG_VERSION"),
-			env!("CARGO_PKG_DESCRIPTION"),
+			$crate::crate_name!(),
+			$crate::crate_authors!(),
+			$crate::crate_version!(),
+			$crate::crate_description!(),
 			None
 			),
 	};
-	($action:ident)=>{
-		Command::with_base(env!("CARGO_PKG_NAME"),
-			env!("CARGO_PKG_AUTHORS"),
-			env!("CARGO_PKG_VERSION"),
-			env!("CARGO_PKG_DESCRIPTION"),
+	($action:expr)=>{
+		Command::with_base(
+			$crate::crate_name!(),
+			$crate::crate_authors!(),
+			$crate::crate_version!(),
+			$crate::crate_description!(),
 			Some($action))
 	}
 }
@@ -90,18 +152,19 @@ macro_rules! root_from_crate {
 macro_rules! preset_root {
 	() => {
 		Command::with_base(
-			env!("CARGO_PKG_NAME"),
-			env!("CARGO_PKG_AUTHORS"),
-			env!("CARGO_PKG_VERSION"),
-			env!("CARGO_PKG_DESCRIPTION"),
+			$crate::crate_name!(),
+			$crate::crate_authors!(),
+			$crate::crate_version!(),
+			$crate::crate_description!(),
 			None
 			),
 	};
-	($action:ident)=>{
-		Command::with_base(env!("CARGO_PKG_NAME"),
-			env!("CARGO_PKG_AUTHORS"),
-			env!("CARGO_PKG_VERSION"),
-			env!("CARGO_PKG_DESCRIPTION"),
+	($action:expr)=>{
+		Command::with_base(
+			$crate::crate_name!(),
+			$crate::crate_authors!(),
+			$crate::crate_version!(),
+			$crate::crate_description!(),
 			Some($action))
 	}
 }

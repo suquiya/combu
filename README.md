@@ -4,7 +4,7 @@
 The library name "combu" comes from command + 昆布(konbu, it means kelp in japanese).
 Crate.io's page is [here](https://crates.io/crates/combu).
 
-combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可能な CLI フレームワークです（一時クレートの名前が cmb だったこともありましたが、現在は combu です）。
+combu(com + 昆布)は柔軟に CLI を組み上げられることを目標とした、カスタマイズ可能な CLI フレームワークです（一時クレートの名前が cmb だったこともありましたが、現在は combu です）。
 
 # Documentation
 
@@ -12,7 +12,7 @@ combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可�
 
 # Installation to your project
 
-Combu exists on crates.io.
+Combu exists on crates.io. So, you can use(or import) this crate like other crate that exists on crates.io.
 
 ## Edit cargo.toml manually
 

@@ -55,7 +55,7 @@ macro_rules! include_license_file {
 }
 
 #[macro_export]
-/// Checks context has license flag. If the context has license flag, show authors and exit.
+/// Checks context has license flag. If the context has license flag, exec $license_func and return done.
 macro_rules! check_license {
 	($context:ident, $license_func:expr) => {
 		if $context.is_flag_true("license") {
@@ -98,6 +98,14 @@ macro_rules! action_result {
 macro_rules! done {
 	() => {
 		Ok($crate::ActionResult::Done)
+	};
+}
+
+#[macro_export]
+/// Simple Alias of Ok(ShowHelpRequest)
+macro_rules! help_req {
+	($context:expr) => {
+		Ok($crate::ActionResult::ShowHelpRequest($context))
 	};
 }
 

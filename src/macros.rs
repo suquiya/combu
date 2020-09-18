@@ -39,6 +39,14 @@ macro_rules! crate_license_file {
 }
 
 #[macro_export]
+/// Gets license of crate from cargo.toml.
+macro_rules! crate_license {
+	() => {
+		env!("CARGO_PKG_LICENSE")
+	};
+}
+
+#[macro_export]
 /// Gets license information from cargo.toml.
 macro_rules! include_license_file {
 	() => {

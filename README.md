@@ -13,17 +13,26 @@ combu(com + 昆布)は柔軟な設計を目標とした、カスタマイズ可�
 # Installation to your project
 
 Combu exists on crates.io.
-To use combu,
+
+## Edit cargo.toml manually
+
+Add
 
 ```toml
 combu="0.1.6"
 ```
 
-Or (if you installed [cargo-edit](https://crates.io/crates/cargo-edit))
+to cargo.toml.
+
+## Use cargo-edit (Recommended)
+
+Exec
 
 ```bash
 cargo add combu
 ```
+
+under target project.
 
 # Quick Start
 

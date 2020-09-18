@@ -47,7 +47,7 @@ fn act(c: Context) -> Result<ActionResult, ActionError> {
 		return Ok(ActionResult::ShowHelpRequest(c));
 	}
 	println!("Hello, combu - {:?}", c.args);
-    Ok(ActionResult::Done)
+	Ok(ActionResult::Done)
 }
 ```
 

@@ -1,5 +1,6 @@
 use crate::{
-	action::{ActionError, ActionResult},
+	action::{ActionError, ActionErrorKind::NoActionRegistered, ActionResult},
+	done,
 	parser::MiddleArg,
 	Action, Context, Flag, FlagValue, Parser, Vector,
 };
@@ -37,6 +38,22 @@ pub struct Command {
 	pub sub: Vector<Command>,
 	///custom help fuction
 	pub help: Option<HelpFunc>,
+}
+
+// Helper inner macros
+macro_rules! run_result{
+	()=>{
+		Result<ActionResult,ActionError>
+	}
+}
+macro_rules! no_registered_error {
+	($context:expr) => {
+		Err(ActionError::without_related_error(
+			"no action is registered.".into(),
+			NoActionRegistered,
+			$context,
+			))
+	};
 }
 
 /// HelpFunc shows type alias for help function
@@ -139,7 +156,7 @@ impl Command {
 	}
 
 	/// Run command as single(do not have sub) command
-	pub fn single_run(&mut self, raw_args: Vec<String>) {
+	pub fn single_run(&mut self, raw_args: Vec<String>) -> run_result!() {
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
@@ -156,7 +173,7 @@ impl Command {
 						self.license.take(),
 					));
 
-					self.handle_action_result(req);
+					self.handle_action_result(req)
 				} else {
 					let mut args = VecDeque::from(raw_args.clone());
 					let current_path = args.pop_front().unwrap();
@@ -187,21 +204,17 @@ impl Command {
 					let version = take(&mut self.version);
 					let copyright = take(&mut self.copyright);
 					let license = self.license.take();
-					self.handle_action_result(Err(ActionError::new(
-						"No action is registered.",
-						Context::new(
-							raw_args,
-							args,
-							c_flags,
-							l_flags,
-							self.derive_route_init_vector(),
-							current_path,
-							version,
-							copyright,
-							license,
-						),
-						None,
-					)));
+					self.handle_action_result(no_registered_error!(Context::new(
+						raw_args,
+						args,
+						c_flags,
+						l_flags,
+						self.derive_route_init_vector(),
+						current_path,
+						version,
+						copyright,
+						license,
+					)))
 				}
 				_ => self.run(raw_args),
 			},
@@ -587,24 +600,24 @@ impl From<String> for Command {
 /// Trait for implementation Run function.
 pub trait Run<T> {
 	/// run function
-	fn run(&mut self, args: T);
+	fn run(&mut self, args: T) -> run_result!();
 }
 
 impl Run<Vec<String>> for Command {
-	fn run(&mut self, args: Vec<String>) {
-		self.run_from_args(args);
+	fn run(&mut self, args: Vec<String>) -> run_result!() {
+		self.run_from_args(args)
 	}
 }
 
 impl Run<Context> for Command {
-	fn run(&mut self, c: Context) {
-		self.run_with_context(c);
+	fn run(&mut self, c: Context) -> run_result!() {
+		self.run_with_context(c)
 	}
 }
 
 impl Command {
 	/// Run commands with raw_args
-	pub fn run_from_args(&mut self, raw_args: Vec<String>) {
+	pub fn run_from_args(&mut self, raw_args: Vec<String>) -> run_result!() {
 		if self.sub.is_none() {
 			return self.single_run(raw_args);
 		}
@@ -626,10 +639,9 @@ impl Command {
 						take(&mut self.copyright),
 						self.license.take(),
 					));
-					self.handle_action_result(req);
+					self.handle_action_result(req)
 				}
 				None => {
-					println!("no action is registered.");
 					let c = Context::new(
 						raw_args,
 						args,
@@ -641,8 +653,7 @@ impl Command {
 						take(&mut self.copyright),
 						self.license.take(),
 					);
-					self.show_help(&c);
-					//println!("args: {:?}", raw_args);
+					self.handle_action_result()
 				}
 			}
 		} else {
@@ -852,8 +863,7 @@ impl Command {
 									take(&mut self.copyright),
 									self.license.take(),
 								);
-								println!("{} does not have its own action.", self.name);
-								self.show_help(&c);
+								no_registered_error!()
 							}
 							Some(action) => {
 								args.push_front(arg);
@@ -869,7 +879,7 @@ impl Command {
 									self.license.take(),
 								);
 								c = p.parse_args_until_end(c);
-								self.handle_action_result(action(c));
+								self.handle_action_result(action(c))
 							}
 						},
 						Some(mut sub) => {
@@ -886,7 +896,7 @@ impl Command {
 								take(&mut self.copyright),
 								self.license.take(),
 							);
-							sub.run(c);
+							sub.run(c)
 						}
 					}
 				}
@@ -899,7 +909,7 @@ impl Command {
 	}
 
 	/// Run command with context
-	pub fn run_with_context(&mut self, mut context: Context) {
+	pub fn run_with_context(&mut self, mut context: Context) -> run_result!() {
 		if self.sub.is_none() {
 			context.local_flags = self.l_flags.take();
 			context.common_flags.push(self.c_flags.take());
@@ -912,10 +922,8 @@ impl Command {
 			context = p.parse_args_until_end(context);
 			context.routes.push(self.name.clone());
 			match self.action {
-				Some(action) => {
-					self.handle_action_result(action(context));
-				}
-				None => println!("no action is registered"),
+				Some(action) => self.handle_action_result(action(context)),
+				None => self.handle_action_result(no_registered_error!(context)),
 			}
 		} else {
 			//サブコマンドと一致するかを捜査
@@ -924,11 +932,11 @@ impl Command {
 			match context.args.pop_front() {
 				Some(long_flag) if p.long_flag(&long_flag) => {
 					let last = p.long_middle(long_flag);
-					self.assign_context(context, p, VecDeque::new(), last);
+					self.assign_context(context, p, VecDeque::new(), last)
 				}
 				Some(short_flag) if p.flag(&short_flag) => {
 					let last = p.short_middle(short_flag);
-					self.assign_context(context, p, VecDeque::new(), last);
+					self.assign_context(context, p, VecDeque::new(), last)
 				}
 				Some(arg) => {
 					//println!("arg sub-sub: {}", &arg);
@@ -979,7 +987,7 @@ impl Command {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
 							}
-							self.handle_action_result(action(context));
+							self.handle_action_result(action(context))
 						}
 						None => {
 							println!("no action is registered.");
@@ -998,7 +1006,7 @@ impl Command {
 		p: Parser,
 		mut inter_mediate_args: VecDeque<MiddleArg>,
 		last: MiddleArg,
-	) {
+	) -> run_result!() {
 		let (next_non_flag, args, _inter_mediate_args, last) =
 			p.middle_parse(c.args, inter_mediate_args, last);
 		inter_mediate_args = _inter_mediate_args;
@@ -1159,7 +1167,7 @@ impl Command {
 		p: Parser,
 		raw_args: Vec<String>,
 		current_path: String,
-	) {
+	) -> run_result!() {
 		//println!("assign_run");
 		match args.pop_front() {
 			Some(long_flag) if p.long_flag(&long_flag) => {
@@ -1453,21 +1461,23 @@ impl Command {
 	/// Handle action's result (Result<ActionResult, ActionError>).
 	///Implemented: show help / show help following show error
 	/// アクションの結果であるResult<ActionResult, ActionError>をハンドルする関数。現在はhelp表示もしくはエラーを表示したのちのヘルプ表示のみ
-	pub fn handle_action_result(&self, req: Result<ActionResult, ActionError>) {
+	pub fn handle_action_result(&self, req: Result<ActionResult, ActionError>) -> run_result!() {
 		match req {
 			Ok(ActionResult::ShowHelpRequest(c)) => {
 				self.show_help(&c);
-				//Ok(ActionResult::Done)
+				done!()
 			}
-			Err(err) => {
+			Err(mut err) => {
 				println!("error: {}", err);
 				self.show_help(&err.context);
-				//Err(err)
+				err.printed = false;
+				Err(err)
 			}
 			_ => {
 				//Doneの場合 - 何もしない
+				done!()
 			}
-		};
+		}
 	}
 }
 #[cfg(test)]
@@ -1504,7 +1514,7 @@ mod tests {
 				assert_eq!(c.args, expect_args);
 				assert_eq!(c.current_path, String::from("current_path"));
 				assert_eq!(c.routes, Vector(None));
-				return Ok(ActionResult::Done);
+				return done!();
 			})
 			.common_flag(Flag::new(
 				"common",
@@ -1551,7 +1561,7 @@ mod tests {
 					("common".to_string(), FlagValue::String("C_after".into())),
 				]);
 				assert_eq!(c.common_flags_values, c_flag_values);
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.common_flag(Flag::new(
 				"common",
@@ -1599,7 +1609,7 @@ mod tests {
 					Some(FlagValue::String(String::default()))
 				);
 				assert_eq!(c.routes, Vector(None));
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.common_flag(Flag::new(
 				"common",
@@ -1609,7 +1619,7 @@ mod tests {
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.sub_command(Command::with_name("sub").action(|_| {
 				println!("sub");
-				Ok(ActionResult::Done)
+				done!()
 			}));
 		root.run(arg);
 	}
@@ -1642,7 +1652,7 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(c.routes, Vector(None));
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.run(arg.clone());
 		arg[2] = "--common".into();
@@ -1663,7 +1673,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.run(arg.clone());
 
@@ -1686,7 +1696,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.run(arg.clone());
 
@@ -1733,7 +1743,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.run(arg.clone());
 
@@ -1775,7 +1785,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.run(arg.clone());
 
@@ -1818,7 +1828,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.run(arg.clone());
 		arg[4] = "-a".into();
@@ -1860,7 +1870,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.run(arg.clone());
 	}
@@ -1914,7 +1924,7 @@ mod tests {
 				assert_eq!(c.get_flag_value_of("commons"), None);
 				assert_eq!(c.get_flag_value_of("local"), None);
 				assert_eq!(c.routes, "sub".to_owned().into());
-				Ok(ActionResult::Done)
+				done!()
 			}))
 			.run(arg.clone());
 
@@ -1938,7 +1948,7 @@ mod tests {
 					c.routes,
 					Vector(Some(vec!["root".to_string(), "sub".to_string()]))
 				);
-				Ok(ActionResult::Done)
+				done!()
 			}))
 			.run(arg.clone());
 
@@ -1960,7 +1970,7 @@ mod tests {
 				);
 				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				Ok(ActionResult::Done)
+				done!()
 			}))
 			.run(arg.clone());
 
@@ -2005,7 +2015,7 @@ mod tests {
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				Ok(ActionResult::Done)
+				done!()
 			}))
 			.run(arg.clone());
 
@@ -2042,7 +2052,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				Ok(ActionResult::Done)
+				done!()
 			}))
 			.run(arg.clone());
 		println!("\r\n\r\nサブサブコマンドが存在する場合の判別系その2\r\n");
@@ -2069,7 +2079,7 @@ mod tests {
 				);
 				assert_eq!(c.args, cnv_arg(vec!["test_arg", "ex_arg"]));
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				Ok(ActionResult::Done)
+				done!()
 			}))
 			.run(arg.clone());
 		arg[6] = "--string=testStr".into();
@@ -2125,7 +2135,7 @@ mod tests {
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				Ok(ActionResult::Done)
+				done!()
 			}))
 			.run(arg.clone());
 
@@ -2169,7 +2179,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				Ok(ActionResult::Done)
+				done!()
 			}))
 			.run(arg.clone());
 	}
@@ -2235,7 +2245,7 @@ mod tests {
 									c.routes,
 									Vector(Some(vec!["sub".to_string(), "leaf".to_string()]))
 								);
-								Ok(ActionResult::Done)
+								done!()
 							})
 							.local_flag(Flag::new_bool("local").short_alias('l')),
 					),
@@ -2267,7 +2277,7 @@ mod tests {
 			|root, sub, leaf, action, args| {
 				root
 					.sub_command(sub.sub_command(leaf.action(action)))
-					.run(args)
+					.run(args);
 			};
 
 		let mut args = cnv_arg(vec!["current_path", "--lbool", "sub", "--lsbefore", "leaf"]);
@@ -2296,7 +2306,7 @@ mod tests {
 						"leaf".to_owned()
 					]))
 				);
-				Ok(ActionResult::Done)
+				done!()
 			},
 			args.clone(),
 		);
@@ -2330,7 +2340,7 @@ mod tests {
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
-				Ok(ActionResult::Done)
+				done!()
 			},
 			args.clone(),
 		);
@@ -2364,7 +2374,7 @@ mod tests {
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
-				Ok(ActionResult::Done)
+				done!()
 			},
 			args.clone(),
 		);
@@ -2400,7 +2410,7 @@ mod tests {
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
-				Ok(ActionResult::Done)
+				done!()
 			},
 			args.clone(),
 		);
@@ -2484,7 +2494,7 @@ mod tests {
 						ParseError::NoExistLong
 					)])
 				);
-				Ok(ActionResult::Done)
+				done!()
 			})
 			.local_flag(Flag::new_bool("yes").short_alias('y'))
 			.local_flag(Flag::new_int("int").short_alias('i'))

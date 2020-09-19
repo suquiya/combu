@@ -28,4 +28,4 @@ pub use parser::Parser;
 pub use vector::Vector;
 
 /// Macros for combu
-pub mod macros;
+pub mod pub_macros;

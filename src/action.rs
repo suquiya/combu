@@ -16,41 +16,65 @@ pub enum ActionResult {
 /// ActionError stores error of action.
 #[derive(Debug)]
 pub struct ActionError {
-	/// ActionError's description
-	pub description: String,
+	/// ActionError's value
+	pub value: String,
+	/// ActionError's Kind
+	pub kind: ActionErrorKind,
 	/// context is a field for storing context that error occured
 	pub context: Context,
 	/// If there is an error which is not ActionError, related_error can stores it.
 	pub related_error: Option<Box<dyn Error>>,
+	/// printed flag. If this is true, this shows error is not printed yet.
+	pub printed: bool,
+}
+
+#[derive(Debug)]
+pub enum ActionErrorKind {
+	Custom,
+	NoActionRegistered,
+	None,
 }
 
 impl ActionError {
 	/// Creates new ActionError.
 	pub fn new<T: Into<String>>(
-		description: T,
+		value: T,
+		kind: ActionErrorKind,
 		context: Context,
 		related_error: Option<Box<dyn Error>>,
 	) -> Self {
 		Self {
-			description: description.into(),
+			value: value.into(),
+			kind,
 			context,
 			related_error,
+			printed: false,
 		}
 	}
 
 	/// Creates new ActionError without (not action) error info.
-	pub fn without_related_error(description: String, context: Context) -> Self {
+	pub fn without_related_error(value: String, kind: ActionErrorKind, context: Context) -> Self {
 		Self {
-			description,
+			value,
+			kind,
 			context,
 			related_error: None,
+			printed: false,
 		}
 	}
 }
 
 impl fmt::Display for ActionError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "{}", self.description)
+		let description = match self.kind {
+			ActionErrorKind::Custom => self.value,
+			ActionErrorKind::NoActionRegistered => {
+				format!("{} does not have its own action.", self.value)
+			}
+			ActionErrorKind::None => String::from("no action error"),
+		};
+
+		write!(f, "{}", description)
 	}
 }
 

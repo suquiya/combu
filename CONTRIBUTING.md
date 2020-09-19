@@ -37,6 +37,7 @@ This project is licensed under [MIT license](./LICENSE)
 
 <br>
 <br>
+
 ## Information about construct for this CONTRIBUTING.md
 
 This CONTRIBUTING.md is based on [seahorse's CONTRIBUTING.md](https://github.com/ksk001100/seahorse/blob/master/.github/CONTRIBUTING.md) - Copyright (c) 2019 Keisuke Toyota - licensed [MIT License](https://github.com/ksk001100/seahorse/blob/master/LICENSE).

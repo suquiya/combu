@@ -19,7 +19,7 @@ Combu exists on crates.io. So, you can use(or import) this crate like other crat
 Add
 
 ```toml
-combu="0.1.6"
+combu="0.1.7"
 ```
 
 to cargo.toml.

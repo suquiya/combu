@@ -30,5 +30,5 @@ fn main() {
 		)
 		.sub_command(Command::with_name("sub2").desctiption("sub command 2"))
 		.sub_command(Command::with_name("t").desctiption("test desc"));
-	root.run_with_auto_arg_collect();
+	let _ = root.run_with_auto_arg_collect();
 }

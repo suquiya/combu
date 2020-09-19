@@ -28,10 +28,14 @@ pub struct ActionError {
 	pub printed: bool,
 }
 
+/// ErrorKind of ActionError
 #[derive(Debug)]
 pub enum ActionErrorKind {
+	/// Shows a custom(Normal) error
 	Custom,
+	/// Shows that no action is registered to specidied command.
 	NoActionRegistered,
+	/// Shows None.
 	None,
 }
 
@@ -66,15 +70,15 @@ impl ActionError {
 
 impl fmt::Display for ActionError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
-		let description = match self.kind {
-			ActionErrorKind::Custom => self.value,
+		match self.kind {
+			ActionErrorKind::Custom => write!(f, "{}", self.value),
 			ActionErrorKind::NoActionRegistered => {
-				format!("{} does not have its own action.", self.value)
+				write!(f, "{} does not have its own action.", self.value)
 			}
-			ActionErrorKind::None => String::from("no action error"),
-		};
+			ActionErrorKind::None => write!(f, "no action error"),
+		}
 
-		write!(f, "{}", description)
+		//write!(f, "{}", description)
 	}
 }
 

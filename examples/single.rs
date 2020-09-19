@@ -2,7 +2,7 @@ use combu::{ActionError, ActionResult, Command, Context, Flag, FlagValue};
 use std::env;
 
 fn main() {
-	Command::with_name("single")
+	let _ = Command::with_name("single")
 		.action(act)
 		.local_flag(Flag::new_bool("reverse").short_alias('r'))
 		.single_run(env::args().collect::<Vec<String>>());

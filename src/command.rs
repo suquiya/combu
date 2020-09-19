@@ -146,13 +146,13 @@ impl Command {
 	}
 
 	/// Run command with collecting args automatically
-	pub fn run_with_auto_arg_collect(mut self) {
+	pub fn run_with_auto_arg_collect(mut self) -> run_result!() {
 		//let args: Vec<String> = std::env::args().collect();
 		//self.run(args);
 		match &self.sub {
 			Vector(None) => self.single_run(std::env::args().collect::<Vec<String>>()),
 			_ => self.run(std::env::args().collect::<Vec<String>>()),
-		};
+		}
 	}
 
 	/// Run command as single(do not have sub) command
@@ -653,7 +653,7 @@ impl Command {
 						take(&mut self.copyright),
 						self.license.take(),
 					);
-					self.handle_action_result()
+					self.handle_action_result(no_registered_error!(c))
 				}
 			}
 		} else {
@@ -689,7 +689,7 @@ impl Command {
 									take(&mut self.copyright),
 									self.license.take(),
 								);
-								sub.run_with_context(context);
+								sub.run_with_context(context)
 							}
 							None =>
 							//サブコマンドが合致しなかった場合
@@ -700,7 +700,7 @@ impl Command {
 										//検出したものがフラグの値になる可能性がある場合のハンドリング
 										inter_mediate_args.push_back(last_flag_arg);
 										inter_mediate_args.push_back(MiddleArg::Normal(arg));
-										self.assign_run(args, inter_mediate_args, p, raw_args, current_path);
+										self.assign_run(args, inter_mediate_args, p, raw_args, current_path)
 									}
 									_ => {
 										//フラグになる可能性がない場合
@@ -728,13 +728,8 @@ impl Command {
 											context.args = non_flag_arg;
 										}
 										match self.action {
-											Some(action) => {
-												self.handle_action_result(action(context));
-											}
-											None => {
-												println!("no action registered");
-												self.show_help(&context);
-											}
+											Some(action) => self.handle_action_result(action(context)),
+											None => self.handle_action_result(no_registered_error!(context)),
 										}
 									}
 								}
@@ -747,7 +742,7 @@ impl Command {
 							args,
 							vec![self.c_flags.take()].into(),
 							self.l_flags.take(),
-							current_path.into(),
+							current_path,
 							self.derive_route_init_vector(),
 							Vector(None),
 							Vector(None),
@@ -760,21 +755,16 @@ impl Command {
 							take(&mut self.copyright),
 							self.license.take(),
 						);
+						let (mut context, args) = p.parse_inter_mediate_args(context, true);
+						if let Some(mut args) = args {
+							context.args = {
+								args.append(&mut context.args);
+								args
+							}
+						}
 						match self.action {
-							Some(action) => {
-								let (mut context, args) = p.parse_inter_mediate_args(context, true);
-								if let Some(mut args) = args {
-									context.args = {
-										args.append(&mut context.args);
-										args
-									}
-								}
-								self.handle_action_result(action(context));
-							}
-							_ => {
-								println!("no action registered");
-								self.show_help(&context);
-							}
+							Some(action) => self.handle_action_result(action(context)),
+							_ => self.handle_action_result(no_registered_error!(context)),
 						}
 					}
 				}
@@ -800,14 +790,14 @@ impl Command {
 									take(&mut self.copyright),
 									self.license.take(),
 								);
-								sub.run_with_context(context);
+								sub.run_with_context(context)
 							}
 							None => match &last_flag_arg {
 								MiddleArg::LongFlag(_, FlagValue::None)
 								| MiddleArg::ShortFlag(_, FlagValue::None) => {
 									inter_mediate_args.push_back(last_flag_arg);
 									inter_mediate_args.push_back(MiddleArg::Normal(arg));
-									self.assign_run(args, inter_mediate_args, p, raw_args, current_path);
+									self.assign_run(args, inter_mediate_args, p, raw_args, current_path)
 								}
 								_ => {
 									//フラグの値になる可能性がない場合（サブコマンドではなくself実行）
@@ -835,16 +825,42 @@ impl Command {
 										context.args = non_flag_args;
 									}
 									match self.action {
-										Some(action) => {
-											self.handle_action_result(action(context));
-										}
-										None => {
-											println!("no action registered");
-											self.show_help(&context);
-										}
+										Some(action) => self.handle_action_result(action(context)),
+										None => self.handle_action_result(no_registered_error!(context)),
 									}
 								}
 							},
+						}
+					} else {
+						//Noneの場合、そのままself.actionに放り込む
+						let context = Context::build_new(
+							raw_args,
+							args,
+							vec![self.c_flags.take()].into(),
+							self.l_flags.take(),
+							current_path,
+							self.derive_route_init_vector(),
+							Vector(None),
+							Vector(None),
+							Some({
+								inter_mediate_args.push_back(last_flag_arg);
+								inter_mediate_args
+							}),
+							Vector(None),
+							take(&mut self.version),
+							take(&mut self.copyright),
+							self.license.take(),
+						);
+						let (mut context, args) = p.parse_inter_mediate_args(context, true);
+						if let Some(mut args) = args {
+							context.args = {
+								args.append(&mut context.args);
+								args
+							}
+						}
+						match self.action {
+							Some(action) => self.handle_action_result(action(context)),
+							_ => self.handle_action_result(no_registered_error!(context)),
 						}
 					}
 				}
@@ -863,7 +879,7 @@ impl Command {
 									take(&mut self.copyright),
 									self.license.take(),
 								);
-								no_registered_error!()
+								self.handle_action_result(no_registered_error!(c))
 							}
 							Some(action) => {
 								args.push_front(arg);
@@ -944,16 +960,13 @@ impl Command {
 						Some(mut sub) => {
 							//println!("{}", &sub.name);
 							context.common_flags.push(self.c_flags.take());
-							sub.run(context);
+							sub.run(context)
 						}
 						None => {
 							context.common_flags.push(self.c_flags.take());
 							context.local_flags = self.l_flags.take();
 							match self.action {
-								None => {
-									println!("{} does not have its own action.", &self.name);
-									self.show_help(&context);
-								}
+								None => self.handle_action_result(no_registered_error!(context)),
 								Some(action) => {
 									let c = match p.parse_inter_mediate_args(context, true) {
 										(mut context, None) => {
@@ -969,7 +982,7 @@ impl Command {
 											context
 										}
 									};
-									self.handle_action_result(action(c));
+									self.handle_action_result(action(c))
 								}
 							}
 						}
@@ -990,7 +1003,15 @@ impl Command {
 							self.handle_action_result(action(context))
 						}
 						None => {
-							println!("no action is registered.");
+							context.local_flags = self.l_flags.take();
+							context.common_flags.push(self.c_flags.take());
+
+							let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
+							if let Some(mut non_flag_args) = non_flag_args {
+								non_flag_args.append(&mut context.args);
+								context.args = non_flag_args;
+							}
+							self.handle_action_result(no_registered_error!(context))
 						}
 					}
 				}
@@ -1024,7 +1045,7 @@ impl Command {
 						c.parsing_args = Some(inter_mediate_args);
 					}
 
-					sub.run(c);
+					sub.run(c)
 				}
 				None => match &last {
 					MiddleArg::LongFlag(_, FlagValue::None)
@@ -1035,11 +1056,11 @@ impl Command {
 						match c.args.pop_front() {
 							Some(long_flag) if p.long_flag(&long_flag) => {
 								let last = p.long_middle(long_flag);
-								self.assign_context(c, p, inter_mediate_args, last);
+								self.assign_context(c, p, inter_mediate_args, last)
 							}
 							Some(short_flag) if p.flag(&short_flag) => {
 								let last = p.short_middle(short_flag);
-								self.assign_context(c, p, inter_mediate_args, last);
+								self.assign_context(c, p, inter_mediate_args, last)
 							}
 							Some(arg) => match self.take_sub(&arg) {
 								Some(mut sub) => {
@@ -1050,109 +1071,95 @@ impl Command {
 									} else {
 										c.parsing_args = Some(inter_mediate_args);
 									}
-									sub.run(c);
+									sub.run(c)
 								}
-								None => match self.action {
-									Some(action) => {
-										if let Some(mut parsing_args) = c.parsing_args {
-											parsing_args.append(&mut inter_mediate_args);
-											c.parsing_args = Some(parsing_args);
-										} else {
-											c.parsing_args = Some(inter_mediate_args);
-										}
-
-										c.local_flags = self.l_flags.take();
-										c.common_flags.push(self.c_flags.take());
-										let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
-										c = p.parse_args_until_end(c);
-										c.args.push_front(arg);
-										if let Some(mut non_flag_args) = non_flag_args {
-											non_flag_args.append(&mut c.args);
-											c.args = non_flag_args;
-										}
-
-										self.handle_action_result(action(c));
-									}
-									None => {
-										println!("no action registered.");
-										let err = ActionError::new("No action registered", c, None);
-										self.handle_action_result(Err(err));
-									}
-								},
-							},
-							None => match self.action {
-								Some(action) => {
-									//println!("inter_mediate_args: {:?}\r\n", inter_mediate_args);
+								None => {
 									if let Some(mut parsing_args) = c.parsing_args {
 										parsing_args.append(&mut inter_mediate_args);
 										c.parsing_args = Some(parsing_args);
 									} else {
 										c.parsing_args = Some(inter_mediate_args);
 									}
-									c.local_flags = self.l_flags.take();
-									let (mut c, args) = p.parse_inter_mediate_args(c, false);
 
-									if let Some(mut args) = args {
-										args.append(&mut c.args);
-										c.args = args;
+									c.local_flags = self.l_flags.take();
+									c.common_flags.push(self.c_flags.take());
+									let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
+									c = p.parse_args_until_end(c);
+									c.args.push_front(arg);
+									if let Some(mut non_flag_args) = non_flag_args {
+										non_flag_args.append(&mut c.args);
+										c.args = non_flag_args;
 									}
-									self.handle_action_result(action(c));
-								}
-								None => {
-									println!("no action registered.");
+									match self.action {
+										Some(action) => self.handle_action_result(action(c)),
+										None => self.handle_action_result(no_registered_error!(c)),
+									}
 								}
 							},
+							None => {
+								if let Some(mut parsing_args) = c.parsing_args {
+									parsing_args.append(&mut inter_mediate_args);
+									c.parsing_args = Some(parsing_args);
+								} else {
+									c.parsing_args = Some(inter_mediate_args);
+								}
+								c.local_flags = self.l_flags.take();
+								let (mut c, args) = p.parse_inter_mediate_args(c, false);
+
+								if let Some(mut args) = args {
+									args.append(&mut c.args);
+									c.args = args;
+								}
+								match self.action {
+									Some(action) => self.handle_action_result(action(c)),
+									None => self.handle_action_result(no_registered_error!(c)),
+								}
+							}
 						}
 					}
-					_ => match self.action {
-						Some(action) => {
-							inter_mediate_args.push_back(last);
-							c.args = args;
-							c.common_flags.push(self.c_flags.take());
-							c.local_flags = self.l_flags.take();
-							if let Some(mut parsing_args) = c.parsing_args {
-								parsing_args.append(&mut inter_mediate_args);
-								c.parsing_args = Some(parsing_args);
-							}
-							let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
-							c = p.parse_args_until_end(c);
-							c.args.push_front(arg);
-							if let Some(mut non_flag_args) = non_flag_args {
-								non_flag_args.append(&mut c.args);
-								c.args = non_flag_args;
-							}
-							self.handle_action_result(action(c));
-						}
-						None => {
-							println!("no action is registered.");
-						}
-					},
-				},
-			},
-			None => {
-				match self.action {
-					Some(action) => {
+					_ => {
 						inter_mediate_args.push_back(last);
 						c.args = args;
+						c.common_flags.push(self.c_flags.take());
+						c.local_flags = self.l_flags.take();
 						if let Some(mut parsing_args) = c.parsing_args {
 							parsing_args.append(&mut inter_mediate_args);
 							c.parsing_args = Some(parsing_args);
-						} else {
-							c.parsing_args = Some(inter_mediate_args);
 						}
-						c.common_flags.push(self.c_flags.take());
-						c.local_flags = self.l_flags.take();
 						let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
-						//println!("after_parse_ima:{:?}", c);
-						if let Some(non_flag_args) = non_flag_args {
-							//non_flag_args.append(&mut c.args);
+						c = p.parse_args_until_end(c);
+						c.args.push_front(arg);
+						if let Some(mut non_flag_args) = non_flag_args {
+							non_flag_args.append(&mut c.args);
 							c.args = non_flag_args;
 						}
-						self.handle_action_result(action(c));
+						match self.action {
+							Some(action) => self.handle_action_result(action(c)),
+							None => self.handle_action_result(no_registered_error!(c)),
+						}
 					}
-					None => {
-						println!("no action is registered.");
-					}
+				},
+			},
+			None => {
+				inter_mediate_args.push_back(last);
+				c.args = args;
+				if let Some(mut parsing_args) = c.parsing_args {
+					parsing_args.append(&mut inter_mediate_args);
+					c.parsing_args = Some(parsing_args);
+				} else {
+					c.parsing_args = Some(inter_mediate_args);
+				}
+				c.common_flags.push(self.c_flags.take());
+				c.local_flags = self.l_flags.take();
+				let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
+				//println!("after_parse_ima:{:?}", c);
+				if let Some(non_flag_args) = non_flag_args {
+					//non_flag_args.append(&mut c.args);
+					c.args = non_flag_args;
+				}
+				match self.action {
+					Some(action) => self.handle_action_result(action(c)),
+					None => no_registered_error!(c),
 				}
 			}
 		}
@@ -1204,39 +1211,36 @@ impl Command {
 									//フラグの値になりうる場合
 									inter_mediate_args.push_back(last_flag_arg);
 									inter_mediate_args.push_back(MiddleArg::Normal(arg));
-									self.assign_run(args, inter_mediate_args, p, raw_args, current_path);
+									self.assign_run(args, inter_mediate_args, p, raw_args, current_path)
 								}
 								_ => {
 									inter_mediate_args.push_back(last_flag_arg);
 									inter_mediate_args.push_back(MiddleArg::Normal(arg));
-									match self.action {
-										Some(action) => {
-											//
-											let context = Context::build_new(
-												raw_args,
-												args,
-												self.c_flags.take().into(),
-												self.l_flags.take(),
-												current_path.into(),
-												self.derive_route_init_vector(),
-												Vector(None),
-												Vector(None),
-												Some(inter_mediate_args),
-												Vector::default(),
-												take(&mut self.version),
-												take(&mut self.copyright),
-												self.license.take(),
-											);
-											let (mut context, non_flag_args) =
-												p.parse_inter_mediate_args(context, false);
-											if let Some(mut non_flag_args) = non_flag_args {
-												non_flag_args.append(&mut context.args);
-												context.args = non_flag_args;
-											}
 
-											self.handle_action_result(action(context));
-										}
-										_ => println!("no action is registered."),
+									let context = Context::build_new(
+										raw_args,
+										args,
+										self.c_flags.take().into(),
+										self.l_flags.take(),
+										current_path.into(),
+										self.derive_route_init_vector(),
+										Vector(None),
+										Vector(None),
+										Some(inter_mediate_args),
+										Vector::default(),
+										take(&mut self.version),
+										take(&mut self.copyright),
+										self.license.take(),
+									);
+									let (mut context, non_flag_args) =
+										p.parse_inter_mediate_args(context, false);
+									if let Some(mut non_flag_args) = non_flag_args {
+										non_flag_args.append(&mut context.args);
+										context.args = non_flag_args;
+									}
+									match self.action {
+										Some(action) => self.handle_action_result(action(context)),
+										_ => self.handle_action_result(no_registered_error!(context)),
 									}
 								}
 							}
@@ -1251,7 +1255,7 @@ impl Command {
 						args,
 						self.c_flags.take().into(),
 						self.l_flags.take(),
-						current_path.into(),
+						current_path,
 						self.derive_route_init_vector(),
 						Vector::default(),
 						Vector::default(),
@@ -1268,13 +1272,8 @@ impl Command {
 					}
 
 					match self.action {
-						Some(action) => {
-							self.handle_action_result(action(c));
-						}
-						None => {
-							println!("no action is registered");
-							self.show_help(&c);
-						}
+						Some(action) => self.handle_action_result(action(c)),
+						None => self.handle_action_result(no_registered_error!(c)),
 					}
 				}
 			}
@@ -1311,61 +1310,85 @@ impl Command {
 							| MiddleArg::ShortFlag(_, FlagValue::None) => {
 								inter_mediate_args.push_back(last_flag_arg);
 								inter_mediate_args.push_back(MiddleArg::Normal(arg));
-								self.assign_run(args, inter_mediate_args, p, raw_args, current_path);
+								self.assign_run(args, inter_mediate_args, p, raw_args, current_path)
 							}
-							_ => {
-								match self.action {
-									Some(action) => {
-										inter_mediate_args.push_back(last_flag_arg);
-										let context = Context::build_new(
-											raw_args,
-											args,
-											self.c_flags.take().into(),
-											self.l_flags.take(),
-											current_path.into(),
-											self.derive_route_init_vector(),
-											Vector::default(),
-											Vector::default(),
-											Some(inter_mediate_args),
-											Vector::default(),
-											take(&mut self.version),
-											take(&mut self.copyright),
-											self.license.take(),
-										);
-										let (mut context, non_flag_args) =
-											p.parse_inter_mediate_args(context, false);
-										context = p.parse_args_until_end(context);
-										if let Some(mut non_flag_args) = non_flag_args {
-											non_flag_args.push_back(arg);
-											non_flag_args.append(&mut context.args);
-											context.args = non_flag_args;
-										}
-										self.handle_action_result(action(context));
+							_ => match self.action {
+								Some(action) => {
+									inter_mediate_args.push_back(last_flag_arg);
+									let context = Context::build_new(
+										raw_args,
+										args,
+										self.c_flags.take().into(),
+										self.l_flags.take(),
+										current_path.into(),
+										self.derive_route_init_vector(),
+										Vector::default(),
+										Vector::default(),
+										Some(inter_mediate_args),
+										Vector::default(),
+										take(&mut self.version),
+										take(&mut self.copyright),
+										self.license.take(),
+									);
+									let (mut context, non_flag_args) =
+										p.parse_inter_mediate_args(context, false);
+									context = p.parse_args_until_end(context);
+									if let Some(mut non_flag_args) = non_flag_args {
+										non_flag_args.push_back(arg);
+										non_flag_args.append(&mut context.args);
+										context.args = non_flag_args;
 									}
-									_ => {
-										inter_mediate_args.push_back(last_flag_arg);
-										let context = Context::build_new(
-											raw_args,
-											args,
-											self.c_flags.take().into(),
-											self.l_flags.take(),
-											current_path.into(),
-											self.derive_route_init_vector(),
-											Vector::default(),
-											Vector::default(),
-											Some(inter_mediate_args),
-											Vector::default(),
-											take(&mut self.version),
-											take(&mut self.copyright),
-											self.license.take(),
-										);
-										println!("no action registerd");
-										self.show_help(&context);
-									}
-								};
-							}
+									self.handle_action_result(action(context))
+								}
+								_ => {
+									inter_mediate_args.push_back(last_flag_arg);
+									let context = Context::build_new(
+										raw_args,
+										args,
+										self.c_flags.take().into(),
+										self.l_flags.take(),
+										current_path.into(),
+										self.derive_route_init_vector(),
+										Vector::default(),
+										Vector::default(),
+										Some(inter_mediate_args),
+										Vector::default(),
+										take(&mut self.version),
+										take(&mut self.copyright),
+										self.license.take(),
+									);
+
+									self.handle_action_result(no_registered_error!(context))
+								}
+							},
 						},
 					}
+				} else {
+					inter_mediate_args.push_back(last_flag_arg);
+					let context = Context::build_new(
+						raw_args,
+						args,
+						self.c_flags.take().into(),
+						self.l_flags.take(),
+						current_path,
+						self.derive_route_init_vector(),
+						Vector::default(),
+						Vector::default(),
+						Some(inter_mediate_args),
+						Vector::default(),
+						take(&mut self.version),
+						take(&mut self.copyright),
+						self.license.take(),
+					);
+					let (mut c, non_flag_args) = p.parse_inter_mediate_args(context, false);
+					if let Some(mut non_flag_args) = non_flag_args {
+						non_flag_args.append(&mut c.args);
+						c.args = non_flag_args;
+					}
+					self.handle_action_result(match self.action {
+						Some(action) => action(c),
+						None => no_registered_error!(c),
+					})
 				}
 			}
 			Some(arg) => {
@@ -1413,13 +1436,8 @@ impl Command {
 							c.args = non_flag_args;
 						}
 						match self.action {
-							Some(action) => {
-								self.handle_action_result(action(c));
-							}
-							None => {
-								println!("no action is registered");
-								self.show_help(&c);
-							}
+							Some(action) => self.handle_action_result(action(c)),
+							None => self.handle_action_result(no_registered_error!(c)),
 						}
 					}
 				}
@@ -1441,18 +1459,14 @@ impl Command {
 					take(&mut self.copyright),
 					self.license.take(),
 				);
+
+				let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, false);
+				if let Some(non_flag_args) = non_flag_args {
+					context.args = non_flag_args;
+				}
 				match self.action {
-					Some(action) => {
-						let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, false);
-						if let Some(non_flag_args) = non_flag_args {
-							context.args = non_flag_args;
-						}
-						self.handle_action_result(action(context));
-					}
-					None => {
-						println!("no action is registered.");
-						self.show_help(&context);
-					}
+					Some(action) => self.handle_action_result(action(context)),
+					None => self.handle_action_result(no_registered_error!(context)),
 				}
 			}
 		}
@@ -1522,7 +1536,7 @@ mod tests {
 				"sample common flag",
 			))
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"));
-		root.single_run(arg.clone());
+		let _ = root.single_run(arg.clone());
 
 		arg.push("--common=C_after".into());
 		arg.push("--local=L_after".into());
@@ -1570,7 +1584,7 @@ mod tests {
 			))
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"));
 
-		root.single_run(arg);
+		let _ = root.single_run(arg);
 	}
 
 	#[test]
@@ -1621,7 +1635,7 @@ mod tests {
 				println!("sub");
 				done!()
 			}));
-		root.run(arg);
+		let _ = root.run(arg);
 	}
 
 	fn base_root() -> Command {
@@ -1639,7 +1653,7 @@ mod tests {
 			panic!("not root, in sub: {:?}", c);
 		}));
 		arg.push("test".into());
-		root
+		let _ = root
 			.clone()
 			.action(|c| {
 				println!("c: {:?}", c);
@@ -1656,7 +1670,7 @@ mod tests {
 			})
 			.run(arg.clone());
 		arg[2] = "--common".into();
-		root
+		let _ = root
 			.clone()
 			.action(|c| {
 				println!("c: {:?}", c);
@@ -1678,7 +1692,7 @@ mod tests {
 			.run(arg.clone());
 
 		arg.push("test".into());
-		root
+		let _ = root
 			.clone()
 			.action(|c| {
 				println!("{:?}", c);
@@ -1705,7 +1719,7 @@ mod tests {
 		arg.push("ex_arg".into());
 		arg.push("--lafter".into());
 		arg.push("--cafter".into());
-		root
+		let _ = root
 			.clone()
 			.action(|c| {
 				println!("{:?}", c);
@@ -1751,7 +1765,7 @@ mod tests {
 		arg.remove(4);
 		arg.insert(5, "arg".into());
 
-		root
+		let _ = root
 			.clone()
 			.action(|c| {
 				println!("{:?}", c);
@@ -1790,7 +1804,7 @@ mod tests {
 			.run(arg.clone());
 
 		arg.push("ex_arg".into());
-		root
+		let _ = root
 			.clone()
 			.action(|c| {
 				println!("{:?}", c);
@@ -1832,7 +1846,7 @@ mod tests {
 			})
 			.run(arg.clone());
 		arg[4] = "-a".into();
-		root
+		let _ = root
 			.clone()
 			.action(|c| {
 				println!("{:?}", c);
@@ -1900,7 +1914,7 @@ mod tests {
 				println!("Context: {:?}", c);
 				panic!("in leaf")
 			}));
-		root
+		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
 				println!("{:?}", c);
@@ -1930,7 +1944,7 @@ mod tests {
 
 		println!("サブコマンド前フラグのテスト");
 		arg = cnv_arg(vec!["current_path", "--cstr=test", "-b", "sub"]);
-		root
+		let _ = root
 			.clone()
 			.name("root")
 			.sub_command(sub.clone().action(|c| {
@@ -1956,7 +1970,7 @@ mod tests {
 		arg[1] = "--cstr".into();
 		arg.insert(2, "test".into());
 
-		root
+		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
 				println!("c:{:?}", c);
@@ -1981,7 +1995,7 @@ mod tests {
 		arg.push("test_arg2".into());
 		arg.push("--string".into());
 		arg.push("testStr".into());
-		root
+		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
 				println!("{:?}", c);
@@ -2021,7 +2035,7 @@ mod tests {
 
 		println!("\r\n\r\nサブサブコマンドが存在する場合の判別系\r\n");
 		arg.remove(4);
-		root
+		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
 				println!("c: {:?}", c);
@@ -2059,7 +2073,7 @@ mod tests {
 		arg.push("ex_arg".into());
 		arg[5] = "test_arg".to_owned();
 
-		root
+		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
 				println!("C: {:?}", c);
@@ -2089,7 +2103,7 @@ mod tests {
 		arg.push("--common".into());
 		arg.push("test_arg4".into());
 
-		root
+		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
 				println!("C: {:?}", c);
@@ -2144,7 +2158,7 @@ mod tests {
 		arg.remove(7);
 		arg.remove(5);
 
-		root
+		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
 				println!("c: {:?}", c);
@@ -2250,7 +2264,7 @@ mod tests {
 							.local_flag(Flag::new_bool("local").short_alias('l')),
 					),
 			);
-		root.run(arg.clone());
+		let _ = root.run(arg.clone());
 	}
 
 	#[test]
@@ -2275,7 +2289,7 @@ mod tests {
 
 		let run_leaf: fn(Command, Command, Command, Action, Vec<String>) -> () =
 			|root, sub, leaf, action, args| {
-				root
+				let _ = root
 					.sub_command(sub.sub_command(leaf.action(action)))
 					.run(args);
 			};
@@ -2520,7 +2534,7 @@ mod tests {
 					})
 					.sub_command(leaf),
 			);
-		root.run(arg.clone());
+		let _ = root.run(arg.clone());
 	}
 
 	/*#[test]

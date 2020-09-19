@@ -3,10 +3,10 @@ use combu::{Command, Context, Flag};
 use std::env;
 
 fn main() {
-	preset_root!(act)
+	let _r = preset_root!(act)
 		.usage(env!("CARGO_PKG_NAME").to_string() + " [args]")
 		.common_flag(Flag::new_bool("help").short_alias('h'))
-		.run_from_args(env::args().collect())
+		.run_from_args(env::args().collect());
 }
 
 fn act(c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>

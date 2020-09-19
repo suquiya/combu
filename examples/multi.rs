@@ -1,7 +1,7 @@
 use combu::{ActionError, ActionResult, Command, Context, Flag, FlagValue};
 
 fn main() {
-	root_command().run_from_args(std::env::args().collect())
+	let _ = root_command().run_from_args(std::env::args().collect());
 }
 
 fn root_command() -> Command {

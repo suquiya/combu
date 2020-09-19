@@ -126,7 +126,7 @@ macro_rules! crate_authors {
 }
 
 #[macro_export]
-///Gets crate's version from cargo.toml
+///Gets crate's version from cargo.toml.
 macro_rules! crate_version {
 	() => {
 		env!("CARGO_PKG_VERSION")
@@ -134,7 +134,7 @@ macro_rules! crate_version {
 }
 
 #[macro_export]
-///Gets crate's description from cargo.toml
+///Gets crate's description from cargo.toml.
 macro_rules! crate_description {
 	() => {
 		env!("CARGO_PKG_DESCRIPTION")

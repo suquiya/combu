@@ -57,6 +57,10 @@ macro_rules! no_registered_error {
 }
 macro_rules! sub_check {
 	($context:expr, $sub:expr, $self:expr) => {
+		if !$sub.authors.is_empty() {
+			$self.authors = take(&mut $context.now_cmd_authors);
+			$context.now_cmd_authors = take(&mut $sub.authors);
+			}
 		if !$sub.version.is_empty() {
 			$self.version = take(&mut $context.now_cmd_version);
 			$context.now_cmd_version = take(&mut $sub.version);

@@ -55,6 +55,38 @@ macro_rules! no_registered_error {
 			))
 	};
 }
+macro_rules! sub_check {
+	($context:expr, $sub:expr, $self:expr) => {
+		if !$sub.version.is_empty() {
+			$self.version = take(&mut $context.now_cmd_version);
+			$context.now_cmd_version = take(&mut $sub.version);
+			}
+		if !$sub.copyright.is_empty() {
+			$self.copyright = take(&mut $context.now_copyright);
+			$context.now_copyright = take(&mut $self.copyright);
+			}
+		if $sub.license.is_some() {
+			$self.license = $context.now_license.take();
+			$context.now_license = $sub.license.take();
+			}
+	};
+}
+macro_rules! check_sub_field {
+	($sub: expr,$field:ident, $self:expr) => {
+		if $sub.$field.is_empty() {
+			take(&mut $self.$field)
+		} else {
+			take(&mut $sub.$field)
+			}
+	};
+	($sub:expr, $field:ident :Option, $self:expr) => {
+		if $sub.$field.is_some() {
+			$sub.$field.take()
+		} else {
+			$self.$field.take()
+			}
+	};
+}
 
 /// HelpFunc shows type alias for help function
 pub type HelpFunc = fn(
@@ -525,6 +557,12 @@ impl Command {
 		self
 	}
 
+	/// Sets license
+	pub fn license(mut self, license: Option<(String, String)>) -> Self {
+		self.license = license;
+		self
+	}
+
 	/// Add command's alias
 	pub fn alias<T: Into<String>>(mut self, a: T) -> Self {
 		self.alias.push(a.into());
@@ -685,9 +723,9 @@ impl Command {
 									Vector::default(),
 									Some(inter_mediate_args),
 									Vector::default(),
-									take(&mut self.version),
-									take(&mut self.copyright),
-									self.license.take(),
+									check_sub_field!(sub, version, self),
+									check_sub_field!(sub, copyright, self),
+									check_sub_field!(sub, license: Option, self),
 								);
 								sub.run_with_context(context)
 							}
@@ -786,9 +824,9 @@ impl Command {
 									Vector(None),
 									Some(inter_mediate_args),
 									Vector(None),
-									take(&mut self.version),
-									take(&mut self.copyright),
-									self.license.take(),
+									check_sub_field!(sub, version, self),
+									check_sub_field!(sub, copyright, self),
+									check_sub_field!(sub, license: Option, self),
 								);
 								sub.run_with_context(context)
 							}
@@ -908,9 +946,9 @@ impl Command {
 								Vector(None),
 								self.derive_route_init_vector(),
 								current_path,
-								take(&mut self.version),
-								take(&mut self.copyright),
-								self.license.take(),
+								check_sub_field!(sub, version, self),
+								check_sub_field!(sub, copyright, self),
+								check_sub_field!(sub, license: Option, self),
 							);
 							sub.run(c)
 						}
@@ -929,6 +967,7 @@ impl Command {
 		if self.sub.is_none() {
 			context.local_flags = self.l_flags.take();
 			context.common_flags.push(self.c_flags.take());
+
 			let p = Parser::default();
 			let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
 			if let Some(mut non_flag_args) = non_flag_args {
@@ -959,7 +998,9 @@ impl Command {
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
 							//println!("{}", &sub.name);
+
 							context.common_flags.push(self.c_flags.take());
+							sub_check!(context, sub, self);
 							sub.run(context)
 						}
 						None => {
@@ -1044,7 +1085,7 @@ impl Command {
 					} else {
 						c.parsing_args = Some(inter_mediate_args);
 					}
-
+					sub_check!(c, sub, self);
 					sub.run(c)
 				}
 				None => match &last {
@@ -1071,6 +1112,7 @@ impl Command {
 									} else {
 										c.parsing_args = Some(inter_mediate_args);
 									}
+									sub_check!(c, sub, self);
 									sub.run(c)
 								}
 								None => {
@@ -1187,7 +1229,7 @@ impl Command {
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
 							inter_mediate_args.push_back(last_flag_arg);
-							sub.run(Context::build_new(
+							let c = Context::build_new(
 								raw_args,
 								args,
 								Vector::with_first_elem(self.c_flags.take()),
@@ -1198,10 +1240,11 @@ impl Command {
 								Vector::default(),
 								Some(inter_mediate_args),
 								Vector::default(),
-								take(&mut self.version),
-								take(&mut self.copyright),
-								self.license.take(),
-							))
+								check_sub_field!(sub, version, self),
+								check_sub_field!(sub, version, self),
+								check_sub_field!(sub, license: Option, self),
+							);
+							sub.run(c)
 						}
 						None => {
 							//一致するサブコマンドがなかった場合
@@ -1289,7 +1332,7 @@ impl Command {
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
 							inter_mediate_args.push_back(last_flag_arg);
-							sub.run(Context::build_new(
+							let c = Context::build_new(
 								raw_args,
 								args,
 								self.c_flags.take().into(),
@@ -1300,10 +1343,11 @@ impl Command {
 								Vector::default(),
 								Some(inter_mediate_args),
 								Vector::default(),
-								take(&mut self.version),
-								take(&mut self.copyright),
-								self.license.take(),
-							))
+								check_sub_field!(sub, version, self),
+								check_sub_field!(sub, copyright, self),
+								check_sub_field!(sub, license: Option, self),
+							);
+							sub.run(c)
 						}
 						None => match &last_flag_arg {
 							MiddleArg::LongFlag(_, FlagValue::None)
@@ -1395,21 +1439,24 @@ impl Command {
 				//println!("non_flag_arg: {}", &arg);
 				//次が普通の引数だった場合サブコマンドか判定
 				match self.take_sub(&arg) {
-					Some(mut sub) => sub.run(Context::build_new(
-						raw_args,
-						args,
-						self.c_flags.take().into(),
-						Vector::default(),
-						current_path.into(),
-						self.derive_route_init_vector(),
-						Vector::default(),
-						Vector::default(),
-						Some(inter_mediate_args),
-						Vector::default(),
-						take(&mut self.version),
-						take(&mut self.copyright),
-						self.license.take(),
-					)),
+					Some(mut sub) => {
+						let c = Context::build_new(
+							raw_args,
+							args,
+							self.c_flags.take().into(),
+							Vector::default(),
+							current_path.into(),
+							self.derive_route_init_vector(),
+							Vector::default(),
+							Vector::default(),
+							Some(inter_mediate_args),
+							Vector::default(),
+							take(&mut self.version),
+							take(&mut self.copyright),
+							self.license.take(),
+						);
+						sub.run(c)
+					}
 					None => {
 						//サブコマンドはないのでそのままselfでaction
 						inter_mediate_args.push_back(MiddleArg::Normal(arg));
@@ -1511,31 +1558,25 @@ mod tests {
 			"test".to_string(),
 			"test".to_string(),
 		];
-		let mut root = Command::new()
-			.action(|c| {
-				println!("test_action: {:?}", c);
-				let raw_args = vec![
-					"current_path".to_string(),
-					"test".to_string(),
-					"test".to_string(),
-				];
-				let expect_args = {
-					let mut vd = VecDeque::from(raw_args.clone());
-					vd.pop_front();
-					vd
-				};
-				assert_eq!(c.raw_args, raw_args);
-				assert_eq!(c.args, expect_args);
-				assert_eq!(c.current_path, String::from("current_path"));
-				assert_eq!(c.routes, Vector(None));
-				return done!();
-			})
-			.common_flag(Flag::new(
-				"common",
-				FlagType::default(),
-				"sample common flag",
-			))
-			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"));
+		let mut root = base_root().action(|c| {
+			println!("test_action: {:?}", c);
+			let raw_args = vec![
+				"current_path".to_string(),
+				"test".to_string(),
+				"test".to_string(),
+			];
+			let expect_args = {
+				let mut vd = VecDeque::from(raw_args.clone());
+				vd.pop_front();
+				vd
+			};
+			assert_eq!(c.raw_args, raw_args);
+			assert_eq!(c.args, expect_args);
+			assert_eq!(c.current_path, String::from("current_path"));
+			assert_eq!(c.routes, Vector(None));
+			return done!();
+		});
+
 		let _ = root.single_run(arg.clone());
 
 		arg.push("--common=C_after".into());
@@ -1575,6 +1616,15 @@ mod tests {
 					("common".to_string(), FlagValue::String("C_after".into())),
 				]);
 				assert_eq!(c.common_flags_values, c_flag_values);
+				assert_eq!(c.now_cmd_version, "root_version".to_owned());
+				assert_eq!(c.now_copyright, "root_copyright".to_owned());
+				assert_eq!(
+					c.now_license,
+					Some((
+						String::from("root_license"),
+						String::from("root_license_file")
+					))
+				);
 				done!()
 			})
 			.common_flag(Flag::new(
@@ -1582,7 +1632,10 @@ mod tests {
 				FlagType::default(),
 				"sample common flag",
 			))
-			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"));
+			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
+			.version("root_version")
+			.copyright("root_copyright")
+			.license(Some(("root_license".into(), "root_license_file".into())));
 
 		let _ = root.single_run(arg);
 	}
@@ -1623,6 +1676,15 @@ mod tests {
 					Some(FlagValue::String(String::default()))
 				);
 				assert_eq!(c.routes, Vector(None));
+				assert_eq!(c.now_cmd_version, "root_version".to_owned());
+				assert_eq!(c.now_copyright, "root_copyright".to_owned());
+				assert_eq!(
+					c.now_license,
+					Some((
+						String::from("root_license"),
+						String::from("root_license_file")
+					))
+				);
 				done!()
 			})
 			.common_flag(Flag::new(
@@ -1634,7 +1696,10 @@ mod tests {
 			.sub_command(Command::with_name("sub").action(|_| {
 				println!("sub");
 				done!()
-			}));
+			}))
+			.version("root_version")
+			.copyright("root_copyright")
+			.license(Some(("root_license".into(), "root_license_file".into())));
 		let _ = root.run(arg);
 	}
 
@@ -1645,6 +1710,9 @@ mod tests {
 			.common_flag(Flag::new_bool("common").short_alias('c'))
 			.common_flag(Flag::new_string("cstr").short_alias('s'))
 			.common_flag(Flag::new_bool("cafter"))
+			.version("root_version")
+			.copyright("root_copyright")
+			.license(Some(("root_license".into(), "root_license_file".into())))
 	}
 	#[test]
 	fn run_root_with_flag_before_normal_arg() {

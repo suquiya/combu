@@ -62,12 +62,12 @@ macro_rules! sub_check {
 			$context.now_cmd_version = take(&mut $sub.version);
 			}
 		if !$sub.copyright.is_empty() {
-			$self.copyright = take(&mut $context.now_copyright);
-			$context.now_copyright = take(&mut $self.copyright);
+			$self.copyright = take(&mut $context.now_cmd_copyright);
+			$context.now_cmd_copyright = take(&mut $self.copyright);
 			}
 		if $sub.license.is_some() {
-			$self.license = $context.now_license.take();
-			$context.now_license = $sub.license.take();
+			$self.license = $context.now_cmd_license.take();
+			$context.now_cmd_license = $sub.license.take();
 			}
 	};
 }
@@ -200,6 +200,7 @@ impl Command {
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
 						current_path,
+						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
 						self.license.take(),
@@ -216,6 +217,7 @@ impl Command {
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
 						current_path,
+						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
 						self.license.take(),
@@ -235,6 +237,7 @@ impl Command {
 					let l_flags = self.l_flags.take();
 					let version = take(&mut self.version);
 					let copyright = take(&mut self.copyright);
+					let authors = take(&mut self.authors);
 					let license = self.license.take();
 					self.handle_action_result(no_registered_error!(Context::new(
 						raw_args,
@@ -243,6 +246,7 @@ impl Command {
 						l_flags,
 						self.derive_route_init_vector(),
 						current_path,
+						authors,
 						version,
 						copyright,
 						license,
@@ -673,6 +677,7 @@ impl Command {
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
 						current_path,
+						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
 						self.license.take(),
@@ -687,6 +692,7 @@ impl Command {
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
 						current_path,
+						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
 						self.license.take(),
@@ -723,6 +729,7 @@ impl Command {
 									Vector::default(),
 									Some(inter_mediate_args),
 									Vector::default(),
+									check_sub_field!(sub, authors, self),
 									check_sub_field!(sub, version, self),
 									check_sub_field!(sub, copyright, self),
 									check_sub_field!(sub, license: Option, self),
@@ -755,6 +762,7 @@ impl Command {
 											Vector::default(),
 											Some(inter_mediate_args),
 											Vector::default(),
+											take(&mut self.authors),
 											take(&mut self.version),
 											take(&mut self.copyright),
 											self.license.take(),
@@ -789,6 +797,7 @@ impl Command {
 								inter_mediate_args
 							}),
 							Vector(None),
+							take(&mut self.authors),
 							take(&mut self.version),
 							take(&mut self.copyright),
 							self.license.take(),
@@ -824,6 +833,7 @@ impl Command {
 									Vector(None),
 									Some(inter_mediate_args),
 									Vector(None),
+									check_sub_field!(sub, authors, self),
 									check_sub_field!(sub, version, self),
 									check_sub_field!(sub, copyright, self),
 									check_sub_field!(sub, license: Option, self),
@@ -852,6 +862,7 @@ impl Command {
 										Vector::default(),
 										Some(inter_mediate_args),
 										Vector::default(),
+										take(&mut self.authors),
 										take(&mut self.version),
 										take(&mut self.copyright),
 										self.license.take(),
@@ -885,6 +896,7 @@ impl Command {
 								inter_mediate_args
 							}),
 							Vector(None),
+							take(&mut self.authors),
 							take(&mut self.version),
 							take(&mut self.copyright),
 							self.license.take(),
@@ -913,6 +925,7 @@ impl Command {
 									Vector::default(),
 									self.derive_route_init_vector(),
 									current_path,
+									take(&mut self.authors),
 									take(&mut self.version),
 									take(&mut self.copyright),
 									self.license.take(),
@@ -928,6 +941,7 @@ impl Command {
 									self.l_flags.take(),
 									self.derive_route_init_vector(),
 									current_path,
+									take(&mut self.authors),
 									take(&mut self.version),
 									take(&mut self.copyright),
 									self.license.take(),
@@ -946,6 +960,7 @@ impl Command {
 								Vector(None),
 								self.derive_route_init_vector(),
 								current_path,
+								check_sub_field!(sub, authors, self),
 								check_sub_field!(sub, version, self),
 								check_sub_field!(sub, copyright, self),
 								check_sub_field!(sub, license: Option, self),
@@ -1240,8 +1255,9 @@ impl Command {
 								Vector::default(),
 								Some(inter_mediate_args),
 								Vector::default(),
+								check_sub_field!(sub, authors, self),
 								check_sub_field!(sub, version, self),
-								check_sub_field!(sub, version, self),
+								check_sub_field!(sub, copyright, self),
 								check_sub_field!(sub, license: Option, self),
 							);
 							sub.run(c)
@@ -1271,6 +1287,7 @@ impl Command {
 										Vector(None),
 										Some(inter_mediate_args),
 										Vector::default(),
+										take(&mut self.authors),
 										take(&mut self.version),
 										take(&mut self.copyright),
 										self.license.take(),
@@ -1304,6 +1321,7 @@ impl Command {
 						Vector::default(),
 						Some(inter_mediate_args),
 						Vector::default(),
+						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
 						self.license.take(),
@@ -1343,6 +1361,7 @@ impl Command {
 								Vector::default(),
 								Some(inter_mediate_args),
 								Vector::default(),
+								check_sub_field!(sub, authors, self),
 								check_sub_field!(sub, version, self),
 								check_sub_field!(sub, copyright, self),
 								check_sub_field!(sub, license: Option, self),
@@ -1370,6 +1389,7 @@ impl Command {
 										Vector::default(),
 										Some(inter_mediate_args),
 										Vector::default(),
+										take(&mut self.authors),
 										take(&mut self.version),
 										take(&mut self.copyright),
 										self.license.take(),
@@ -1397,6 +1417,7 @@ impl Command {
 										Vector::default(),
 										Some(inter_mediate_args),
 										Vector::default(),
+										take(&mut self.authors),
 										take(&mut self.version),
 										take(&mut self.copyright),
 										self.license.take(),
@@ -1420,6 +1441,7 @@ impl Command {
 						Vector::default(),
 						Some(inter_mediate_args),
 						Vector::default(),
+						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
 						self.license.take(),
@@ -1451,6 +1473,7 @@ impl Command {
 							Vector::default(),
 							Some(inter_mediate_args),
 							Vector::default(),
+							take(&mut self.authors),
 							take(&mut self.version),
 							take(&mut self.copyright),
 							self.license.take(),
@@ -1471,6 +1494,7 @@ impl Command {
 							Vector::default(),
 							Some(inter_mediate_args),
 							Vector(None),
+							take(&mut self.authors),
 							take(&mut self.version),
 							take(&mut self.copyright),
 							self.license.take(),
@@ -1502,6 +1526,7 @@ impl Command {
 					Vector::default(),
 					Some(inter_mediate_args),
 					Vector::default(),
+					take(&mut self.authors),
 					take(&mut self.version),
 					take(&mut self.copyright),
 					self.license.take(),
@@ -1617,9 +1642,9 @@ mod tests {
 				]);
 				assert_eq!(c.common_flags_values, c_flag_values);
 				assert_eq!(c.now_cmd_version, "root_version".to_owned());
-				assert_eq!(c.now_copyright, "root_copyright".to_owned());
+				assert_eq!(c.now_cmd_copyright, "root_copyright".to_owned());
 				assert_eq!(
-					c.now_license,
+					c.now_cmd_license,
 					Some((
 						String::from("root_license"),
 						String::from("root_license_file")
@@ -1677,9 +1702,9 @@ mod tests {
 				);
 				assert_eq!(c.routes, Vector(None));
 				assert_eq!(c.now_cmd_version, "root_version".to_owned());
-				assert_eq!(c.now_copyright, "root_copyright".to_owned());
+				assert_eq!(c.now_cmd_copyright, "root_copyright".to_owned());
 				assert_eq!(
-					c.now_license,
+					c.now_cmd_license,
 					Some((
 						String::from("root_license"),
 						String::from("root_license_file")

@@ -33,12 +33,14 @@ pub struct Context {
 	pub parsing_args: Option<VecDeque<MiddleArg>>,
 	/// error inforamation list of parsing
 	pub error_info_list: Vector<ErrorInfo>,
+	/// authors
+	pub now_cmd_authors: String,
 	/// version
 	pub now_cmd_version: String,
 	/// licence information
-	pub now_license: Option<(String, String)>,
+	pub now_cmd_license: Option<(String, String)>,
 	/// copyright
-	pub now_copyright: String,
+	pub now_cmd_copyright: String,
 }
 
 impl Context {
@@ -50,9 +52,10 @@ impl Context {
 		local_flags: Vector<Flag>,
 		routes: Vector<String>,
 		current_path: String,
+		now_cmd_authors: String,
 		now_cmd_version: String,
-		now_copyright: String,
-		now_license: Option<(String, String)>,
+		now_cmd_copyright: String,
+		now_cmd_license: Option<(String, String)>,
 	) -> Context {
 		Context {
 			raw_args,
@@ -66,8 +69,9 @@ impl Context {
 			parsing_args: None,
 			error_info_list: Vector::default(),
 			now_cmd_version,
-			now_copyright,
-			now_license,
+			now_cmd_authors,
+			now_cmd_copyright,
+			now_cmd_license,
 		}
 	}
 
@@ -83,9 +87,10 @@ impl Context {
 		local_flags_values: Vector<(String, FlagValue)>,
 		parsing_args: Option<VecDeque<MiddleArg>>,
 		error_info_list: Vector<ErrorInfo>,
+		now_cmd_authors: String,
 		now_cmd_version: String,
-		now_copyright: String,
-		now_license: Option<(String, String)>,
+		now_cmd_copyright: String,
+		now_cmd_license: Option<(String, String)>,
 	) -> Context {
 		Context {
 			raw_args,
@@ -98,9 +103,10 @@ impl Context {
 			local_flags_values,
 			parsing_args,
 			error_info_list,
+			now_cmd_authors,
 			now_cmd_version,
-			now_copyright,
-			now_license,
+			now_cmd_copyright,
+			now_cmd_license,
 		}
 	}
 
@@ -328,9 +334,10 @@ impl<'a> From<Vec<String>> for Context {
 			local_flags_values: Vector::default(),
 			parsing_args: None,
 			error_info_list: Vector::default(),
+			now_cmd_authors: String::default(),
 			now_cmd_version: String::default(),
-			now_license: Some((String::default(), String::default())),
-			now_copyright: String::default(),
+			now_cmd_license: Some((String::default(), String::default())),
+			now_cmd_copyright: String::default(),
 		}
 	}
 }

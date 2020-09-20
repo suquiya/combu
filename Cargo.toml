@@ -10,7 +10,7 @@ documentation="https://docs.rs/combu/"
 repository="https://github.com/suquiya/combu"
 readme="README.md"
 categories=["command-line-interface"]
-keywords=["argument","arg","cli","command-line","parser","executor","macro"]
+keywords=["argument","arg","cli","command-line","parser"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

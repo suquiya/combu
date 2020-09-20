@@ -9,6 +9,8 @@ license-file="LICENSE"
 documentation="https://docs.rs/combu/"
 repository="https://github.com/suquiya/combu"
 readme="README.md"
+categories=["command-line-interface"]
+keywords=["argument","arg","cli","command-line","parser","executor","macro"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -36,7 +36,7 @@ You can use(or import) this crate like other crate that exists on crates.io.
 Add
 
 ```toml
-combu="0.2.3"
+combu="0.2.4"
 ```
 
 to cargo.toml.

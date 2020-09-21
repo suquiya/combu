@@ -55,28 +55,32 @@ macro_rules! no_registered_error {
 			))
 	};
 }
-macro_rules! sub_check {
-	($context:expr, $sub:expr, $self:expr) => {
-		if !$sub.authors.is_empty() {
-			$self.authors = take(&mut $context.now_cmd_authors);
-			$context.now_cmd_authors = take(&mut $sub.authors);
+macro_rules! sub_check_field {
+	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident) => {
+		if !$sub.$field.is_empty() {
+			$self.$field = take(&mut $context.$context_field);
+			$context.$context_field = take(&mut $sub.$field);
 			}
-		if !$sub.version.is_empty() {
-			$self.version = take(&mut $context.now_cmd_version);
-			$context.now_cmd_version = take(&mut $sub.version);
-			}
-		if !$sub.copyright.is_empty() {
-			$self.copyright = take(&mut $context.now_cmd_copyright);
-			$context.now_cmd_copyright = take(&mut $self.copyright);
-			}
-		if $sub.license.is_some() {
-			$self.license = $context.now_cmd_license.take();
-			$context.now_cmd_license = $sub.license.take();
+	};
+	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident :Option) => {
+		if $sub.$field.is_some() {
+			$self.$field = $context.$context_field.take();
+			$context.$context_field = $sub.$field.take();
 			}
 	};
 }
+
+macro_rules! sub_check {
+	($context:expr, $sub:expr, $self:expr) => {
+		sub_check_field!($context, now_cmd_authors, $sub, $self, authors);
+		sub_check_field!($context, now_cmd_version, $sub, $self, version);
+		sub_check_field!($context, now_cmd_copyright, $sub, $self, copyright);
+		sub_check_field!($context, now_cmd_license, $sub, $self, license: Option);
+	};
+}
+
 macro_rules! check_sub_field {
-	($sub: expr,$field:ident, $self:expr) => {
+	($sub: expr, $field:ident, $self:expr) => {
 		if $sub.$field.is_empty() {
 			take(&mut $self.$field)
 		} else {
@@ -1013,13 +1017,13 @@ impl Command {
 					self.assign_context(context, p, VecDeque::new(), last)
 				}
 				Some(arg) => {
-					//println!("arg sub-sub: {}", &arg);
+					println!("arg sub-sub: {}", &arg);
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
-							//println!("{}", &sub.name);
-
+							println!("{}", &sub.name);
 							context.common_flags.push(self.c_flags.take());
 							sub_check!(context, sub, self);
+							println!("{:?}", &context);
 							sub.run(context)
 						}
 						None => {
@@ -1742,6 +1746,20 @@ mod tests {
 			.version("root_version")
 			.copyright("root_copyright")
 			.license(Some(("root_license".into(), "root_license_file".into())))
+			.authors("root_authors")
+	}
+
+	macro_rules! assert_attrs {
+		($prefix:expr, $context:expr) => {
+			let prefix = String::from($prefix);
+			assert_eq!($context.now_cmd_authors, prefix.clone() + "authors");
+			assert_eq!($context.now_cmd_version, prefix.clone() + "version");
+			assert_eq!($context.now_cmd_copyright, prefix.clone() + "copyright");
+			assert_eq!(
+				$context.now_cmd_license,
+				Some((prefix.clone() + "license", prefix + "license_file"))
+				);
+		};
 	}
 	#[test]
 	fn run_root_with_flag_before_normal_arg() {
@@ -1763,6 +1781,8 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(c.routes, Vector(None));
+				assert_attrs!("root_", c);
+
 				done!()
 			})
 			.run(arg.clone());
@@ -1784,6 +1804,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
+				assert_attrs!("root_", c);
 				done!()
 			})
 			.run(arg.clone());
@@ -1807,6 +1828,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
+				assert_attrs!("root_", c);
 				done!()
 			})
 			.run(arg.clone());
@@ -1854,6 +1876,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
+				assert_attrs!("root_", c);
 				done!()
 			})
 			.run(arg.clone());
@@ -1896,6 +1919,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
+				assert_attrs!("root_", c);
 				done!()
 			})
 			.run(arg.clone());
@@ -1939,6 +1963,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
+				assert_attrs!("root_", c);
 				done!()
 			})
 			.run(arg.clone());
@@ -1981,6 +2006,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
+				assert_attrs!("root_", c);
 				done!()
 			})
 			.run(arg.clone());
@@ -2010,7 +2036,11 @@ mod tests {
 			.sub_command(Command::with_name("leaf").action(|c| {
 				println!("Context: {:?}", c);
 				panic!("in leaf")
-			}));
+			}))
+			.authors("sub_authors")
+			.version("sub_version")
+			.copyright("sub_copyright")
+			.license(Some(("sub_license".into(), "sub_license_file".into())));
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
@@ -2035,6 +2065,7 @@ mod tests {
 				assert_eq!(c.get_flag_value_of("commons"), None);
 				assert_eq!(c.get_flag_value_of("local"), None);
 				assert_eq!(c.routes, "sub".to_owned().into());
+				assert_attrs!("sub_", c);
 				done!()
 			}))
 			.run(arg.clone());
@@ -2059,6 +2090,7 @@ mod tests {
 					c.routes,
 					Vector(Some(vec!["root".to_string(), "sub".to_string()]))
 				);
+				assert_attrs!("sub_", c);
 				done!()
 			}))
 			.run(arg.clone());
@@ -2081,6 +2113,7 @@ mod tests {
 				);
 				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_attrs!("sub_", c);
 				done!()
 			}))
 			.run(arg.clone());
@@ -2126,6 +2159,7 @@ mod tests {
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_attrs!("sub_", c);
 				done!()
 			}))
 			.run(arg.clone());
@@ -2163,6 +2197,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_attrs!("sub_", c);
 				done!()
 			}))
 			.run(arg.clone());
@@ -2190,6 +2225,7 @@ mod tests {
 				);
 				assert_eq!(c.args, cnv_arg(vec!["test_arg", "ex_arg"]));
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_attrs!("sub_", c);
 				done!()
 			}))
 			.run(arg.clone());
@@ -2246,6 +2282,7 @@ mod tests {
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_attrs!("sub_", c);
 				done!()
 			}))
 			.run(arg.clone());
@@ -2290,6 +2327,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_attrs!("sub_", c);
 				done!()
 			}))
 			.run(arg.clone());
@@ -2320,9 +2358,14 @@ mod tests {
 					.action(|c| {
 						panic!("sub: {:?}", c);
 					})
+					.version("sub_version")
+					.copyright("sub_copyright")
+					.license(Some(("sub_license".into(), "root_license_file".into())))
+					.authors("sub_authors")
 					.sub_command(
 						Command::with_name("leaf")
 							.action(|c| {
+								println!("{:?}", c);
 								let raw_args = vec![
 									"current_path".to_string(),
 									"sub".to_string(),
@@ -2356,9 +2399,14 @@ mod tests {
 									c.routes,
 									Vector(Some(vec!["sub".to_string(), "leaf".to_string()]))
 								);
+								assert_attrs!("leaf_", c);
 								done!()
 							})
-							.local_flag(Flag::new_bool("local").short_alias('l')),
+							.local_flag(Flag::new_bool("local").short_alias('l'))
+							.version("leaf_version")
+							.copyright("leaf_copyright")
+							.license(Some(("leaf_license".into(), "leaf_license_file".into())))
+							.authors("leaf_authors"),
 					),
 			);
 		let _ = root.run(arg.clone());
@@ -2382,7 +2430,14 @@ mod tests {
 			.common_flag(Flag::new_string("cs"))
 			.local_flag(Flag::new_bool("lbool").short_alias('b'))
 			.local_flag(Flag::new_string("lsafter").short_alias('a'))
-			.local_flag(Flag::new_string("lsbefore").short_alias('s'));
+			.local_flag(Flag::new_string("lsbefore").short_alias('s'))
+			.authors("leaf_authors")
+			.copyright("leaf_copyright")
+			.version("leaf_version")
+			.license(Some((
+				"leaf_license".to_owned(),
+				"leaf_license_file".to_owned(),
+			)));
 
 		let run_leaf: fn(Command, Command, Command, Action, Vec<String>) -> () =
 			|root, sub, leaf, action, args| {
@@ -2417,6 +2472,7 @@ mod tests {
 						"leaf".to_owned()
 					]))
 				);
+				assert_attrs!("leaf_", c);
 				done!()
 			},
 			args.clone(),
@@ -2451,6 +2507,7 @@ mod tests {
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
+				assert_attrs!("leaf_", c);
 				done!()
 			},
 			args.clone(),
@@ -2485,6 +2542,7 @@ mod tests {
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
+				assert_attrs!("leaf_", c);
 				done!()
 			},
 			args.clone(),
@@ -2521,6 +2579,7 @@ mod tests {
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
+				assert_attrs!("leaf_", c);
 				done!()
 			},
 			args.clone(),
@@ -2605,11 +2664,16 @@ mod tests {
 						ParseError::NoExistLong
 					)])
 				);
+				assert_attrs!("sub_", c);
 				done!()
 			})
 			.local_flag(Flag::new_bool("yes").short_alias('y'))
 			.local_flag(Flag::new_int("int").short_alias('i'))
-			.local_flag(Flag::new_float("float").short_alias('f'));
+			.local_flag(Flag::new_float("float").short_alias('f'))
+			.authors("sub_authors")
+			.version("sub_version")
+			.copyright("sub_copyright")
+			.license(Some(("sub_license".into(), "sub_license_file".into())));
 		let mut root = Command::new()
 			.action(|c| {
 				println!("test_action: {:?}", c);

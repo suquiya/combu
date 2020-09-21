@@ -43,13 +43,11 @@ to cargo.toml.
 
 ## Use cargo-edit (Recommended)
 
-Exec
+If you installed cargo-edit, exec below command under the target project:
 
 ```bash
 cargo add combu
 ```
-
-under target project.
 
 # Quick Start
 

@@ -5,7 +5,6 @@ use crate::{
 };
 use std::collections::VecDeque;
 
-//TODO: 現在のauthor, version, licenseを抱えて下るようにする
 /// Storage information for command execution.
 /// This storage raw args, non-flag args, flag values, and etc.
 /// コマンドからrunを通ってactionにたどり着くまでの情報およびパース結果を格納する構造体。
@@ -22,8 +21,8 @@ pub struct Context {
 	pub routes: Vector<String>,
 	/// local flags
 	pub local_flags: Vector<Flag>,
-	/// current_path (String, not PathBuf)
-	pub current_path: String,
+	/// exe_path (String, not PathBuf)
+	pub exe_path: String,
 	/// storage of result of parsing common flags values
 	pub common_flags_values: Vector<(String, FlagValue)>,
 	/// storage of result of parsing local flags values
@@ -51,7 +50,7 @@ impl Context {
 		common_flags: Vector<Flag>,
 		local_flags: Vector<Flag>,
 		routes: Vector<String>,
-		current_path: String,
+		exe_path: String,
 		now_cmd_authors: String,
 		now_cmd_version: String,
 		now_cmd_copyright: String,
@@ -63,7 +62,7 @@ impl Context {
 			common_flags: Vector(Some(vec![common_flags])),
 			routes: routes.into(),
 			local_flags,
-			current_path,
+			exe_path,
 			common_flags_values: Vector::default(),
 			local_flags_values: Vector::default(),
 			parsing_args: None,
@@ -81,7 +80,7 @@ impl Context {
 		args: VecDeque<String>,
 		common_flags: Vector<Vector<Flag>>,
 		local_flags: Vector<Flag>,
-		current_path: String,
+		exe_path: String,
 		routes: Vector<String>,
 		common_flags_values: Vector<(String, FlagValue)>,
 		local_flags_values: Vector<(String, FlagValue)>,
@@ -98,7 +97,7 @@ impl Context {
 			common_flags,
 			routes,
 			local_flags,
-			current_path,
+			exe_path,
 			common_flags_values,
 			local_flags_values,
 			parsing_args,
@@ -116,14 +115,14 @@ impl Context {
 		self
 	}
 
-	/// Get current_path as &str
+	/// Get exe_path as &str
 	pub fn current(&self) -> &str {
-		&self.current_path
+		&self.exe_path
 	}
 
-	/// Change current_path's value
+	/// Change exe_path's value
 	pub fn change_current(mut self, path: String) {
-		self.current_path = path;
+		self.exe_path = path;
 	}
 
 	/// Find long form of local flag matches name_or_alias
@@ -319,7 +318,7 @@ impl Context {
 impl<'a> From<Vec<String>> for Context {
 	fn from(raw_args: Vec<String>) -> Context {
 		let args = VecDeque::from(raw_args.clone());
-		let current_path = match raw_args.get(0) {
+		let exe_path = match raw_args.get(0) {
 			Some(str) => String::from(str),
 			None => String::new(),
 		};
@@ -329,7 +328,7 @@ impl<'a> From<Vec<String>> for Context {
 			common_flags: Vector::default(),
 			local_flags: Vector::default(),
 			routes: Vector::default(),
-			current_path,
+			exe_path,
 			common_flags_values: Vector::default(),
 			local_flags_values: Vector::default(),
 			parsing_args: None,

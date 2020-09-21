@@ -200,14 +200,14 @@ impl Command {
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
-					let current_path = raw_args[0].clone();
+					let exe_path = raw_args[0].clone();
 					let req = action(Context::new(
 						raw_args,
 						VecDeque::new(),
 						self.c_flags.take(),
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
-						current_path,
+						exe_path,
 						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
@@ -217,14 +217,14 @@ impl Command {
 					self.handle_action_result(req)
 				} else {
 					let mut args = VecDeque::from(raw_args.clone());
-					let current_path = args.pop_front().unwrap();
+					let exe_path = args.pop_front().unwrap();
 					let mut context = Context::new(
 						raw_args,
 						args,
 						self.c_flags.take(),
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
-						current_path,
+						exe_path,
 						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
@@ -240,7 +240,7 @@ impl Command {
 			None => match self.sub {
 				Vector(None) => {
 					let mut args: VecDeque<String> = raw_args.clone().into();
-					let current_path = args.pop_front().unwrap();
+					let exe_path = args.pop_front().unwrap();
 					let c_flags = self.c_flags.take();
 					let l_flags = self.l_flags.take();
 					let version = take(&mut self.version);
@@ -253,7 +253,7 @@ impl Command {
 						c_flags,
 						l_flags,
 						self.derive_route_init_vector(),
-						current_path,
+						exe_path,
 						authors,
 						version,
 						copyright,
@@ -672,7 +672,7 @@ impl Command {
 			return self.single_run(raw_args);
 		}
 		let mut args = VecDeque::from(raw_args.clone());
-		let current_path = args.pop_front().unwrap();
+		let exe_path = args.pop_front().unwrap();
 		let head = args.pop_front();
 		if head.is_none() {
 			//引数がない場合
@@ -684,7 +684,7 @@ impl Command {
 						self.c_flags.take(),
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
-						current_path,
+						exe_path,
 						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
@@ -699,7 +699,7 @@ impl Command {
 						self.c_flags.take(),
 						self.l_flags.take(),
 						self.derive_route_init_vector(),
-						current_path,
+						exe_path,
 						take(&mut self.authors),
 						take(&mut self.version),
 						take(&mut self.copyright),
@@ -731,7 +731,7 @@ impl Command {
 									args,
 									vec![self.c_flags.take()].into(),
 									Vector::default(),
-									current_path.into(),
+									exe_path.into(),
 									self.derive_route_init_vector(),
 									Vector::default(),
 									Vector::default(),
@@ -753,7 +753,7 @@ impl Command {
 										//検出したものがフラグの値になる可能性がある場合のハンドリング
 										inter_mediate_args.push_back(last_flag_arg);
 										inter_mediate_args.push_back(MiddleArg::Normal(arg));
-										self.assign_run(args, inter_mediate_args, p, raw_args, current_path)
+										self.assign_run(args, inter_mediate_args, p, raw_args, exe_path)
 									}
 									_ => {
 										//フラグになる可能性がない場合
@@ -764,7 +764,7 @@ impl Command {
 											args,
 											vec![self.c_flags.take()].into(),
 											self.l_flags.take(),
-											current_path,
+											exe_path,
 											self.derive_route_init_vector(),
 											Vector::default(),
 											Vector::default(),
@@ -796,7 +796,7 @@ impl Command {
 							args,
 							vec![self.c_flags.take()].into(),
 							self.l_flags.take(),
-							current_path,
+							exe_path,
 							self.derive_route_init_vector(),
 							Vector(None),
 							Vector(None),
@@ -835,7 +835,7 @@ impl Command {
 									args,
 									vec![self.c_flags.take()].into(),
 									Vector(None),
-									current_path.into(),
+									exe_path.into(),
 									self.derive_route_init_vector(),
 									Vector(None),
 									Vector(None),
@@ -853,7 +853,7 @@ impl Command {
 								| MiddleArg::ShortFlag(_, FlagValue::None) => {
 									inter_mediate_args.push_back(last_flag_arg);
 									inter_mediate_args.push_back(MiddleArg::Normal(arg));
-									self.assign_run(args, inter_mediate_args, p, raw_args, current_path)
+									self.assign_run(args, inter_mediate_args, p, raw_args, exe_path)
 								}
 								_ => {
 									//フラグの値になる可能性がない場合（サブコマンドではなくself実行）
@@ -864,7 +864,7 @@ impl Command {
 										args,
 										vec![self.c_flags.take()].into(),
 										self.l_flags.take(),
-										current_path.into(),
+										exe_path.into(),
 										self.derive_route_init_vector(),
 										Vector::default(),
 										Vector::default(),
@@ -895,7 +895,7 @@ impl Command {
 							args,
 							vec![self.c_flags.take()].into(),
 							self.l_flags.take(),
-							current_path,
+							exe_path,
 							self.derive_route_init_vector(),
 							Vector(None),
 							Vector(None),
@@ -932,7 +932,7 @@ impl Command {
 									self.c_flags.take(),
 									Vector::default(),
 									self.derive_route_init_vector(),
-									current_path,
+									exe_path,
 									take(&mut self.authors),
 									take(&mut self.version),
 									take(&mut self.copyright),
@@ -948,7 +948,7 @@ impl Command {
 									self.c_flags.take(),
 									self.l_flags.take(),
 									self.derive_route_init_vector(),
-									current_path,
+									exe_path,
 									take(&mut self.authors),
 									take(&mut self.version),
 									take(&mut self.copyright),
@@ -967,7 +967,7 @@ impl Command {
 								common_flag,
 								Vector(None),
 								self.derive_route_init_vector(),
-								current_path,
+								exe_path,
 								check_sub_field!(sub, authors, self),
 								check_sub_field!(sub, version, self),
 								check_sub_field!(sub, copyright, self),
@@ -1238,7 +1238,7 @@ impl Command {
 		mut inter_mediate_args: VecDeque<MiddleArg>,
 		p: Parser,
 		raw_args: Vec<String>,
-		current_path: String,
+		exe_path: String,
 	) -> run_result!() {
 		//println!("assign_run");
 		match args.pop_front() {
@@ -1257,7 +1257,7 @@ impl Command {
 								args,
 								Vector::with_first_elem(self.c_flags.take()),
 								Vector::default(),
-								current_path.into(),
+								exe_path.into(),
 								self.derive_route_init_vector(),
 								Vector::default(),
 								Vector::default(),
@@ -1278,7 +1278,7 @@ impl Command {
 									//フラグの値になりうる場合
 									inter_mediate_args.push_back(last_flag_arg);
 									inter_mediate_args.push_back(MiddleArg::Normal(arg));
-									self.assign_run(args, inter_mediate_args, p, raw_args, current_path)
+									self.assign_run(args, inter_mediate_args, p, raw_args, exe_path)
 								}
 								_ => {
 									inter_mediate_args.push_back(last_flag_arg);
@@ -1289,7 +1289,7 @@ impl Command {
 										args,
 										self.c_flags.take().into(),
 										self.l_flags.take(),
-										current_path.into(),
+										exe_path.into(),
 										self.derive_route_init_vector(),
 										Vector(None),
 										Vector(None),
@@ -1323,7 +1323,7 @@ impl Command {
 						args,
 						self.c_flags.take().into(),
 						self.l_flags.take(),
-						current_path,
+						exe_path,
 						self.derive_route_init_vector(),
 						Vector::default(),
 						Vector::default(),
@@ -1363,7 +1363,7 @@ impl Command {
 								args,
 								self.c_flags.take().into(),
 								Vector::default(),
-								current_path.into(),
+								exe_path.into(),
 								self.derive_route_init_vector(),
 								Vector::default(),
 								Vector::default(),
@@ -1381,7 +1381,7 @@ impl Command {
 							| MiddleArg::ShortFlag(_, FlagValue::None) => {
 								inter_mediate_args.push_back(last_flag_arg);
 								inter_mediate_args.push_back(MiddleArg::Normal(arg));
-								self.assign_run(args, inter_mediate_args, p, raw_args, current_path)
+								self.assign_run(args, inter_mediate_args, p, raw_args, exe_path)
 							}
 							_ => match self.action {
 								Some(action) => {
@@ -1391,7 +1391,7 @@ impl Command {
 										args,
 										self.c_flags.take().into(),
 										self.l_flags.take(),
-										current_path.into(),
+										exe_path.into(),
 										self.derive_route_init_vector(),
 										Vector::default(),
 										Vector::default(),
@@ -1419,7 +1419,7 @@ impl Command {
 										args,
 										self.c_flags.take().into(),
 										self.l_flags.take(),
-										current_path.into(),
+										exe_path.into(),
 										self.derive_route_init_vector(),
 										Vector::default(),
 										Vector::default(),
@@ -1443,7 +1443,7 @@ impl Command {
 						args,
 						self.c_flags.take().into(),
 						self.l_flags.take(),
-						current_path,
+						exe_path,
 						self.derive_route_init_vector(),
 						Vector::default(),
 						Vector::default(),
@@ -1475,7 +1475,7 @@ impl Command {
 							args,
 							self.c_flags.take().into(),
 							Vector::default(),
-							current_path.into(),
+							exe_path.into(),
 							self.derive_route_init_vector(),
 							Vector::default(),
 							Vector::default(),
@@ -1496,7 +1496,7 @@ impl Command {
 							args,
 							self.c_flags.take().into(),
 							self.l_flags.take(),
-							current_path.into(),
+							exe_path.into(),
 							self.derive_route_init_vector(),
 							Vector::default(),
 							Vector::default(),
@@ -1528,7 +1528,7 @@ impl Command {
 					args, //argsを使いまわしているが、実質空
 					self.c_flags.take().into(),
 					self.l_flags.take(),
-					current_path.into(),
+					exe_path.into(),
 					self.derive_route_init_vector(),
 					Vector::default(),
 					Vector::default(),
@@ -1587,14 +1587,14 @@ mod tests {
 	#[test]
 	fn single_run() {
 		let mut arg = vec![
-			"current_path".to_string(),
+			"exe_path".to_string(),
 			"test".to_string(),
 			"test".to_string(),
 		];
 		let mut root = base_root().action(|c| {
 			println!("test_action: {:?}", c);
 			let raw_args = vec![
-				"current_path".to_string(),
+				"exe_path".to_string(),
 				"test".to_string(),
 				"test".to_string(),
 			];
@@ -1605,7 +1605,7 @@ mod tests {
 			};
 			assert_eq!(c.raw_args, raw_args);
 			assert_eq!(c.args, expect_args);
-			assert_eq!(c.current_path, String::from("current_path"));
+			assert_eq!(c.exe_path, String::from("exe_path"));
 			assert_eq!(c.routes, Vector(None));
 			return done!();
 		});
@@ -1620,7 +1620,7 @@ mod tests {
 			.action(|c| {
 				println!("test_action: {:?}", c);
 				let raw_args: Vec<String> = vec![
-					"current_path".to_string(),
+					"exe_path".to_string(),
 					"--local=L_before".to_string(),
 					"--common=C_before".to_string(),
 					"test".to_string(),
@@ -1631,7 +1631,7 @@ mod tests {
 				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
-				assert_eq!(c.current_path, String::from("current_path"));
+				assert_eq!(c.exe_path, String::from("exe_path"));
 				assert_eq!(c.routes, Vector(Some(vec!["root".to_string()])));
 				let l_flag_values = Vector::from(vec![
 					(
@@ -1676,7 +1676,7 @@ mod tests {
 	#[test]
 	fn run_root() {
 		let arg = vec![
-			"current_path".to_string(),
+			"exe_path".to_string(),
 			"test".to_string(),
 			"test".to_string(),
 			"--local".to_string(),
@@ -1686,7 +1686,7 @@ mod tests {
 			.action(|c| {
 				println!("test_action: {:?}", c);
 				let raw_args = vec![
-					"current_path".to_string(),
+					"exe_path".to_string(),
 					"test".to_string(),
 					"test".to_string(),
 					"--local".to_string(),
@@ -1695,7 +1695,7 @@ mod tests {
 				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
-				assert_eq!(c.current_path, String::from("current_path"));
+				assert_eq!(c.exe_path, String::from("exe_path"));
 				assert_eq!(
 					c.get_local_flag_value_of("local"),
 					Some(FlagValue::String("test".into()))
@@ -1763,7 +1763,7 @@ mod tests {
 	}
 	#[test]
 	fn run_root_with_flag_before_normal_arg() {
-		let mut arg = cnv_arg(vec!["current_path", "--local=test"]);
+		let mut arg = cnv_arg(vec!["exe_path", "--local=test"]);
 		let root = base_root().sub_command(Command::with_name("sub").action(|c| {
 			panic!("not root, in sub: {:?}", c);
 		}));
@@ -1773,7 +1773,7 @@ mod tests {
 			.action(|c| {
 				println!("c: {:?}", c);
 				assert_eq!(
-					cnv_arg(vec!["current_path", "--local=test", "test"]),
+					cnv_arg(vec!["exe_path", "--local=test", "test"]),
 					c.raw_args
 				);
 				assert_eq!(
@@ -1792,7 +1792,7 @@ mod tests {
 			.action(|c| {
 				println!("c: {:?}", c);
 				assert_eq!(
-					cnv_arg(vec!["current_path", "--local=test", "--common"]),
+					cnv_arg(vec!["exe_path", "--local=test", "--common"]),
 					c.raw_args
 				);
 				assert_eq!(
@@ -1815,7 +1815,7 @@ mod tests {
 			.action(|c| {
 				println!("{:?}", c);
 				assert_eq!(
-					cnv_arg(vec!["current_path", "--local=test", "--common", "test"]),
+					cnv_arg(vec!["exe_path", "--local=test", "--common", "test"]),
 					c.raw_args
 				);
 				assert_eq!(VecDeque::from(vec!["test".to_string()]), c.args);
@@ -1844,7 +1844,7 @@ mod tests {
 				println!("{:?}", c);
 				assert_eq!(
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--local=test",
 						"--common",
 						"test",
@@ -1892,7 +1892,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--local=test",
 						"--common",
 						"test",
@@ -1932,7 +1932,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--local=test",
 						"--common",
 						"test",
@@ -1975,7 +1975,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--local=test",
 						"--common",
 						"test",
@@ -2015,15 +2015,7 @@ mod tests {
 	#[test]
 	fn run_node() {
 		let mut arg = cnv_arg(vec![
-			"current_path",
-			"sub",
-			"test",
-			"--common",
-			"test",
-			"--cstr",
-			"strt",
-			"-b",
-			"--local",
+			"exe_path", "sub", "test", "--common", "test", "--cstr", "strt", "-b", "--local",
 		]);
 		let root = base_root().action(|c| {
 			println!("test_action: {:?}", c);
@@ -2046,18 +2038,10 @@ mod tests {
 			.sub_command(sub.clone().action(|c| {
 				println!("{:?}", c);
 				let raw_args = cnv_arg(vec![
-					"current_path",
-					"sub",
-					"test",
-					"--common",
-					"test",
-					"--cstr",
-					"strt",
-					"-b",
-					"--local",
+					"exe_path", "sub", "test", "--common", "test", "--cstr", "strt", "-b", "--local",
 				]);
 				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_string()]);
-				assert_eq!(c.current_path, String::from("current_path"));
+				assert_eq!(c.exe_path, String::from("exe_path"));
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(c.get_flag_value_of("common"), Some(FlagValue::Bool(true)));
@@ -2071,7 +2055,7 @@ mod tests {
 			.run(arg.clone());
 
 		println!("サブコマンド前フラグのテスト");
-		arg = cnv_arg(vec!["current_path", "--cstr=test", "-b", "sub"]);
+		arg = cnv_arg(vec!["exe_path", "--cstr=test", "-b", "sub"]);
 		let _ = root
 			.clone()
 			.name("root")
@@ -2079,7 +2063,7 @@ mod tests {
 				println!("c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
-					cnv_arg(vec!["current_path", "--cstr=test", "-b", "sub"])
+					cnv_arg(vec!["exe_path", "--cstr=test", "-b", "sub"])
 				);
 				assert_eq!(
 					c.get_flag_value_of("cstr").unwrap(),
@@ -2105,7 +2089,7 @@ mod tests {
 				println!("c:{:?}", c);
 				assert_eq!(
 					c.raw_args,
-					cnv_arg(vec!["current_path", "--cstr", "test", "-b", "sub"])
+					cnv_arg(vec!["exe_path", "--cstr", "test", "-b", "sub"])
 				);
 				assert_eq!(
 					c.get_flag_value_of("cstr").unwrap(),
@@ -2132,7 +2116,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--cstr=test",
 						"-b",
 						"sub",
@@ -2173,7 +2157,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--cstr=test",
 						"-b",
 						"sub",
@@ -2212,7 +2196,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--cstr=test",
 						"-b",
 						"sub",
@@ -2243,7 +2227,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--cstr=test",
 						"-b",
 						"sub",
@@ -2299,7 +2283,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--cstr=test",
 						"-b",
 						"sub",
@@ -2336,7 +2320,7 @@ mod tests {
 	#[test]
 	fn run_leaf() {
 		let arg = vec![
-			"current_path".to_string(),
+			"exe_path".to_string(),
 			"sub".to_string(),
 			"leaf".to_string(),
 			//"test".to_string(),
@@ -2367,7 +2351,7 @@ mod tests {
 							.action(|c| {
 								println!("{:?}", c);
 								let raw_args = vec![
-									"current_path".to_string(),
+									"exe_path".to_string(),
 									"sub".to_string(),
 									"leaf".to_string(),
 									//"test".to_string(),
@@ -2378,7 +2362,7 @@ mod tests {
 								];
 								//let expect_args = VecDeque::from(vec!["test".to_string()]);
 								let expect_args = VecDeque::new();
-								assert_eq!(c.current_path, String::from("current_path"));
+								assert_eq!(c.exe_path, String::from("exe_path"));
 								assert_eq!(c.raw_args, raw_args);
 								assert_eq!(c.args, expect_args);
 								assert_eq!(
@@ -2446,7 +2430,7 @@ mod tests {
 					.run(args);
 			};
 
-		let mut args = cnv_arg(vec!["current_path", "--lbool", "sub", "--lsbefore", "leaf"]);
+		let mut args = cnv_arg(vec!["exe_path", "--lbool", "sub", "--lsbefore", "leaf"]);
 
 		run_leaf(
 			root.clone().name("root"),
@@ -2456,7 +2440,7 @@ mod tests {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
-					cnv_arg(vec!["current_path", "--lbool", "sub", "--lsbefore", "leaf"])
+					cnv_arg(vec!["exe_path", "--lbool", "sub", "--lsbefore", "leaf"])
 				);
 				assert_eq!(c.args, VecDeque::new());
 				assert_eq!(c.get_flag_value_of("lbool").unwrap(), FlagValue::Bool(true));
@@ -2489,7 +2473,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--lbool",
 						"sub",
 						"--lsbefore",
@@ -2522,7 +2506,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--lbool",
 						"sub",
 						"--lsbefore",
@@ -2559,7 +2543,7 @@ mod tests {
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
-						"current_path",
+						"exe_path",
 						"--lbool",
 						"sub",
 						"--lsbefore",
@@ -2589,7 +2573,7 @@ mod tests {
 	#[test]
 	fn test_flag_type() {
 		let arg = vec![
-			"current_path".to_string(),
+			"exe_path".to_string(),
 			"sub".to_string(),
 			"leaf".to_string(),
 			"test".to_string(),
@@ -2608,7 +2592,7 @@ mod tests {
 			.action(|c| {
 				println!("sub_action: {:?}", c);
 				let raw_args = vec![
-					"current_path".to_string(),
+					"exe_path".to_string(),
 					"sub".to_string(),
 					"leaf".to_string(),
 					"test".to_string(),
@@ -2623,7 +2607,7 @@ mod tests {
 					"10.0".to_string(),
 				];
 				let expect_args = VecDeque::from(vec!["test".to_string()]);
-				assert_eq!(c.current_path, String::from("current_path"));
+				assert_eq!(c.exe_path, String::from("exe_path"));
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(

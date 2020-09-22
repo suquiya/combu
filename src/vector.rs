@@ -218,6 +218,8 @@ impl<T> Vector<Vector<T>> {
 	}
 }
 
+// TODO: vector!マクロ実装したい
+
 /// Inner module of Vector. This module about Vector and Flag.
 pub mod flag {
 	use super::Vector;

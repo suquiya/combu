@@ -7,6 +7,9 @@ use crate::{
 
 use core::mem::take;
 use std::collections::VecDeque;
+
+// TODO: 複数フラグを一気に登録できるようにしたい
+
 ///The struct for command information store and command execution
 ///This can be root and edge
 ///コマンドの情報格納＆実行用構造体
@@ -1555,17 +1558,26 @@ impl Command {
 	/// Handle action's result (Result<ActionResult, ActionError>).
 	///Implemented: show help / show help following show error
 	/// アクションの結果であるResult<ActionResult, ActionError>をハンドルする関数。現在はhelp表示もしくはエラーを表示したのちのヘルプ表示のみ
-	pub fn handle_action_result(&self, req: Result<ActionResult, ActionError>) -> run_result!() {
+	pub fn handle_action_result(
+		&mut self,
+		mut req: Result<ActionResult, ActionError>,
+	) -> run_result!() {
 		match req {
+			done!() => {
+				// Doneなら何もしないでreqを上にあげる
+				req
+			}
 			Ok(ActionResult::ShowHelpRequest(c)) => {
 				self.show_help(&c);
 				done!()
 			}
-			Err(mut err) => {
-				println!("error: {}", err);
-				self.show_help(&err.context);
-				err.printed = false;
-				Err(err)
+			Err(ref mut err) => {
+				if !err.printed {
+					println!("error: {}", err);
+					self.show_help(&err.context);
+				}
+				err.printed = true;
+				req
 			}
 			_ => {
 				//Doneの場合 - 何もしない

@@ -10,6 +10,9 @@ pub mod action;
 /// command is a module about command
 pub mod command;
 
+/// hook for command execution
+pub mod hook;
+
 mod context;
 /// flag is a module about flag
 pub mod flag;
@@ -24,6 +27,7 @@ pub use action::{
 pub use command::Command;
 pub use context::Context;
 pub use flag::{Flag, FlagType, FlagValue};
+pub use hook::Hook;
 pub use parser::Parser;
 pub use vector::Vector;
 

@@ -2,7 +2,7 @@ use crate::{
 	action::{ActionError, ActionErrorKind::NoActionRegistered, ActionResult},
 	done,
 	parser::MiddleArg,
-	Action, Context, Flag, FlagValue, Parser, Vector,
+	Action, Context, Flag, FlagValue, Hook, Parser, Vector,
 };
 
 use core::mem::take;
@@ -41,6 +41,8 @@ pub struct Command {
 	pub sub: Vector<Command>,
 	///custom help fuction
 	pub help: Option<HelpFunc>,
+	/// hooks
+	pub hook: Vector<Hook>,
 }
 
 // Helper inner macros
@@ -61,6 +63,7 @@ macro_rules! no_registered_error {
 macro_rules! sub_check_field {
 	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident) => {
 		if !$sub.$field.is_empty() {
+			println!("{}", $sub.$field);
 			$self.$field = take(&mut $context.$context_field);
 			$context.$context_field = take(&mut $sub.$field);
 			}
@@ -99,23 +102,6 @@ macro_rules! check_sub_field {
 	};
 }
 
-/*macro_rules! climb_field {
-	($self:expr, $field:ident, $context:expr, $context_field:ident) => {
-		if $self.$field.is_empty() {
-			$self.$field = $context.$context_field.clone();
-		} else {
-			$context.$context_field = $self.$field.clone();
-			}
-	};
-	($self:expr, $field:ident, $context:expr,$context_field:ident, :Option) => {
-		if $self.$field.is_none() {
-			$self.$field = $context.$context_field.clone();
-		} else {
-			$context.$context_field = $self.$field.clone();
-			}
-	};
-}*/
-
 /// HelpFunc shows type alias for help function
 pub type HelpFunc = fn(
 	command: &Command,
@@ -137,7 +123,7 @@ impl Command {
 		description: T,
 		action: Option<Action>,
 	) -> Command {
-		Command::build_new(
+		Command::with_all_field(
 			name.into(),
 			action,
 			authors.into(),
@@ -149,6 +135,7 @@ impl Command {
 			Vector::default(),
 			Vector::default(),
 			version.into(),
+			Vector::default(),
 			Vector::default(),
 		)
 	}
@@ -169,12 +156,13 @@ impl Command {
 			version: String::default(),
 			sub: Vector::default(),
 			help: None,
+			hook: Vector::default(),
 		}
 	}
 
 	/// Create new instance of Command with more options
 	#[allow(clippy::too_many_arguments)]
-	pub fn build_new(
+	pub fn with_all_field(
 		name: String,
 		action: Option<Action>,
 		authors: String,
@@ -187,6 +175,7 @@ impl Command {
 		alias: Vector<String>,
 		version: String,
 		sub: Vector<Command>,
+		hook: Vector<Hook>,
 	) -> Command {
 		Command {
 			name,
@@ -202,6 +191,7 @@ impl Command {
 			version,
 			sub,
 			help: None,
+			hook,
 		}
 	}
 
@@ -626,8 +616,19 @@ impl Command {
 		match self.sub {
 			Vector(None) => None,
 			Vector(Some(ref mut inner)) => match inner.into_iter().position(|c| c.is(name_or_alias)) {
-				None => return None,
+				None => None,
 				Some(index) => Some(inner.swap_remove(index)),
+			},
+		}
+	}
+
+	/// Gets sub command mutable reference matches name_or_alias.
+	pub fn get_mut_sub(&mut self, name_or_alias: &str) -> Option<&mut Command> {
+		match self.sub {
+			Vector(None) => None,
+			Vector(Some(ref mut inner)) => match inner.into_iter().position(|c| c.is(name_or_alias)) {
+				None => None,
+				Some(index) => Some(inner.get_mut(index).unwrap()),
 			},
 		}
 	}
@@ -647,6 +648,14 @@ impl Command {
 	}
 }
 
+/*
+impl Drop for Command {
+	fn drop(&mut self) {
+		println!("drop:{}", self.name);
+	}
+}
+*/
+
 impl From<String> for Command {
 	fn from(name: String) -> Self {
 		Command {
@@ -663,6 +672,7 @@ impl From<String> for Command {
 			version: String::default(),
 			sub: Vector::default(),
 			help: None,
+			hook: Vector::default(),
 		}
 	}
 }
@@ -746,7 +756,7 @@ impl Command {
 							//サブコマンド合致
 							Some(mut sub) => {
 								inter_mediate_args.push_back(last_flag_arg);
-								let context = Context::build_new(
+								let context = Context::with_all_field(
 									raw_args,
 									args,
 									vec![self.c_flags.take()].into(),
@@ -763,7 +773,7 @@ impl Command {
 									check_sub_field!(sub, license: Option, self),
 								);
 								let r = sub.run_with_context(context);
-								self.handle_sub_result(&mut sub, r)
+								r
 							}
 							None =>
 							//サブコマンドが合致しなかった場合
@@ -780,7 +790,7 @@ impl Command {
 										//フラグになる可能性がない場合
 										inter_mediate_args.push_back(last_flag_arg);
 										inter_mediate_args.push_back(MiddleArg::Normal(arg));
-										let context = Context::build_new(
+										let context = Context::with_all_field(
 											raw_args,
 											args,
 											vec![self.c_flags.take()].into(),
@@ -812,7 +822,7 @@ impl Command {
 						}
 					} else {
 						//Noneの場合、そのままself.actionに放り込む
-						let context = Context::build_new(
+						let context = Context::with_all_field(
 							raw_args,
 							args,
 							vec![self.c_flags.take()].into(),
@@ -851,7 +861,7 @@ impl Command {
 					if let Some(arg) = arg {
 						match self.take_sub(&arg) {
 							Some(mut sub) => {
-								let context = Context::build_new(
+								let context = Context::with_all_field(
 									raw_args,
 									args,
 									vec![self.c_flags.take()].into(),
@@ -868,7 +878,7 @@ impl Command {
 									check_sub_field!(sub, license: Option, self),
 								);
 								let r = sub.run_with_context(context);
-								self.handle_sub_result(&mut sub, r)
+								r
 							}
 							None => match &last_flag_arg {
 								MiddleArg::LongFlag(_, FlagValue::None)
@@ -881,7 +891,7 @@ impl Command {
 									//フラグの値になる可能性がない場合（サブコマンドではなくself実行）
 									inter_mediate_args.push_back(last_flag_arg);
 									inter_mediate_args.push_back(MiddleArg::Normal(arg));
-									let context = Context::build_new(
+									let context = Context::with_all_field(
 										raw_args,
 										args,
 										vec![self.c_flags.take()].into(),
@@ -912,7 +922,7 @@ impl Command {
 						}
 					} else {
 						//Noneの場合、そのままself.actionに放り込む
-						let context = Context::build_new(
+						let context = Context::with_all_field(
 							raw_args,
 							args,
 							vec![self.c_flags.take()].into(),
@@ -996,7 +1006,7 @@ impl Command {
 								check_sub_field!(sub, license: Option, self),
 							);
 							let r = sub.run(c);
-							self.handle_sub_result(&mut sub, r)
+							r
 						}
 					}
 				}
@@ -1048,7 +1058,7 @@ impl Command {
 							sub_check!(context, sub, self);
 							println!("{:?}", &context);
 							let r = sub.run(context);
-							self.handle_sub_result(&mut sub, r)
+							r
 						}
 						None => {
 							context.common_flags.push(self.c_flags.take());
@@ -1134,7 +1144,7 @@ impl Command {
 					}
 					sub_check!(c, sub, self);
 					let r = sub.run(c);
-					self.handle_sub_result(&mut sub, r)
+					r
 				}
 				None => match &last {
 					MiddleArg::LongFlag(_, FlagValue::None)
@@ -1162,7 +1172,7 @@ impl Command {
 									}
 									sub_check!(c, sub, self);
 									let r = sub.run(c);
-									self.handle_sub_result(&mut sub, r)
+									r
 								}
 								None => {
 									if let Some(mut parsing_args) = c.parsing_args {
@@ -1278,7 +1288,7 @@ impl Command {
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
 							inter_mediate_args.push_back(last_flag_arg);
-							let c = Context::build_new(
+							let c = Context::with_all_field(
 								raw_args,
 								args,
 								Vector::with_first_elem(self.c_flags.take()),
@@ -1295,7 +1305,7 @@ impl Command {
 								check_sub_field!(sub, license: Option, self),
 							);
 							let r = sub.run(c);
-							self.handle_sub_result(&mut sub, r)
+							r
 						}
 						None => {
 							//一致するサブコマンドがなかった場合
@@ -1311,7 +1321,7 @@ impl Command {
 									inter_mediate_args.push_back(last_flag_arg);
 									inter_mediate_args.push_back(MiddleArg::Normal(arg));
 
-									let context = Context::build_new(
+									let context = Context::with_all_field(
 										raw_args,
 										args,
 										self.c_flags.take().into(),
@@ -1345,7 +1355,7 @@ impl Command {
 					//argがなかった場合
 					//self.actionに放り込む
 					inter_mediate_args.push_back(last_flag_arg);
-					let context = Context::build_new(
+					let context = Context::with_all_field(
 						raw_args,
 						args,
 						self.c_flags.take().into(),
@@ -1385,7 +1395,7 @@ impl Command {
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
 							inter_mediate_args.push_back(last_flag_arg);
-							let c = Context::build_new(
+							let c = Context::with_all_field(
 								raw_args,
 								args,
 								self.c_flags.take().into(),
@@ -1402,7 +1412,7 @@ impl Command {
 								check_sub_field!(sub, license: Option, self),
 							);
 							let r = sub.run(c);
-							self.handle_sub_result(&mut sub, r)
+							r
 						}
 						None => match &last_flag_arg {
 							MiddleArg::LongFlag(_, FlagValue::None)
@@ -1414,7 +1424,7 @@ impl Command {
 							_ => match self.action {
 								Some(action) => {
 									inter_mediate_args.push_back(last_flag_arg);
-									let context = Context::build_new(
+									let context = Context::with_all_field(
 										raw_args,
 										args,
 										self.c_flags.take().into(),
@@ -1442,7 +1452,7 @@ impl Command {
 								}
 								_ => {
 									inter_mediate_args.push_back(last_flag_arg);
-									let context = Context::build_new(
+									let context = Context::with_all_field(
 										raw_args,
 										args,
 										self.c_flags.take().into(),
@@ -1466,7 +1476,7 @@ impl Command {
 					}
 				} else {
 					inter_mediate_args.push_back(last_flag_arg);
-					let context = Context::build_new(
+					let context = Context::with_all_field(
 						raw_args,
 						args,
 						self.c_flags.take().into(),
@@ -1498,7 +1508,7 @@ impl Command {
 				//次が普通の引数だった場合サブコマンドか判定
 				match self.take_sub(&arg) {
 					Some(mut sub) => {
-						let c = Context::build_new(
+						let c = Context::with_all_field(
 							raw_args,
 							args,
 							self.c_flags.take().into(),
@@ -1515,12 +1525,12 @@ impl Command {
 							self.license.take(),
 						);
 						let r = sub.run(c);
-						self.handle_sub_result(&mut sub, r)
+						r
 					}
 					None => {
 						//サブコマンドはないのでそのままselfでaction
 						inter_mediate_args.push_back(MiddleArg::Normal(arg));
-						let c = Context::build_new(
+						let c = Context::with_all_field(
 							raw_args,
 							args,
 							self.c_flags.take().into(),
@@ -1552,7 +1562,7 @@ impl Command {
 			}
 			None => {
 				//これで終わっている場合の判定
-				let context = Context::build_new(
+				let context = Context::with_all_field(
 					raw_args,
 					args, //argsを使いまわしているが、実質空
 					self.c_flags.take().into(),
@@ -1597,24 +1607,6 @@ impl Command {
 				self.show_help(&c);
 				done!()
 			}
-			Ok(ActionResult::ShowOtherHelpRequest(ref mut c, ref mut depth, ref mut cmds)) => {
-				//
-				println!();
-				println!("depth: {}", depth);
-				println!("cmds: {:?}", cmds);
-				println!("{}", self.name);
-				if *depth < 1 {
-					//目的の階層にたどり着いた場合
-					println!("c: {:?}", c);
-					done!()
-				} else {
-					*depth = *depth - 1;
-					self.c_flags = c.common_flags.pop().unwrap();
-					c.routes.pop();
-					println!("depth minused: {:?}", c);
-					req
-				}
-			}
 			Err(ref mut err) => {
 				if !err.printed {
 					println!("error: {}", err);
@@ -1623,35 +1615,6 @@ impl Command {
 				err.printed = true;
 				req
 			}
-		}
-	}
-
-	/// handles result(Result<ActionResult, ActionError>) from sub command run.
-	/// サブコマンドが走った後の制御関数
-	pub fn handle_sub_result(&mut self, sub: &mut Command, mut req: run_result!()) -> run_result!() {
-		match req {
-			Ok(ActionResult::ShowOtherHelpRequest(ref mut c, ref mut depth, ref mut cmds)) => {
-				//
-				println!();
-				println!("depth: {}", depth);
-				println!("cmds: {:?}", cmds);
-				println!("{}", self.name);
-				println!("{}", self.version);
-				println!("{}", sub.version);
-				if *depth < 1 {
-					//目的の階層にたどり着いた場合
-					println!("c: {:?}", c);
-					done!()
-				} else {
-					*depth = *depth - 1;
-					self.c_flags = c.common_flags.pop().unwrap();
-					c.routes.pop();
-					sub_check!(c, self, sub);
-					println!("depth minused: {:?}", c);
-					req
-				}
-			}
-			_ => self.handle_action_result(req),
 		}
 	}
 }

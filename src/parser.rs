@@ -67,7 +67,7 @@ impl Parser {
 	}
 
 	/// Builds a new Parser with all options
-	pub fn build_new(flag_pattern: char, long_flag_prefix: String, eq: char) -> Parser {
+	pub fn with_all_field(flag_pattern: char, long_flag_prefix: String, eq: char) -> Parser {
 		Parser {
 			flag_pattern,
 			long_flag_prefix,

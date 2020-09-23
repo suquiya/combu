@@ -216,7 +216,7 @@ impl Flag {
 	}
 
 	/// Builds a new instance of Flags with all options.
-	pub fn build_new(
+	pub fn with_all_field(
 		name: String,
 		description: String,
 		short_alias: Vector<char>,

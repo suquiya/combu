@@ -75,7 +75,7 @@ impl Context {
 	}
 
 	/// Creates a new instance of Context with all options.
-	pub fn build_new(
+	pub fn with_all_field(
 		raw_args: Vec<String>,
 		args: VecDeque<String>,
 		common_flags: Vector<Vector<Flag>>,

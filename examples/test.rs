@@ -1,5 +1,5 @@
 use combu::command::*;
-use combu::{Done, Flag, FlagType, ShowHelpRequest, Vector};
+use combu::{done, Done, Flag, FlagType, ShowHelpRequest};
 
 fn main() {
 	let root = Command::new()
@@ -33,11 +33,12 @@ fn main() {
 					Command::with_name("help")
 						.action(|c| {
 							println!("send help req: {:?}", c);
-							Ok(combu::ActionResult::ShowOtherHelpRequest(
+							/*Ok(combu::ActionResult::ShowOtherHelpRequest(
 								c,
 								1,
 								Vector(None),
-							))
+							))*/
+							done!()
 						})
 						.version("leaf_version"),
 				),

@@ -165,6 +165,14 @@ impl<T> Vector<T> {
 			Vector(Some(inner)) => inner.get(index),
 		}
 	}
+
+	/// Removes last element of inner vec and returns it. If inner vec is empty or None, returns None.
+	pub fn pop(&mut self) -> Option<T> {
+		match self {
+			Vector(None) => None,
+			Vector(Some(ref mut inner)) => inner.pop(),
+		}
+	}
 }
 
 impl<T> From<Vector<T>> for Vector<Vector<T>> {

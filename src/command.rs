@@ -99,6 +99,23 @@ macro_rules! check_sub_field {
 	};
 }
 
+/*macro_rules! climb_field {
+	($self:expr, $field:ident, $context:expr, $context_field:ident) => {
+		if $self.$field.is_empty() {
+			$self.$field = $context.$context_field.clone();
+		} else {
+			$context.$context_field = $self.$field.clone();
+			}
+	};
+	($self:expr, $field:ident, $context:expr,$context_field:ident, :Option) => {
+		if $self.$field.is_none() {
+			$self.$field = $context.$context_field.clone();
+		} else {
+			$context.$context_field = $self.$field.clone();
+			}
+	};
+}*/
+
 /// HelpFunc shows type alias for help function
 pub type HelpFunc = fn(
 	command: &Command,
@@ -745,7 +762,8 @@ impl Command {
 									check_sub_field!(sub, copyright, self),
 									check_sub_field!(sub, license: Option, self),
 								);
-								sub.run_with_context(context)
+								let r = sub.run_with_context(context);
+								self.handle_sub_result(&mut sub, r)
 							}
 							None =>
 							//サブコマンドが合致しなかった場合
@@ -849,7 +867,8 @@ impl Command {
 									check_sub_field!(sub, copyright, self),
 									check_sub_field!(sub, license: Option, self),
 								);
-								sub.run_with_context(context)
+								let r = sub.run_with_context(context);
+								self.handle_sub_result(&mut sub, r)
 							}
 							None => match &last_flag_arg {
 								MiddleArg::LongFlag(_, FlagValue::None)
@@ -976,7 +995,8 @@ impl Command {
 								check_sub_field!(sub, copyright, self),
 								check_sub_field!(sub, license: Option, self),
 							);
-							sub.run(c)
+							let r = sub.run(c);
+							self.handle_sub_result(&mut sub, r)
 						}
 					}
 				}
@@ -1020,14 +1040,15 @@ impl Command {
 					self.assign_context(context, p, VecDeque::new(), last)
 				}
 				Some(arg) => {
-					println!("arg sub-sub: {}", &arg);
+					//println!("arg sub-sub: {}", &arg);
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
-							println!("{}", &sub.name);
+							//println!("{}", &sub.name);
 							context.common_flags.push(self.c_flags.take());
 							sub_check!(context, sub, self);
 							println!("{:?}", &context);
-							sub.run(context)
+							let r = sub.run(context);
+							self.handle_sub_result(&mut sub, r)
 						}
 						None => {
 							context.common_flags.push(self.c_flags.take());
@@ -1112,7 +1133,8 @@ impl Command {
 						c.parsing_args = Some(inter_mediate_args);
 					}
 					sub_check!(c, sub, self);
-					sub.run(c)
+					let r = sub.run(c);
+					self.handle_sub_result(&mut sub, r)
 				}
 				None => match &last {
 					MiddleArg::LongFlag(_, FlagValue::None)
@@ -1139,7 +1161,8 @@ impl Command {
 										c.parsing_args = Some(inter_mediate_args);
 									}
 									sub_check!(c, sub, self);
-									sub.run(c)
+									let r = sub.run(c);
+									self.handle_sub_result(&mut sub, r)
 								}
 								None => {
 									if let Some(mut parsing_args) = c.parsing_args {
@@ -1271,7 +1294,8 @@ impl Command {
 								check_sub_field!(sub, copyright, self),
 								check_sub_field!(sub, license: Option, self),
 							);
-							sub.run(c)
+							let r = sub.run(c);
+							self.handle_sub_result(&mut sub, r)
 						}
 						None => {
 							//一致するサブコマンドがなかった場合
@@ -1377,7 +1401,8 @@ impl Command {
 								check_sub_field!(sub, copyright, self),
 								check_sub_field!(sub, license: Option, self),
 							);
-							sub.run(c)
+							let r = sub.run(c);
+							self.handle_sub_result(&mut sub, r)
 						}
 						None => match &last_flag_arg {
 							MiddleArg::LongFlag(_, FlagValue::None)
@@ -1489,7 +1514,8 @@ impl Command {
 							take(&mut self.copyright),
 							self.license.take(),
 						);
-						sub.run(c)
+						let r = sub.run(c);
+						self.handle_sub_result(&mut sub, r)
 					}
 					None => {
 						//サブコマンドはないのでそのままselfでaction
@@ -1571,6 +1597,24 @@ impl Command {
 				self.show_help(&c);
 				done!()
 			}
+			Ok(ActionResult::ShowOtherHelpRequest(ref mut c, ref mut depth, ref mut cmds)) => {
+				//
+				println!();
+				println!("depth: {}", depth);
+				println!("cmds: {:?}", cmds);
+				println!("{}", self.name);
+				if *depth < 1 {
+					//目的の階層にたどり着いた場合
+					println!("c: {:?}", c);
+					done!()
+				} else {
+					*depth = *depth - 1;
+					self.c_flags = c.common_flags.pop().unwrap();
+					c.routes.pop();
+					println!("depth minused: {:?}", c);
+					req
+				}
+			}
 			Err(ref mut err) => {
 				if !err.printed {
 					println!("error: {}", err);
@@ -1579,10 +1623,35 @@ impl Command {
 				err.printed = true;
 				req
 			}
-			_ => {
-				//Doneの場合 - 何もしない
-				done!()
+		}
+	}
+
+	/// handles result(Result<ActionResult, ActionError>) from sub command run.
+	/// サブコマンドが走った後の制御関数
+	pub fn handle_sub_result(&mut self, sub: &mut Command, mut req: run_result!()) -> run_result!() {
+		match req {
+			Ok(ActionResult::ShowOtherHelpRequest(ref mut c, ref mut depth, ref mut cmds)) => {
+				//
+				println!();
+				println!("depth: {}", depth);
+				println!("cmds: {:?}", cmds);
+				println!("{}", self.name);
+				println!("{}", self.version);
+				println!("{}", sub.version);
+				if *depth < 1 {
+					//目的の階層にたどり着いた場合
+					println!("c: {:?}", c);
+					done!()
+				} else {
+					*depth = *depth - 1;
+					self.c_flags = c.common_flags.pop().unwrap();
+					c.routes.pop();
+					sub_check!(c, self, sub);
+					println!("depth minused: {:?}", c);
+					req
+				}
 			}
+			_ => self.handle_action_result(req),
 		}
 	}
 }

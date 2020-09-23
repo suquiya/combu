@@ -1,5 +1,5 @@
 use combu::command::*;
-use combu::{Done, Flag, FlagType, ShowHelpRequest};
+use combu::{Done, Flag, FlagType, ShowHelpRequest, Vector};
 
 fn main() {
 	let root = Command::new()
@@ -7,6 +7,7 @@ fn main() {
 			println!("root_action: {:?}", c);
 			Ok(ShowHelpRequest(c))
 		})
+		.version("root_version")
 		.usage("root usage")
 		.desctiption("example main")
 		.common_flag(Flag::new("common", FlagType::default(), "Sample common flag").short_alias('c'))
@@ -21,12 +22,25 @@ fn main() {
 					Ok(ShowHelpRequest(c))
 				})
 				.alias("s")
+				.version("sublong_version")
 				.common_flag(Flag::with_name("scommon"))
 				.sub_command(Command::with_name("leaf").action(|c| {
 					println!("leaf_action: {:?}", c);
 					println!("common: {:?}", c.get_flag_value_of("common"));
 					Ok(Done)
-				})),
+				}))
+				.sub_command(
+					Command::with_name("help")
+						.action(|c| {
+							println!("send help req: {:?}", c);
+							Ok(combu::ActionResult::ShowOtherHelpRequest(
+								c,
+								1,
+								Vector(None),
+							))
+						})
+						.version("leaf_version"),
+				),
 		)
 		.sub_command(Command::with_name("sub2").desctiption("sub command 2"))
 		.sub_command(Command::with_name("t").desctiption("test desc"));

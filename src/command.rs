@@ -224,7 +224,7 @@ impl Command {
 						self.license.take(),
 					));
 
-					self.handle_action_result(req)
+					self.handle_command_result(req)
 				} else {
 					let mut args = VecDeque::from(raw_args.clone());
 					let exe_path = args.pop_front().unwrap();
@@ -244,7 +244,7 @@ impl Command {
 					context = Parser::default().parse_args_until_end(context);
 
 					let req = action(context);
-					self.handle_action_result(req)
+					self.handle_command_result(req)
 				}
 			}
 			None => match self.sub {
@@ -257,7 +257,7 @@ impl Command {
 					let copyright = take(&mut self.copyright);
 					let authors = take(&mut self.authors);
 					let license = self.license.take();
-					self.handle_action_result(no_registered_error!(Context::new(
+					self.handle_command_result(no_registered_error!(Context::new(
 						raw_args,
 						args,
 						c_flags,
@@ -579,6 +579,12 @@ impl Command {
 		self
 	}
 
+	/// Add command's hook
+	pub fn hook(mut self, hook: Hook) -> Self {
+		self.hook.push(hook);
+		self
+	}
+
 	/// Sets license
 	pub fn license(mut self, license: Option<(String, String)>) -> Self {
 		self.license = license;
@@ -732,7 +738,7 @@ impl Command {
 						take(&mut self.copyright),
 						self.license.take(),
 					));
-					self.handle_action_result(req)
+					self.handle_command_result(req)
 				}
 				None => {
 					let c = Context::new(
@@ -747,7 +753,7 @@ impl Command {
 						take(&mut self.copyright),
 						self.license.take(),
 					);
-					self.handle_action_result(no_registered_error!(c))
+					self.handle_command_result(no_registered_error!(c))
 				}
 			}
 		} else {
@@ -780,7 +786,7 @@ impl Command {
 									take(&mut self.copyright),
 									self.license.take(),
 								);
-								self.handle_action_result(no_registered_error!(c))
+								self.handle_command_result(no_registered_error!(c))
 							}
 							Some(action) => {
 								args.push_front(arg);
@@ -797,7 +803,7 @@ impl Command {
 									self.license.take(),
 								);
 								c = p.parse_args_until_end(c);
-								self.handle_action_result(action(c))
+								self.handle_command_result(action(c))
 							}
 						},
 						Some(mut sub) => {
@@ -843,8 +849,8 @@ impl Command {
 			context = p.parse_args_until_end(context);
 			context.routes.push(self.name.clone());
 			match self.action {
-				Some(action) => self.handle_action_result(action(context)),
-				None => self.handle_action_result(no_registered_error!(context)),
+				Some(action) => self.handle_command_result(action(context)),
+				None => self.handle_command_result(no_registered_error!(context)),
 			}
 		} else {
 			//サブコマンドと一致するかを捜査
@@ -874,7 +880,7 @@ impl Command {
 							context.common_flags.push(self.c_flags.take());
 							context.local_flags = self.l_flags.take();
 							match self.action {
-								None => self.handle_action_result(no_registered_error!(context)),
+								None => self.handle_command_result(no_registered_error!(context)),
 								Some(action) => {
 									let c = match p.parse_inter_mediate_args(context, true) {
 										(mut context, None) => {
@@ -890,7 +896,7 @@ impl Command {
 											context
 										}
 									};
-									self.handle_action_result(action(c))
+									self.handle_command_result(action(c))
 								}
 							}
 						}
@@ -908,7 +914,7 @@ impl Command {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
 							}
-							self.handle_action_result(action(context))
+							self.handle_command_result(action(context))
 						}
 						None => {
 							context.local_flags = self.l_flags.take();
@@ -919,7 +925,7 @@ impl Command {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
 							}
-							self.handle_action_result(no_registered_error!(context))
+							self.handle_command_result(no_registered_error!(context))
 						}
 					}
 				}
@@ -1002,8 +1008,8 @@ impl Command {
 										c.args = non_flag_args;
 									}
 									match self.action {
-										Some(action) => self.handle_action_result(action(c)),
-										None => self.handle_action_result(no_registered_error!(c)),
+										Some(action) => self.handle_command_result(action(c)),
+										None => self.handle_command_result(no_registered_error!(c)),
 									}
 								}
 							},
@@ -1022,8 +1028,8 @@ impl Command {
 									c.args = args;
 								}
 								match self.action {
-									Some(action) => self.handle_action_result(action(c)),
-									None => self.handle_action_result(no_registered_error!(c)),
+									Some(action) => self.handle_command_result(action(c)),
+									None => self.handle_command_result(no_registered_error!(c)),
 								}
 							}
 						}
@@ -1045,8 +1051,8 @@ impl Command {
 							c.args = non_flag_args;
 						}
 						match self.action {
-							Some(action) => self.handle_action_result(action(c)),
-							None => self.handle_action_result(no_registered_error!(c)),
+							Some(action) => self.handle_command_result(action(c)),
+							None => self.handle_command_result(no_registered_error!(c)),
 						}
 					}
 				},
@@ -1069,7 +1075,7 @@ impl Command {
 					c.args = non_flag_args;
 				}
 				match self.action {
-					Some(action) => self.handle_action_result(action(c)),
+					Some(action) => self.handle_command_result(action(c)),
 					None => no_registered_error!(c),
 				}
 			}
@@ -1180,8 +1186,8 @@ impl Command {
 												c.args = non_flag_args;
 											};
 											match self.action {
-												Some(action) => self.handle_action_result(action(c)),
-												None => self.handle_action_result(no_registered_error!(c)),
+												Some(action) => self.handle_command_result(action(c)),
+												None => self.handle_command_result(no_registered_error!(c)),
 											}
 										}
 									},
@@ -1210,7 +1216,7 @@ impl Command {
 										}
 										match self.action {
 											Some(action) => action(c),
-											None => self.handle_action_result(no_registered_error!(c)),
+											None => self.handle_command_result(no_registered_error!(c)),
 										}
 									}
 								}
@@ -1244,8 +1250,8 @@ impl Command {
 									c.args = non_flag_args;
 								}
 								match self.action {
-									Some(action) => self.handle_action_result(action(c)),
-									_ => self.handle_action_result(no_registered_error!(c)),
+									Some(action) => self.handle_command_result(action(c)),
+									_ => self.handle_command_result(no_registered_error!(c)),
 								}
 							}
 						}
@@ -1279,8 +1285,8 @@ impl Command {
 				}
 
 				match self.action {
-					Some(action) => self.handle_action_result(action(c)),
-					None => self.handle_action_result(no_registered_error!(c)),
+					Some(action) => self.handle_command_result(action(c)),
+					None => self.handle_command_result(no_registered_error!(c)),
 				}
 			} /*Some(short_flag) if p.flag(&short_flag) => {
 				  //println!("short_flag: {}", &short_flag);
@@ -1347,7 +1353,7 @@ impl Command {
 										  non_flag_args.append(&mut context.args);
 										  context.args = non_flag_args;
 									  }
-									  self.handle_action_result(action(context))
+									  self.handle_command_result(action(context))
 								  }
 								  _ => {
 									  inter_mediate_args.push_back(last_flag_arg);
@@ -1368,7 +1374,7 @@ impl Command {
 										  self.license.take(),
 									  );
 
-									  self.handle_action_result(no_registered_error!(context))
+									  self.handle_command_result(no_registered_error!(context))
 								  }
 							  },
 						  },
@@ -1396,7 +1402,7 @@ impl Command {
 						  non_flag_args.append(&mut c.args);
 						  c.args = non_flag_args;
 					  }
-					  self.handle_action_result(match self.action {
+					  self.handle_command_result(match self.action {
 						  Some(action) => action(c),
 						  None => no_registered_error!(c),
 					  })
@@ -1453,8 +1459,8 @@ impl Command {
 							  c.args = non_flag_args;
 						  }
 						  match self.action {
-							  Some(action) => self.handle_action_result(action(c)),
-							  None => self.handle_action_result(no_registered_error!(c)),
+							  Some(action) => self.handle_command_result(action(c)),
+							  None => self.handle_command_result(no_registered_error!(c)),
 						  }
 					  }
 				  }
@@ -1465,7 +1471,7 @@ impl Command {
 	/// Handle action's result (Result<ActionResult, ActionError>).
 	///Implemented: show help / show help following show error
 	/// アクションの結果であるResult<ActionResult, ActionError>をハンドルする関数。現在はhelp表示もしくはエラーを表示したのちのヘルプ表示のみ
-	pub fn handle_action_result(
+	pub fn handle_command_result(
 		&mut self,
 		mut req: Result<ActionResult, ActionError>,
 	) -> run_result!() {
@@ -1486,6 +1492,7 @@ impl Command {
 				err.printed = true;
 				req
 			}
+			_ => req,
 		}
 	}
 }

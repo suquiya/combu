@@ -11,6 +11,8 @@ pub enum ActionResult {
 	Done,
 	/// ShowHelpRequest shows that action requested to show help.
 	ShowHelpRequest(Context),
+	/// Continue after Hook
+	Continue,
 }
 
 /// ActionError stores error of action.

@@ -82,12 +82,7 @@ impl<T> Vector<T> {
 	/// Append other(Vec<T>) to this inner.
 	pub fn append_vec(&mut self, mut other: Vec<T>) {
 		match self {
-			Vector(None) => {
-				//let mut inner = vec![];
-				//inner.append(other);
-				// self = Vector(Some(inner));
-				*self = Vector(Some(other))
-			}
+			Vector(None) => *self = Vector(Some(other)),
 			Vector(Some(ref mut vec)) => (*vec).append(&mut other),
 		}
 	}
@@ -239,8 +234,6 @@ impl<T> Vector<Vector<T>> {
 		}
 	}
 }
-
-// TODO: vector!マクロ実装したい
 
 /// Inner module of Vector. This module about Vector and Flag.
 pub mod flag {

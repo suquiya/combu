@@ -22,7 +22,7 @@ pub struct Hook {
 }
 
 /// Type for action of hook.
-pub type HookAction = fn(&Command, Context) -> action_result!();
+pub type HookAction = fn(&mut Command, Context) -> action_result!();
 
 impl Hook {
 	/// Creates new hook.

@@ -1,4 +1,18 @@
 #[macro_export]
+/// Creates new Vector.
+macro_rules! vector {
+	() => {
+		$crate::Vector(None)
+	};
+	($elem:expr; $n:expr)=>{
+		$crate::Vector(Some(vec![$elem,$n]))
+	};
+	($($x:expr),+ $(,)?)=>{
+		$crate::Vector(Some(vec![$($x),+]))
+	}
+}
+
+#[macro_export]
 /// Checks context has help flag. If the context has help flag, return ShowHelpRequest.
 macro_rules! check_help {
 	($context:ident) => {

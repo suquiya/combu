@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::{action_result, Command, Context, Vector};
 
 #[derive(Clone, Default)]
@@ -22,7 +24,13 @@ pub struct Hook {
 }
 
 /// Type for action of hook.
-pub type HookAction = fn(&mut Command, Context) -> action_result!();
+pub type HookAction = fn(&mut Command, HookInfo) -> action_result!();
+
+/// Enum for hookAction arg.
+pub enum HookInfo {
+	Context(Context),
+	Args(Vec<String>, VecDeque<String>),
+}
 
 impl Hook {
 	/// Creates new hook.

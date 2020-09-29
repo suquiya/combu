@@ -8,7 +8,7 @@ use crate::{
 use core::mem::take;
 use std::collections::VecDeque;
 
-// TODO: 複数フラグを一気に登録できるようにしたい
+// TODO: 複数フラグ、複数コマンドを一気に登録できるようにしたい
 
 ///The struct for command information store and command execution
 ///This can be root and edge
@@ -771,6 +771,17 @@ impl Command {
 					self.assign_run(args, VecDeque::new(), p, raw_args, exe_path, last)
 				}
 				Some(arg) => {
+					match self.take_hook(&arg) {
+						None => {
+							//何もしない
+						}
+						Some(hook) => {
+							if let Some(action) = hook.action {
+								let r = action(self, None);
+							}
+						}
+					}
+
 					match self.take_sub(&arg) {
 						None => match self.action {
 							None => {

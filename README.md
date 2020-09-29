@@ -291,8 +291,9 @@ cargo run --example multi -- s 1 2 3 4 5
 
 # TODO(or Features to be implemented)
 
+- フック処理追加
 - ドキュメントコメントを分かりやすくする(いつになるかは無期限未定)
-- テストの実装(`command.rs` のみ実装中)
+- テストの実装(`command.rs` のフラグ解析テストは実装した)
 - コマンド構築にあたってのプリセット実装
 
 # License

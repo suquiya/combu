@@ -13,8 +13,8 @@ pub enum ActionResult {
 	ShowHelpRequest(Context),
 	/// ShowHelpReq shows that action requested to show relative's help.
 	ShowOtherHelpReq(Context, usize, Vector<String>),
-	/// Returns Context and Action function
-	ActionAndContext(Context, Action),
+	/// Shows return Context and Action as result for parse and run.
+	Result(Context, Action),
 }
 
 /// ActionError stores error of action.

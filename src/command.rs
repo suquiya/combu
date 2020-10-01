@@ -2,7 +2,7 @@ use crate::{
 	action::{ActionError, ActionErrorKind::NoActionRegistered, ActionResult},
 	done,
 	parser::MiddleArg,
-	Action, Context, Flag, FlagValue, Hook, Parser, Vector,
+	Action, Context, Flag, FlagValue, Parser, Vector,
 };
 
 use core::mem::take;
@@ -41,8 +41,6 @@ pub struct Command {
 	pub sub: Vector<Command>,
 	///custom help fuction
 	pub help: Option<HelpFunc>,
-	/// hooks
-	pub hook: Vector<Hook>,
 }
 
 // Helper inner macros
@@ -136,7 +134,6 @@ impl Command {
 			Vector::default(),
 			version.into(),
 			Vector::default(),
-			Vector::default(),
 		)
 	}
 
@@ -156,7 +153,6 @@ impl Command {
 			version: String::default(),
 			sub: Vector::default(),
 			help: None,
-			hook: Vector::default(),
 		}
 	}
 
@@ -175,7 +171,6 @@ impl Command {
 		alias: Vector<String>,
 		version: String,
 		sub: Vector<Command>,
-		hook: Vector<Hook>,
 	) -> Command {
 		Command {
 			name,
@@ -191,7 +186,6 @@ impl Command {
 			version,
 			sub,
 			help: None,
-			hook,
 		}
 	}
 
@@ -579,11 +573,11 @@ impl Command {
 		self
 	}
 
-	/// Add command's hook
-	pub fn hook(mut self, hook: Hook) -> Self {
+	// /// Add command's hook
+	/*pub fn hook(mut self, hook: Hook) -> Self {
 		self.hook.push(hook);
 		self
-	}
+	}*/
 
 	/// Sets license
 	pub fn license(mut self, license: Option<(String, String)>) -> Self {
@@ -628,9 +622,9 @@ impl Command {
 		}
 	}
 
-	/// Take hook matches name_or_alias.
-	/// name_or_aliasに一致するフックがある場合、保持しているVectorからswap_removeで取り出して返す
-	pub fn take_hook(&mut self, name_or_alias: &str) -> Option<Hook> {
+	// /// Take hook matches name_or_alias.
+	// /// name_or_aliasに一致するフックがある場合、保持しているVectorからswap_removeで取り出して返す
+	/*pub fn take_hook(&mut self, name_or_alias: &str) -> Option<Hook> {
 		match self.hook {
 			Vector(None) => None,
 			Vector(Some(ref mut inner)) => match inner.into_iter().position(|c| c.is(name_or_alias)) {
@@ -638,7 +632,7 @@ impl Command {
 				Some(index) => Some(inner.swap_remove(index)),
 			},
 		}
-	}
+	}*/
 
 	/// Gets sub command mutable reference matches name_or_alias.
 	pub fn get_mut_sub(&mut self, name_or_alias: &str) -> Option<&mut Command> {
@@ -690,7 +684,6 @@ impl From<String> for Command {
 			version: String::default(),
 			sub: Vector::default(),
 			help: None,
-			hook: Vector::default(),
 		}
 	}
 }
@@ -771,16 +764,25 @@ impl Command {
 					self.assign_run(args, VecDeque::new(), p, raw_args, exe_path, last)
 				}
 				Some(arg) => {
-					match self.take_hook(&arg) {
+					/*match self.take_hook(&arg) {
 						None => {
 							//何もしない
 						}
 						Some(hook) => {
 							if let Some(action) = hook.action {
-								let r = action(self, None);
+								let (r, hi) = action(self, HookInfo::Args(args, None));
+								match r {
+									done!() => return r,
+									_ => {}
+								}
+								if let HookInfo::Args(after_args, None) = hi {
+									args = after_args
+								} else {
+									panic!("args is not returned");
+								}
 							}
 						}
-					}
+					}*/
 
 					match self.take_sub(&arg) {
 						None => match self.action {
@@ -1299,55 +1301,9 @@ impl Command {
 					Some(action) => self.handle_command_result(action(c)),
 					None => self.handle_command_result(no_registered_error!(c)),
 				}
-			} /*Some(short_flag) if p.flag(&short_flag) => {
-				  //println!("short_flag: {}", &short_flag);
-				  //そのままself.runに放り込む
-				  let (arg, _args, mut _inter_mediate_args, last_flag_arg) =
-					  p.middle_parse(args, inter_mediate_args, p.short_middle(short_flag));
-				  //println!("next normal arg: {:?}", arg);
-				  args = _args;
-				  inter_mediate_args = _inter_mediate_args;
-				  if let Some(arg) = arg {
-					  match self.take_sub(&arg) {
-						  Some(mut sub) => {
-							  inter_mediate_args.push_back(last_flag_arg);
-							  let c = Context::with_all_field(
-								  raw_args,
-								  args,
-								  self.c_flags.take().into(),
-								  Vector::default(),
-								  exe_path.into(),
-								  self.derive_route_init_vector(),
-								  Vector::default(),
-								  Vector::default(),
-								  Some(inter_mediate_args),
-								  Vector::default(),
-								  check_sub_field!(sub, authors, self),
-								  check_sub_field!(sub, version, self),
-								  check_sub_field!(sub, copyright, self),
-								  check_sub_field!(sub, license: Option, self),
-							  );
-							  let r = sub.run(c);
-							  r
-						  }
-						  None => match &last_flag_arg {
-							  MiddleArg::LongFlag(_, FlagValue::None)
-							  | MiddleArg::ShortFlag(_, FlagValue::None) => {
-								  inter_mediate_args.push_back(last_flag_arg);
-								  inter_mediate_args.push_back(MiddleArg::Normal(arg));
-								  self.assign_run(args, inter_mediate_args, p, raw_args, exe_path)
-							  }
-							  _ => match self.action {
-								  Some(action) => {
-									  inter_mediate_args.push_back(last_flag_arg);
-									  let context = Context::with_all_field(
-										  raw_args,
-										  args,
-										  self.c_flags.take().into(),
-										  self.l_flags.take(),
-										  exe_path.into(),
-										  self.derive_route_init_vector(),
-										  Vector::default(),
+			} /*
+
+
 										  Vector::default(),
 										  Some(inter_mediate_args),
 										  Vector::default(),
@@ -1392,9 +1348,7 @@ impl Command {
 					  }
 				  } else {
 					  inter_mediate_args.push_back(last_flag_arg);
-					  let context = Context::with_all_field(
-						  raw_args,
-						  args,
+
 						  self.c_flags.take().into(),
 						  self.l_flags.take(),
 						  exe_path,
@@ -1409,73 +1363,9 @@ impl Command {
 						  self.license.take(),
 					  );
 					  let (mut c, non_flag_args) = p.parse_inter_mediate_args(context, false);
-					  if let Some(mut non_flag_args) = non_flag_args {
-						  non_flag_args.append(&mut c.args);
-						  c.args = non_flag_args;
-					  }
-					  self.handle_command_result(match self.action {
-						  Some(action) => action(c),
-						  None => no_registered_error!(c),
-					  })
-				  }
-			  }*/
-			  /*Some(arg) => {
-				  //println!("non_flag_arg: {}", &arg);
-				  //次が普通の引数だった場合サブコマンドか判定
-				  match self.take_sub(&arg) {
-					  Some(mut sub) => {
-						  let c = Context::with_all_field(
-							  raw_args,
-							  args,
-							  self.c_flags.take().into(),
-							  Vector::default(),
-							  exe_path.into(),
-							  self.derive_route_init_vector(),
-							  Vector::default(),
-							  Vector::default(),
-							  Some(inter_mediate_args),
-							  Vector::default(),
-							  take(&mut self.authors),
-							  take(&mut self.version),
-							  take(&mut self.copyright),
-							  self.license.take(),
-						  );
-						  let r = sub.run(c);
-						  r
-					  }
-					  None => {
-						  //サブコマンドはないのでそのままselfでaction
-						  inter_mediate_args.push_back(MiddleArg::Normal(arg));
-						  let c = Context::with_all_field(
-							  raw_args,
-							  args,
-							  self.c_flags.take().into(),
-							  self.l_flags.take(),
-							  exe_path.into(),
-							  self.derive_route_init_vector(),
-							  Vector::default(),
-							  Vector::default(),
-							  Some(inter_mediate_args),
-							  Vector(None),
-							  take(&mut self.authors),
-							  take(&mut self.version),
-							  take(&mut self.copyright),
-							  self.license.take(),
-						  );
 
-						  let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
-						  c = p.parse_args_until_end(c);
-						  if let Some(mut non_flag_args) = non_flag_args {
-							  non_flag_args.append(&mut c.args);
-							  c.args = non_flag_args;
-						  }
-						  match self.action {
-							  Some(action) => self.handle_command_result(action(c)),
-							  None => self.handle_command_result(no_registered_error!(c)),
-						  }
-					  }
-				  }
-			  }*/
+
+			  */
 		}
 	}
 

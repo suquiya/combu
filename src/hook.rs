@@ -1,6 +1,7 @@
+// Hookをするとややこしくなりそうなので却下
 use std::collections::VecDeque;
 
-use crate::{action_result, Command, Context, Vector};
+use crate::{ActionError, ActionResult, Command, Context, Vector};
 
 #[derive(Clone, Default)]
 /// Hook is struct for action needs a context before sub.run.
@@ -24,12 +25,14 @@ pub struct Hook {
 }
 
 /// Type for action of hook.
-pub type HookAction = fn(&mut Command, HookInfo) -> action_result!();
+pub type HookAction = fn(&mut Command, HookInfo) -> (Result<ActionResult, ActionError>, HookInfo);
 
 /// Enum for hookAction arg.
 pub enum HookInfo {
+	/// shows Context given.
 	Context(Context),
-	Args(Vec<String>, VecDeque<String>),
+	/// shows args(args,inter_mediate_args) given.
+	Args(VecDeque<String>, Option<Vector<crate::parser::MiddleArg>>),
 }
 
 impl Hook {

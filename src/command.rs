@@ -1281,71 +1281,7 @@ impl Command {
 					Some(action) => self.handle_action_result(action(c)),
 					None => self.handle_action_result(no_registered_error!(c)),
 				}
-			} /*
-
-
-										  Vector::default(),
-										  Some(inter_mediate_args),
-										  Vector::default(),
-										  take(&mut self.authors),
-										  take(&mut self.version),
-										  take(&mut self.copyright),
-										  self.license.take(),
-									  );
-									  let (mut context, non_flag_args) =
-										  p.parse_inter_mediate_args(context, false);
-									  context = p.parse_args_until_end(context);
-									  if let Some(mut non_flag_args) = non_flag_args {
-										  non_flag_args.push_back(arg);
-										  non_flag_args.append(&mut context.args);
-										  context.args = non_flag_args;
-									  }
-									  self.handle_action_result(action(context))
-								  }
-								  _ => {
-									  inter_mediate_args.push_back(last_flag_arg);
-									  let context = Context::with_all_field(
-										  raw_args,
-										  args,
-										  self.c_flags.take().into(),
-										  self.l_flags.take(),
-										  exe_path.into(),
-										  self.derive_route_init_vector(),
-										  Vector::default(),
-										  Vector::default(),
-										  Some(inter_mediate_args),
-										  Vector::default(),
-										  take(&mut self.authors),
-										  take(&mut self.version),
-										  take(&mut self.copyright),
-										  self.license.take(),
-									  );
-
-									  self.handle_action_result(no_registered_error!(context))
-								  }
-							  },
-						  },
-					  }
-				  } else {
-					  inter_mediate_args.push_back(last_flag_arg);
-
-						  self.c_flags.take().into(),
-						  self.l_flags.take(),
-						  exe_path,
-						  self.derive_route_init_vector(),
-						  Vector::default(),
-						  Vector::default(),
-						  Some(inter_mediate_args),
-						  Vector::default(),
-						  take(&mut self.authors),
-						  take(&mut self.version),
-						  take(&mut self.copyright),
-						  self.license.take(),
-					  );
-					  let (mut c, non_flag_args) = p.parse_inter_mediate_args(context, false);
-
-
-			  */
+			}
 		}
 	}
 

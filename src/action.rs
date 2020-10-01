@@ -11,8 +11,6 @@ pub enum ActionResult {
 	Done,
 	/// ShowHelpRequest shows that action requested to show help.
 	ShowHelpRequest(Context),
-	/// Continue after Hook
-	Continue,
 	/// ShowHelpReq shows that action requested to show relative's help.
 	ShowOtherHelpReq(Context, usize, Vector<String>),
 	/// Returns Context and Action function

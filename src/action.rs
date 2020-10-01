@@ -1,4 +1,4 @@
-use crate::Context;
+use crate::{Context, Vector};
 use std::{error::Error, fmt};
 
 ///Action is type for command action. It returns Result<ActionResult, ActionError>.
@@ -13,6 +13,10 @@ pub enum ActionResult {
 	ShowHelpRequest(Context),
 	/// Continue after Hook
 	Continue,
+	/// ShowHelpReq shows that action requested to show relative's help.
+	ShowOtherHelpReq(Context, usize, Vector<String>),
+	/// Returns Context and Action function
+	ActionAndContext(Context, Action),
 }
 
 /// ActionError stores error of action.

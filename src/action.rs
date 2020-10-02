@@ -17,20 +17,8 @@ pub enum ActionResult {
 	ShowOtherHelpReq(Context, usize, Vector<String>),
 	/// Shows return Context and Action as result for parse and run.
 	Result(Context, Action),
-	/// Custom result
-	Custom(Box<dyn CustomResult>),
-}
-
-/// Empty Trait for Custom Result.
-pub trait CustomResult {
-	/// function for show debug message
-	fn debug_message(&self) -> &str;
-}
-
-impl Debug for dyn CustomResult {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "{}", self.debug_message())
-	}
+	/// Custom result(can have Box including dyn Debug).
+	Custom(Box<dyn Debug>),
 }
 
 /// ActionError stores error of action.
@@ -97,8 +85,6 @@ impl fmt::Display for ActionError {
 			}
 			ActionErrorKind::None => write!(f, "no action error"),
 		}
-
-		//write!(f, "{}", description)
 	}
 }
 

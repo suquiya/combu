@@ -107,6 +107,40 @@ pub type HelpFunc = fn(
 	default_help: fn(&Command, &Context) -> String,
 ) -> String;
 
+macro_rules! gen_context_for_self_action {
+	($self:expr,$raw_args:expr,$args:expr,$exe_path:expr) => {
+		Context::new(
+			$raw_args,
+			$args,
+			$self.c_flags.take(),
+			$self.l_flags.take(),
+			$self.derive_route_init_vector(),
+			$exe_path,
+			take(&mut $self.authors),
+			take(&mut $self.version),
+			take(&mut $self.copyright),
+			$self.license.take(),
+			)
+	};
+}
+
+macro_rules! gen_context_for_sub_run {
+	($self:expr,$sub:expr, $raw_args:expr,$args:expr,$exe_path:expr) => {
+		Context::new(
+			$raw_args,
+			$args,
+			$self.c_flags.take(),
+			Vector(None),
+			$self.derive_route_init_vector(),
+			$exe_path,
+			check_sub_field!($sub, authors, $self),
+			check_sub_field!($sub, version, $self),
+			check_sub_field!($sub, copyright, $self),
+			check_sub_field!($sub, license: Option, $self),
+			)
+	};
+}
+
 impl Command {
 	/// Creare new instance of Command
 	pub fn new() -> Command {
@@ -622,18 +656,6 @@ impl Command {
 		}
 	}
 
-	// /// Take hook matches name_or_alias.
-	// /// name_or_aliasに一致するフックがある場合、保持しているVectorからswap_removeで取り出して返す
-	/*pub fn take_hook(&mut self, name_or_alias: &str) -> Option<Hook> {
-		match self.hook {
-			Vector(None) => None,
-			Vector(Some(ref mut inner)) => match inner.into_iter().position(|c| c.is(name_or_alias)) {
-				None => None,
-				Some(index) => Some(inner.swap_remove(index)),
-			},
-		}
-	}*/
-
 	/// Gets sub command mutable reference matches name_or_alias.
 	pub fn get_mut_sub(&mut self, name_or_alias: &str) -> Option<&mut Command> {
 		match self.sub {
@@ -719,33 +741,11 @@ impl Command {
 			//引数がない場合
 			match self.action {
 				Some(action) => {
-					let req = action(Context::new(
-						raw_args,
-						args,
-						self.c_flags.take(),
-						self.l_flags.take(),
-						self.derive_route_init_vector(),
-						exe_path,
-						take(&mut self.authors),
-						take(&mut self.version),
-						take(&mut self.copyright),
-						self.license.take(),
-					));
+					let req = action(gen_context_for_self_action!(self, raw_args, args, exe_path));
 					self.handle_action_result(req)
 				}
 				None => {
-					let c = Context::new(
-						raw_args,
-						args,
-						self.c_flags.take(),
-						self.l_flags.take(),
-						self.derive_route_init_vector(),
-						exe_path,
-						take(&mut self.authors),
-						take(&mut self.version),
-						take(&mut self.copyright),
-						self.license.take(),
-					);
+					let c = gen_context_for_self_action!(self, raw_args, args, exe_path);
 					self.handle_action_result(no_registered_error!(c))
 				}
 			}
@@ -767,53 +767,20 @@ impl Command {
 					match self.take_sub(&arg) {
 						None => match self.action {
 							None => {
-								let c = Context::new(
-									raw_args,
-									args,
-									self.c_flags.take(),
-									Vector::default(),
-									self.derive_route_init_vector(),
-									exe_path,
-									take(&mut self.authors),
-									take(&mut self.version),
-									take(&mut self.copyright),
-									self.license.take(),
-								);
+								let c = gen_context_for_self_action!(self, raw_args, args, exe_path);
 								self.handle_action_result(no_registered_error!(c))
 							}
 							Some(action) => {
 								args.push_front(arg);
-								let mut c = Context::new(
-									raw_args,
-									args,
-									self.c_flags.take(),
-									self.l_flags.take(),
-									self.derive_route_init_vector(),
-									exe_path,
-									take(&mut self.authors),
-									take(&mut self.version),
-									take(&mut self.copyright),
-									self.license.take(),
-								);
+								let mut c = gen_context_for_self_action!(self, raw_args, args, exe_path);
 								c = p.parse_args_until_end(c);
 								self.handle_action_result(action(c))
 							}
 						},
 						Some(mut sub) => {
 							//println!("{}", sub.name);
-							let common_flag = self.c_flags.take();
-							let c = Context::new(
-								raw_args,
-								args,
-								common_flag,
-								Vector(None),
-								self.derive_route_init_vector(),
-								exe_path,
-								check_sub_field!(sub, authors, self),
-								check_sub_field!(sub, version, self),
-								check_sub_field!(sub, copyright, self),
-								check_sub_field!(sub, license: Option, self),
-							);
+							//let common_flag = ;
+							let c = gen_context_for_sub_run!(self, sub, raw_args, args, exe_path);
 							let r = sub.run(c);
 							r
 						}

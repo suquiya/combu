@@ -127,17 +127,53 @@ macro_rules! gen_context_for_self_action {
 			$self.license.take(),
 			)
 	};
+	($self:expr, $raw_args:expr,$args:expr,$exe_path:expr, $inter_mediate_args:expr) => {
+		Context::with_all_field(
+			$raw_args,
+			$args,
+			$self.c_flags.take().into(),
+			$self.l_flags.take(),
+			$exe_path,
+			$self.derive_route_init_vector(),
+			Vector::default(),
+			Vector::default(),
+			Some($inter_mediate_args),
+			Vector(None),
+			take(&mut $self.authors),
+			take(&mut $self.version),
+			take(&mut $self.copyright),
+			$self.license.take(),
+			)
+	};
 }
 
 macro_rules! gen_context_for_sub_run {
 	($self:expr,$sub:expr, $raw_args:expr,$args:expr,$exe_path:expr) => {
-		Context::new(
+		gen_context_for_sub_run!(inner, $self, $sub, $raw_args, $args, $exe_path, None)
+	};
+	($self:expr,$sub:expr, $raw_args:expr,$args:expr,$exe_path:expr, $inter_mediate_args: expr) => {
+		gen_context_for_sub_run!(
+			inner,
+			$self,
+			$sub,
 			$raw_args,
 			$args,
-			$self.c_flags.take(),
-			Vector(None),
-			$self.derive_route_init_vector(),
 			$exe_path,
+			Some($inter_mediate_args)
+			)
+	};
+	(inner,$self:expr, $sub:expr, $raw_args:expr,$args:expr,$exe_path:expr,$inter_mediate_args:expr) => {
+		Context::with_all_field(
+			$raw_args,
+			$args,
+			Vector::with_first_elem($self.c_flags.take()),
+			Vector(None),
+			$exe_path,
+			$self.derive_route_init_vector(),
+			Vector::default(),
+			Vector::default(),
+			$inter_mediate_args,
+			Vector::default(),
 			check_sub_field!($sub, authors, $self),
 			check_sub_field!($sub, version, $self),
 			check_sub_field!($sub, copyright, $self),
@@ -233,7 +269,10 @@ impl Command {
 		//let args: Vec<String> = std::env::args().collect();
 		//self.run(args);
 		match &self.sub {
-			Vector(None) => self.single_run(std::env::args().collect::<Vec<String>>()),
+			Vector(None) => {
+				let r = self.single_run(std::env::args().collect::<Vec<String>>());
+				r
+			}
 			_ => self.run(std::env::args().collect::<Vec<String>>()),
 		}
 	}
@@ -256,26 +295,8 @@ impl Command {
 			}
 			None => match self.sub {
 				Vector(None) => {
-					let mut args: VecDeque<String> = raw_args.clone().into();
-					let exe_path = args.pop_front().unwrap();
-					let c_flags = self.c_flags.take();
-					let l_flags = self.l_flags.take();
-					let version = take(&mut self.version);
-					let copyright = take(&mut self.copyright);
-					let authors = take(&mut self.authors);
-					let license = self.license.take();
-					self.handle_action_result(no_registered_error!(Context::new(
-						raw_args,
-						args,
-						c_flags,
-						l_flags,
-						self.derive_route_init_vector(),
-						exe_path,
-						authors,
-						version,
-						copyright,
-						license,
-					)))
+					let c = gen_context_for_self_action!(self, raw_args);
+					self.handle_action_result(no_registered_error!(c))
 				}
 				_ => self.run(raw_args),
 			},
@@ -718,15 +739,13 @@ impl Command {
 		let head = args.pop_front();
 		if head.is_none() {
 			//引数がない場合
+			let c = gen_context_for_self_action!(self, raw_args, args, exe_path);
 			match self.action {
 				Some(action) => {
-					let req = action(gen_context_for_self_action!(self, raw_args, args, exe_path));
+					let req = action(c);
 					self.handle_action_result(req)
 				}
-				None => {
-					let c = gen_context_for_self_action!(self, raw_args, args, exe_path);
-					self.handle_action_result(no_registered_error!(c))
-				}
+				None => self.handle_action_result(no_registered_error!(c)),
 			}
 		} else {
 			//get before first non-flag arg with parsing flags
@@ -744,18 +763,17 @@ impl Command {
 				}
 				Some(arg) => {
 					match self.take_sub(&arg) {
-						None => match self.action {
-							None => {
-								let c = gen_context_for_self_action!(self, raw_args, args, exe_path);
-								self.handle_action_result(no_registered_error!(c))
+						None => {
+							args.push_front(arg);
+							let mut c = gen_context_for_self_action!(self, raw_args, args, exe_path);
+							match self.action {
+								None => self.handle_action_result(no_registered_error!(c)),
+								Some(action) => {
+									c = p.parse_args_until_end(c);
+									self.handle_action_result(action(c))
+								}
 							}
-							Some(action) => {
-								args.push_front(arg);
-								let mut c = gen_context_for_self_action!(self, raw_args, args, exe_path);
-								c = p.parse_args_until_end(c);
-								self.handle_action_result(action(c))
-							}
-						},
+						}
 						Some(mut sub) => {
 							//println!("{}", sub.name);
 							//let common_flag = ;
@@ -1041,21 +1059,13 @@ impl Command {
 				match self.take_sub(&arg) {
 					Some(mut sub) => {
 						inter_mediate_args.push_back(last);
-						let c = Context::with_all_field(
+						let c = gen_context_for_sub_run!(
+							self,
+							sub,
 							raw_args,
 							args,
-							Vector::with_first_elem(self.c_flags.take()),
-							Vector::default(),
-							exe_path.into(),
-							self.derive_route_init_vector(),
-							Vector::default(),
-							Vector::default(),
-							Some(inter_mediate_args),
-							Vector::default(),
-							check_sub_field!(sub, authors, self),
-							check_sub_field!(sub, version, self),
-							check_sub_field!(sub, copyright, self),
-							check_sub_field!(sub, license: Option, self),
+							exe_path,
+							inter_mediate_args
 						);
 						let r = sub.run(c);
 						r
@@ -1079,43 +1089,25 @@ impl Command {
 									}
 									Some(arg) => match self.take_sub(&arg) {
 										Some(mut sub) => {
-											let c = Context::with_all_field(
+											let c = gen_context_for_sub_run!(
+												self,
+												sub,
 												raw_args,
 												args,
-												self.c_flags.take().into(),
-												Vector::default(),
 												exe_path,
-												self.derive_route_init_vector(),
-												Vector::default(),
-												Vector::default(),
-												Some(inter_mediate_args),
-												Vector::default(),
-												check_sub_field!(sub, authors, self),
-												check_sub_field!(sub, version, self),
-												check_sub_field!(sub, copyright, self),
-												check_sub_field!(sub, license: Option, self),
+												inter_mediate_args
 											);
 											let r = sub.run(c);
 											r
 										}
 										None => {
 											//サブコマンドはないのでそのままselfでaction
-
-											let c = Context::with_all_field(
+											let c = gen_context_for_self_action!(
+												self,
 												raw_args,
 												args,
-												self.c_flags.take().into(),
-												self.l_flags.take(),
 												exe_path,
-												self.derive_route_init_vector(),
-												Vector::default(),
-												Vector::default(),
-												Some(inter_mediate_args),
-												Vector(None),
-												take(&mut self.authors),
-												take(&mut self.version),
-												take(&mut self.copyright),
-												self.license.take(),
+												inter_mediate_args
 											);
 											let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
 											c = p.parse_args_until_end(c);
@@ -1132,21 +1124,12 @@ impl Command {
 									},
 									None => {
 										//残りのargはなし、そのままaction
-										let c = Context::with_all_field(
+										let c = gen_context_for_self_action!(
+											self,
 											raw_args,
 											args,
-											self.c_flags.take().into(),
-											self.l_flags.take(),
 											exe_path,
-											self.derive_route_init_vector(),
-											Vector::default(),
-											Vector::default(),
-											Some(inter_mediate_args),
-											Vector(None),
-											take(&mut self.authors),
-											take(&mut self.version),
-											take(&mut self.copyright),
-											self.license.take(),
+											inter_mediate_args
 										);
 										let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
 										if let Some(mut non_flag_args) = non_flag_args {
@@ -1165,21 +1148,12 @@ impl Command {
 								inter_mediate_args.push_back(last);
 								//inter_mediate_args.push_back(MiddleArg::Normal(arg));
 
-								let c = Context::with_all_field(
+								let c = gen_context_for_self_action!(
+									self,
 									raw_args,
 									args,
-									self.c_flags.take().into(),
-									self.l_flags.take(),
-									exe_path.into(),
-									self.derive_route_init_vector(),
-									Vector(None),
-									Vector(None),
-									Some(inter_mediate_args),
-									Vector::default(),
-									take(&mut self.authors),
-									take(&mut self.version),
-									take(&mut self.copyright),
-									self.license.take(),
+									exe_path,
+									inter_mediate_args
 								);
 								let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
 								c = p.parse_args_until_end(c);
@@ -1201,22 +1175,8 @@ impl Command {
 				//argがなかった場合
 				//self.actionに放り込む
 				inter_mediate_args.push_back(last);
-				let context = Context::with_all_field(
-					raw_args,
-					args,
-					self.c_flags.take().into(),
-					self.l_flags.take(),
-					exe_path,
-					self.derive_route_init_vector(),
-					Vector::default(),
-					Vector::default(),
-					Some(inter_mediate_args),
-					Vector::default(),
-					take(&mut self.authors),
-					take(&mut self.version),
-					take(&mut self.copyright),
-					self.license.take(),
-				);
+				let context =
+					gen_context_for_self_action!(self, raw_args, args, exe_path, inter_mediate_args);
 				let (mut c, non_flag_args) = p.parse_inter_mediate_args(context, false);
 				if let Some(mut non_flag_args) = non_flag_args {
 					non_flag_args.append(&mut c.args);

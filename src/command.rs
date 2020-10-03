@@ -108,6 +108,24 @@ pub type HelpFunc = fn(
 ) -> String;
 
 macro_rules! gen_context_for_self_action {
+	($self:expr, $raw_args:expr) => {{
+		let exe_path = $raw_args[0].clone();
+		gen_context_for_self_action!($self, $raw_args, exe_path)
+		}};
+	($self:expr, $raw_args:expr, $exe_path:expr) => {
+		Context::new(
+			$raw_args,
+			VecDeque::new(),
+			$self.c_flags.take(),
+			$self.l_flags.take(),
+			$self.derive_route_init_vector(),
+			$exe_path,
+			take(&mut $self.authors),
+			take(&mut $self.version),
+			take(&mut $self.copyright),
+			$self.license.take(),
+			)
+	};
 	($self:expr,$raw_args:expr,$args:expr,$exe_path:expr) => {
 		Context::new(
 			$raw_args,
@@ -238,20 +256,7 @@ impl Command {
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
-					let exe_path = raw_args[0].clone();
-					let req = action(Context::new(
-						raw_args,
-						VecDeque::new(),
-						self.c_flags.take(),
-						self.l_flags.take(),
-						self.derive_route_init_vector(),
-						exe_path,
-						take(&mut self.authors),
-						take(&mut self.version),
-						take(&mut self.copyright),
-						self.license.take(),
-					));
-
+					let req = action(gen_context_for_self_action!(self, raw_args));
 					self.handle_action_result(req)
 				} else {
 					let mut args = VecDeque::from(raw_args.clone());

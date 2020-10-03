@@ -109,23 +109,10 @@ pub type HelpFunc = fn(
 
 macro_rules! gen_context_for_self_action {
 	($self:expr, $raw_args:expr) => {{
-		let exe_path = $raw_args[0].clone();
-		gen_context_for_self_action!($self, $raw_args, exe_path)
+		let mut args = VecDeque::from($raw_args.clone());
+		let exe_path = args.pop_front().unwrap();
+		gen_context_for_self_action!($self, $raw_args, args, exe_path)
 		}};
-	($self:expr, $raw_args:expr, $exe_path:expr) => {
-		Context::new(
-			$raw_args,
-			VecDeque::new(),
-			$self.c_flags.take(),
-			$self.l_flags.take(),
-			$self.derive_route_init_vector(),
-			$exe_path,
-			take(&mut $self.authors),
-			take(&mut $self.version),
-			take(&mut $self.copyright),
-			$self.license.take(),
-			)
-	};
 	($self:expr,$raw_args:expr,$args:expr,$exe_path:expr) => {
 		Context::new(
 			$raw_args,
@@ -259,20 +246,7 @@ impl Command {
 					let req = action(gen_context_for_self_action!(self, raw_args));
 					self.handle_action_result(req)
 				} else {
-					let mut args = VecDeque::from(raw_args.clone());
-					let exe_path = args.pop_front().unwrap();
-					let mut context = Context::new(
-						raw_args,
-						args,
-						self.c_flags.take(),
-						self.l_flags.take(),
-						self.derive_route_init_vector(),
-						exe_path,
-						take(&mut self.authors),
-						take(&mut self.version),
-						take(&mut self.copyright),
-						self.license.take(),
-					);
+					let mut context = gen_context_for_self_action!(self, raw_args);
 					//println!("single_run_context: {:?}", context);
 					context = Parser::default().parse_args_until_end(context);
 

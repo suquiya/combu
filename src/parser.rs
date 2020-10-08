@@ -810,16 +810,75 @@ impl Parser {
 		}
 	}
 
-	/*　関数分離時のためのメモ
+	// parse_middle_args
+	/// Parses args if next middle args exist.
+	pub fn parse_next_if_middle_arg(
+		&self,
+		mut inter_mediate_args: VecDeque<MiddleArg>,
+		mut non_flag_args: VecDeque<String>,
+		mut c: Context,
+		mut c_flag: VecDeque<(String, FlagValue)>,
+		mut l_flag: VecDeque<(String, FlagValue)>,
+		flag_only: bool,
+	) -> (VecDeque<MiddleArg>, VecDeque<String>) {
+		match inter_mediate_args.pop_back() {
+			Some(MiddleArg::LongFlag(long_flag, flag_val)) => self.parse_inter_mediate_long_flag(
+				long_flag,
+				flag_val,
+				inter_mediate_args,
+				non_flag_args,
+				c,
+				c_flag,
+				l_flag,
+				flag_only,
+			),
+			Some(MiddleArg::ShortFlag(short_flag, flag_val)) => self.parse_inter_mediate_short_flag(
+				short_flag,
+				flag_val,
+				inter_mediate_args,
+				non_flag_args,
+				c,
+				c_flag,
+				l_flag,
+				flag_only,
+			),
+			Some(MiddleArg::Normal(arg)) => {
+				non_flag_args.push_back(arg);
+				(inter_mediate_args, non_flag_args)
+			}
+			None => (inter_mediate_args, non_flag_args),
+		}
+	}
+
+	/// Parse inter_mediate_args begins with long flag.
 	pub fn parse_inter_mediate_long_flag(
 		&self,
 		long_flag: String,
 		flag_val: FlagValue,
-		ref mut inter_mediate_args: VecDeque<MiddleArg>,
-		ref mut c: Context,
-	) {
-		//
-	}*/
+		mut inter_mediate_args: VecDeque<MiddleArg>,
+		mut non_flag_args: VecDeque<String>,
+		mut c: Context,
+		mut c_flags: VecDeque<(String, FlagValue)>,
+		mut l_flags: VecDeque<(String, FlagValue)>,
+		flag_only: bool,
+	) -> (VecDeque<MiddleArg>, VecDeque<String>) {
+		(inter_mediate_args, non_flag_args)
+	}
+
+	/// Parse inter_mediate_args begins with short flag.
+	pub fn parse_inter_mediate_short_flag(
+		&self,
+		short_flag: String,
+		flag_val: FlagValue,
+		mut inter_mediate_args: VecDeque<MiddleArg>,
+		mut non_flag_args: VecDeque<String>,
+		mut c: Context,
+		mut c_flags: VecDeque<(String, FlagValue)>,
+		mut l_flags: VecDeque<(String, FlagValue)>,
+		flag_only: bool,
+	) -> (VecDeque<MiddleArg>, VecDeque<String>) {
+		(inter_mediate_args, non_flag_args)
+	}
 
 	/// Parse args until args' end.
 	pub fn parse_args_until_end(self, mut c: Context) -> Context {

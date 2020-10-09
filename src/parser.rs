@@ -817,10 +817,15 @@ impl Parser {
 		mut inter_mediate_args: VecDeque<MiddleArg>,
 		mut non_flag_args: VecDeque<String>,
 		mut c: Context,
-		mut c_flag: VecDeque<(String, FlagValue)>,
-		mut l_flag: VecDeque<(String, FlagValue)>,
+		mut c_flags: VecDeque<(String, FlagValue)>,
+		mut l_flags: VecDeque<(String, FlagValue)>,
 		flag_only: bool,
-	) -> (VecDeque<MiddleArg>, VecDeque<String>) {
+	) -> (
+		VecDeque<MiddleArg>,
+		VecDeque<String>,
+		VecDeque<(String, FlagValue)>,
+		VecDeque<(String, FlagValue)>,
+	) {
 		match inter_mediate_args.pop_back() {
 			Some(MiddleArg::LongFlag(long_flag, flag_val)) => self.parse_inter_mediate_long_flag(
 				long_flag,
@@ -828,8 +833,8 @@ impl Parser {
 				inter_mediate_args,
 				non_flag_args,
 				c,
-				c_flag,
-				l_flag,
+				c_flags,
+				l_flags,
 				flag_only,
 			),
 			Some(MiddleArg::ShortFlag(short_flag, flag_val)) => self.parse_inter_mediate_short_flag(
@@ -838,15 +843,15 @@ impl Parser {
 				inter_mediate_args,
 				non_flag_args,
 				c,
-				c_flag,
-				l_flag,
+				c_flags,
+				l_flags,
 				flag_only,
 			),
 			Some(MiddleArg::Normal(arg)) => {
-				non_flag_args.push_back(arg);
-				(inter_mediate_args, non_flag_args)
+				non_flag_args.push_front(arg);
+				(inter_mediate_args, non_flag_args, c_flags, l_flags)
 			}
-			None => (inter_mediate_args, non_flag_args),
+			None => (inter_mediate_args, non_flag_args, c_flags, l_flags),
 		}
 	}
 
@@ -861,8 +866,13 @@ impl Parser {
 		mut c_flags: VecDeque<(String, FlagValue)>,
 		mut l_flags: VecDeque<(String, FlagValue)>,
 		flag_only: bool,
-	) -> (VecDeque<MiddleArg>, VecDeque<String>) {
-		(inter_mediate_args, non_flag_args)
+	) -> (
+		VecDeque<MiddleArg>,
+		VecDeque<String>,
+		VecDeque<(String, FlagValue)>,
+		VecDeque<(String, FlagValue)>,
+	) {
+		(inter_mediate_args, non_flag_args, c_flags, l_flags)
 	}
 
 	/// Parse inter_mediate_args begins with short flag.
@@ -876,8 +886,13 @@ impl Parser {
 		mut c_flags: VecDeque<(String, FlagValue)>,
 		mut l_flags: VecDeque<(String, FlagValue)>,
 		flag_only: bool,
-	) -> (VecDeque<MiddleArg>, VecDeque<String>) {
-		(inter_mediate_args, non_flag_args)
+	) -> (
+		VecDeque<MiddleArg>,
+		VecDeque<String>,
+		VecDeque<(String, FlagValue)>,
+		VecDeque<(String, FlagValue)>,
+	) {
+		(inter_mediate_args, non_flag_args, c_flags, l_flags)
 	}
 
 	/// Parse args until args' end.

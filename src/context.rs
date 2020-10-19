@@ -167,6 +167,20 @@ impl Context {
 		}
 	}
 
+	/// Shift(Push front) middle_arg to this context's parsing_args
+	pub fn push_front_to_parsing_args(&mut self, middle_arg: MiddleArg) {
+		match self.parsing_args {
+			None => {
+				self.parsing_args = Some({
+					let mut inner = VecDeque::new();
+					inner.push_front(middle_arg);
+					inner
+				})
+			}
+			Some(ref mut vd) => (*vd).push_back(middle_arg),
+		}
+	}
+
 	/// Takes flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
 	/// contextからフラグ値を取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はデフォルト値のコピー）そのものを返す
 	pub fn take_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {

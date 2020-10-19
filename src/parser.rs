@@ -810,13 +810,87 @@ impl Parser {
 		}
 	}
 
+	/// Parses middle long flag.
+	pub fn parse_middle_long_flag(
+		&self,
+		name_or_alias: String,
+		val: FlagValue,
+		c: &Context,
+		mut c_flags: VecDeque<(String, FlagValue)>,
+		mut l_flags: VecDeque<(String, FlagValue)>,
+		mut e_list: VecDeque<ErrorInfo>,
+	) -> (
+		VecDeque<(String, FlagValue)>,
+		VecDeque<(String, FlagValue)>,
+		VecDeque<ErrorInfo>,
+	) {
+		match c.find_local_long_flag(&name_or_alias) {
+			LongFound::Name(l_flag) => {
+				match val {
+					FlagValue::String(_) if l_flag.flag_type.is_string() => {
+						l_flags.push_front((name_or_alias, val));
+					}
+					FlagValue::String(val) => match l_flag.derive_flag_value_from_string(val) {
+						FlagValue::Invalid(val) => {
+							let flag_arg =
+								MiddleArg::LongFlag(name_or_alias.clone(), FlagValue::String(val));
+							e_list.push_front((
+								flag_arg,
+								ParseError::InvalidLong(name_or_alias),
+								ParseError::NotParsed,
+							));
+						}
+						val => {
+							l_flags.push_front((name_or_alias, val));
+						}
+					},
+					FlagValue::None => {
+						l_flags.push_front((name_or_alias, l_flag.derive_flag_value_if_no_value()));
+					}
+					_ => l_flags.push_front((name_or_alias, l_flag.derive_flag_value_if_no_value())),
+				};
+			}
+			LongFound::Long(l_flag) => match val {
+				FlagValue::String(_) if l_flag.flag_type.is_string() => {
+					l_flags.push_front((l_flag.get_name_clone(), val));
+				}
+				FlagValue::String(val) => match l_flag.derive_flag_value_from_string(val) {
+					FlagValue::Invalid(val) => e_list.push_front((
+						MiddleArg::LongFlag(name_or_alias, FlagValue::String(val)),
+						ParseError::InvalidLong(l_flag.get_name_clone()),
+						ParseError::NotParsed,
+					)),
+					val => {
+						l_flags.push_front((l_flag.get_name_clone(), val));
+					}
+				},
+				FlagValue::None => {
+					l_flags.push_front((
+						l_flag.get_name_clone(),
+						l_flag.derive_flag_value_if_no_value(),
+					));
+				}
+				_ => {
+					l_flags.push_front((
+						l_flag.get_name_clone(),
+						l_flag.derive_flag_value_if_no_value(),
+					));
+				}
+			},
+			LongFound::None => {
+				//
+			}
+		}
+		(c_flags, l_flags, e_list)
+	}
+
 	// parse_middle_args
 	/// Parses args if next middle args exist.
 	pub fn parse_next_if_middle_arg(
 		&self,
 		mut inter_mediate_args: VecDeque<MiddleArg>,
 		mut non_flag_args: VecDeque<String>,
-		mut c: Context,
+		c: &mut Context,
 		mut c_flags: VecDeque<(String, FlagValue)>,
 		mut l_flags: VecDeque<(String, FlagValue)>,
 		flag_only: bool,
@@ -827,72 +901,19 @@ impl Parser {
 		VecDeque<(String, FlagValue)>,
 	) {
 		match inter_mediate_args.pop_back() {
-			Some(MiddleArg::LongFlag(long_flag, flag_val)) => self.parse_inter_mediate_long_flag(
-				long_flag,
-				flag_val,
-				inter_mediate_args,
-				non_flag_args,
-				c,
-				c_flags,
-				l_flags,
-				flag_only,
-			),
-			Some(MiddleArg::ShortFlag(short_flag, flag_val)) => self.parse_inter_mediate_short_flag(
-				short_flag,
-				flag_val,
-				inter_mediate_args,
-				non_flag_args,
-				c,
-				c_flags,
-				l_flags,
-				flag_only,
-			),
+			Some(MiddleArg::LongFlag(long_flag, flag_val)) => {
+				(inter_mediate_args, non_flag_args, c_flags, l_flags)
+			}
+			Some(MiddleArg::ShortFlag(short_flag, flag_val)) => {
+				//
+				(inter_mediate_args, non_flag_args, c_flags, l_flags)
+			}
 			Some(MiddleArg::Normal(arg)) => {
 				non_flag_args.push_front(arg);
 				(inter_mediate_args, non_flag_args, c_flags, l_flags)
 			}
 			None => (inter_mediate_args, non_flag_args, c_flags, l_flags),
 		}
-	}
-
-	/// Parse inter_mediate_args begins with long flag.
-	pub fn parse_inter_mediate_long_flag(
-		&self,
-		long_flag: String,
-		flag_val: FlagValue,
-		mut inter_mediate_args: VecDeque<MiddleArg>,
-		mut non_flag_args: VecDeque<String>,
-		mut c: Context,
-		mut c_flags: VecDeque<(String, FlagValue)>,
-		mut l_flags: VecDeque<(String, FlagValue)>,
-		flag_only: bool,
-	) -> (
-		VecDeque<MiddleArg>,
-		VecDeque<String>,
-		VecDeque<(String, FlagValue)>,
-		VecDeque<(String, FlagValue)>,
-	) {
-		(inter_mediate_args, non_flag_args, c_flags, l_flags)
-	}
-
-	/// Parse inter_mediate_args begins with short flag.
-	pub fn parse_inter_mediate_short_flag(
-		&self,
-		short_flag: String,
-		flag_val: FlagValue,
-		mut inter_mediate_args: VecDeque<MiddleArg>,
-		mut non_flag_args: VecDeque<String>,
-		mut c: Context,
-		mut c_flags: VecDeque<(String, FlagValue)>,
-		mut l_flags: VecDeque<(String, FlagValue)>,
-		flag_only: bool,
-	) -> (
-		VecDeque<MiddleArg>,
-		VecDeque<String>,
-		VecDeque<(String, FlagValue)>,
-		VecDeque<(String, FlagValue)>,
-	) {
-		(inter_mediate_args, non_flag_args, c_flags, l_flags)
 	}
 
 	/// Parse args until args' end.

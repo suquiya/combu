@@ -48,8 +48,8 @@ macro_rules! str_char {
 	($str:expr, $char:expr) => {{
 		let mut s: String = $str.clone();
 		s.push($char);
-			s
-		}};
+		s
+	}};
 }
 
 impl Parser {
@@ -1212,30 +1212,43 @@ impl Parser {
 					self.parse_middle_long_flag(name_or_alias, val, c, l_flags, c_flags, e_list);
 				(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)
 			}
-			Some(MiddleArg::ShortFlag(short_alias, FlagValue::None)) => {
-				match c.find_local_short_flag(short_alias) {
-					Some(l_flag) => {
-						match l_flag.derive_flag_value_from_string(normal_arg) {
-							FlagValue::Invalid(normal_arg){
+			Some(MiddleArg::ShortFlag(mut short_str, FlagValue::None)) => {
+				let short_alias = short_str.pop();
+				if let Some(short_alias) = short_alias {
+					match c.find_local_short_flag(&short_alias) {
+						Some(l_flag) => match l_flag.derive_flag_value_from_string(normal_arg) {
+							FlagValue::Invalid(normal_arg) => {
 								non_flag_args.push_front(normal_arg);
-								l_flags.push_front((l_flag.get_name_clone(),FlagValue::None));
-								self.parse_next_if_middle_arg(inter_mediate_args, non_flag_args, c, l_flags, c_flags, e_list, flag_only)
+								l_flags.push_front((l_flag.get_name_clone(), FlagValue::None));
+								self.parse_next_if_middle_arg(
+									inter_mediate_args,
+									non_flag_args,
+									c,
+									l_flags,
+									c_flags,
+									e_list,
+									flag_only,
+								)
 							}
-							val=>{
-								l_flags.push_front((l_flag.get
-								),val);
-								self.parse_next_if_middle_arg(inter_mediate_args, non_flag_args, c, l_flags, c_flags, e_list, flag_only)
+							val => {
+								l_flags.push_front((l_flag.get_name_clone(), val));
+								self.parse_next_if_middle_arg(
+									inter_mediate_args,
+									non_flag_args,
+									c,
+									l_flags,
+									c_flags,
+									e_list,
+									flag_only,
+								)
 							}
-						};
-					}
-					None => {
-						match c.find_common_short_flag(short_alias){
-							Some(c_flag)=>{
-								match c_flag.derive_flag_value_from_string(normal_arg){
-									FlagValue::Invalid(normal_arg)=>{
+						},
+						None => {
+							match c.find_common_short_flag(&short_alias) {
+								Some(c_flag) => match c_flag.derive_flag_value_from_string(normal_arg) {
+									FlagValue::Invalid(normal_arg) => {
 										non_flag_args.push_front(normal_arg);
-										c_flags.push_front((c_flag.get_name_clone()
-										,FlagValue::None));
+										c_flags.push_front((c_flag.get_name_clone(), FlagValue::None));
 										self.parse_next_if_middle_arg(
 											inter_mediate_args,
 											non_flag_args,
@@ -1243,27 +1256,45 @@ impl Parser {
 											l_flags,
 											c_flags,
 											e_list,
-											flag_only
+											flag_only,
 										)
 									}
-									val=>{
-										c_flags.push_front((c_flag.get_name_clone(),val));
-										self.parse_next_if_middle_arg(inter_mediate_args, non_flag_args, c, l_flags, c_flags, e_list, flag_only)
+									val => {
+										c_flags.push_front((c_flag.get_name_clone(), val));
+										self.parse_next_if_middle_arg(
+											inter_mediate_args,
+											non_flag_args,
+											c,
+											l_flags,
+											c_flags,
+											e_list,
+											flag_only,
+										)
 									}
+								},
+								None => {
+									//
+									panic!("まだimplできてない")
 								}
-							}
-							None=>{
-								//
 							}
 						}
 					}
+				} else {
+					panic!("short alias is not existed")
 				}
 			}
-			Some(MiddleArg::ShortFlag(_, _)) => non_flag_args.push_front(normal_arg),
+			Some(MiddleArg::ShortFlag(_, _)) => {
+				non_flag_args.push_front(normal_arg);
+				panic!("not impl yet")
+			}
 			Some(val) => {
 				non_flag_args.push_front(normal_arg);
+				panic!("not impl yet")
 			}
-			None => non_flag_args.push_front(normal_arg),
+			None => {
+				non_flag_args.push_front(normal_arg);
+				panic!("not impl yet")
+			}
 		}
 		//(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)
 	}
@@ -1322,6 +1353,7 @@ impl Parser {
 					l_flags,
 					c_flags,
 					e_list,
+					flag_only,
 				)
 				//non_flag_args.push_front(arg);
 				//(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)

@@ -1287,9 +1287,18 @@ impl Parser {
 				non_flag_args.push_front(normal_arg);
 				panic!("not impl yet")
 			}
-			Some(val) => {
+			Some(MiddleArg::Normal(prev_arg)) => {
 				non_flag_args.push_front(normal_arg);
-				panic!("not impl yet")
+				self.parse_middle_normal_arg(
+					inter_mediate_args,
+					prev_arg,
+					c,
+					non_flag_args,
+					l_flags,
+					c_flags,
+					e_list,
+					flag_only,
+				)
 			}
 			None => {
 				non_flag_args.push_front(normal_arg);
@@ -1303,7 +1312,7 @@ impl Parser {
 	pub fn parse_next_if_middle_arg(
 		&self,
 		mut inter_mediate_args: VecDeque<MiddleArg>,
-		mut non_flag_args: VecDeque<String>,
+		non_flag_args: VecDeque<String>,
 		c: &Context,
 		l_flags: VecDeque<(String, FlagValue)>,
 		c_flags: VecDeque<(String, FlagValue)>,

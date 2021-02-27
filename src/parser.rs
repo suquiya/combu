@@ -1220,27 +1220,9 @@ impl Parser {
 							FlagValue::Invalid(normal_arg) => {
 								non_flag_args.push_front(normal_arg);
 								l_flags.push_front((l_flag.get_name_clone(), FlagValue::None));
-								self.parse_next_if_middle_arg(
-									inter_mediate_args,
-									non_flag_args,
-									c,
-									l_flags,
-									c_flags,
-									e_list,
-									flag_only,
-								)
 							}
 							val => {
 								l_flags.push_front((l_flag.get_name_clone(), val));
-								self.parse_next_if_middle_arg(
-									inter_mediate_args,
-									non_flag_args,
-									c,
-									l_flags,
-									c_flags,
-									e_list,
-									flag_only,
-								)
 							}
 						},
 						None => {
@@ -1249,27 +1231,9 @@ impl Parser {
 									FlagValue::Invalid(normal_arg) => {
 										non_flag_args.push_front(normal_arg);
 										c_flags.push_front((c_flag.get_name_clone(), FlagValue::None));
-										self.parse_next_if_middle_arg(
-											inter_mediate_args,
-											non_flag_args,
-											c,
-											l_flags,
-											c_flags,
-											e_list,
-											flag_only,
-										)
 									}
 									val => {
 										c_flags.push_front((c_flag.get_name_clone(), val));
-										self.parse_next_if_middle_arg(
-											inter_mediate_args,
-											non_flag_args,
-											c,
-											l_flags,
-											c_flags,
-											e_list,
-											flag_only,
-										)
 									}
 								},
 								None => {
@@ -1278,7 +1242,17 @@ impl Parser {
 								}
 							}
 						}
-					}
+					};
+
+					self.parse_next_if_middle_arg(
+						inter_mediate_args,
+						non_flag_args,
+						c,
+						l_flags,
+						c_flags,
+						e_list,
+						flag_only,
+					)
 				} else {
 					panic!("short alias is not existed")
 				}

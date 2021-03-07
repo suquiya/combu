@@ -1225,23 +1225,26 @@ impl Parser {
 								l_flags.push_front((l_flag.get_name_clone(), val));
 							}
 						},
-						None => {
-							match c.find_common_short_flag(&short_alias) {
-								Some(c_flag) => match c_flag.derive_flag_value_from_string(normal_arg) {
-									FlagValue::Invalid(normal_arg) => {
-										non_flag_args.push_front(normal_arg);
-										c_flags.push_front((c_flag.get_name_clone(), FlagValue::None));
-									}
-									val => {
-										c_flags.push_front((c_flag.get_name_clone(), val));
-									}
-								},
-								None => {
-									//
-									panic!("まだimplできてない")
+						None => match c.find_common_short_flag(&short_alias) {
+							Some(c_flag) => match c_flag.derive_flag_value_from_string(normal_arg) {
+								FlagValue::Invalid(normal_arg) => {
+									non_flag_args.push_front(normal_arg);
+									c_flags.push_front((c_flag.get_name_clone(), FlagValue::None));
 								}
+								val => {
+									c_flags.push_front((c_flag.get_name_clone(), val));
+								}
+							},
+							None => {
+								non_flag_args.push_front(normal_arg);
+								let i = short_str.len() - 1;
+								e_list.push_back((
+									MiddleArg::ShortFlag(short_str, FlagValue::None),
+									ParseError::NoExistShort(i),
+									ParseError::NoExistShort(i),
+								));
 							}
-						}
+						},
 					};
 
 					self.parse_next_if_middle_arg(
@@ -1303,7 +1306,6 @@ impl Parser {
 			Some(MiddleArg::LongFlag(long_flag, flag_val)) => {
 				let (l_flags, c_flags, e_list) =
 					self.parse_middle_long_flag(long_flag, flag_val, &c, l_flags, c_flags, e_list);
-				//(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)
 				self.parse_next_if_middle_arg(
 					inter_mediate_args,
 					non_flag_args,
@@ -1327,20 +1329,16 @@ impl Parser {
 					flag_only,
 				)
 			}
-			Some(MiddleArg::Normal(arg)) => {
-				self.parse_middle_normal_arg(
-					inter_mediate_args,
-					arg,
-					c,
-					non_flag_args,
-					l_flags,
-					c_flags,
-					e_list,
-					flag_only,
-				)
-				//non_flag_args.push_front(arg);
-				//(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)
-			}
+			Some(MiddleArg::Normal(arg)) => self.parse_middle_normal_arg(
+				inter_mediate_args,
+				arg,
+				c,
+				non_flag_args,
+				l_flags,
+				c_flags,
+				e_list,
+				flag_only,
+			),
 			None => (inter_mediate_args, non_flag_args, l_flags, c_flags, e_list),
 		}
 	}

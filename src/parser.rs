@@ -1071,6 +1071,7 @@ impl Parser {
 		VecDeque<ErrorInfo>,
 	) {
 		match inter_mediate_args.pop_back() {
+			//ロングフラグが前にあり、その値である可能性があるとき
 			Some(MiddleArg::LongFlag(long_flag_name, FlagValue::None)) => {
 				match c.find_local_long_flag(&long_flag_name) {
 					LongFound::Name(l_flag) => match l_flag.derive_flag_value_from_string(normal_arg) {
@@ -1206,12 +1207,14 @@ impl Parser {
 					},
 				}
 			}
+			//ロングフラグが前にあり、その引数である可能性がないとき
 			Some(MiddleArg::LongFlag(name_or_alias, val)) => {
 				non_flag_args.push_front(normal_arg);
 				let (l_flags, c_flags, e_list) =
 					self.parse_middle_long_flag(name_or_alias, val, c, l_flags, c_flags, e_list);
 				(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)
 			}
+			//ショートフラグの引数である可能性があるとき
 			Some(MiddleArg::ShortFlag(mut short_str, FlagValue::None)) => {
 				let short_alias = short_str.pop();
 				if let Some(short_alias) = short_alias {
@@ -1260,9 +1263,18 @@ impl Parser {
 					panic!("short alias is not existed")
 				}
 			}
-			Some(MiddleArg::ShortFlag(_, _)) => {
-				non_flag_args.push_front(normal_arg);
-				panic!("not impl yet")
+			Some(MiddleArg::ShortFlag(short_str, val)) => {
+				let (l_flags, c_flags, e_list) =
+					self.parse_middle_short_flag(short_str, val, c, l_flags, c_flags, e_list);
+				self.parse_next_if_middle_arg(
+					inter_mediate_args,
+					non_flag_args,
+					c,
+					l_flags,
+					c_flags,
+					e_list,
+					flag_only,
+				)
 			}
 			Some(MiddleArg::Normal(prev_arg)) => {
 				non_flag_args.push_front(normal_arg);
@@ -1279,10 +1291,9 @@ impl Parser {
 			}
 			None => {
 				non_flag_args.push_front(normal_arg);
-				panic!("not impl yet")
+				(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)
 			}
 		}
-		//(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)
 	}
 
 	/// Parses args if next middle args exist.

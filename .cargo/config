@@ -1,0 +1,4 @@
+[alias]
+wt="make watch"
+dev="wt"
+

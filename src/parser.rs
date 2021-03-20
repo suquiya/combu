@@ -1057,13 +1057,14 @@ impl Parser {
 		&self,
 		mut inter_mediate_args: VecDeque<MiddleArg>,
 		normal_arg: String,
-		c: &Context,
+		mut c: Context,
 		mut non_flag_args: VecDeque<String>,
 		mut l_flags: VecDeque<(String, FlagValue)>,
 		mut c_flags: VecDeque<(String, FlagValue)>,
 		mut e_list: VecDeque<ErrorInfo>,
 		flag_only: bool,
 	) -> (
+		Context,
 		VecDeque<MiddleArg>,
 		VecDeque<String>,
 		VecDeque<(String, FlagValue)>,
@@ -1076,7 +1077,11 @@ impl Parser {
 				match c.find_local_long_flag(&long_flag_name) {
 					LongFound::Name(l_flag) => match l_flag.derive_flag_value_from_string(normal_arg) {
 						FlagValue::Invalid(normal_arg) => {
-							non_flag_args.push_front(normal_arg);
+							if flag_only {
+								c = self.push_normal_arg_in_flag_only_error(c, normal_arg);
+							} else {
+								non_flag_args.push_front(normal_arg);
+							}
 							l_flags.push_front((long_flag_name, FlagValue::None));
 							self.parse_next_if_middle_arg(
 								inter_mediate_args,
@@ -1104,7 +1109,11 @@ impl Parser {
 					LongFound::Long(l_flag) => match l_flag.derive_flag_value_from_string(normal_arg) {
 						FlagValue::Invalid(normal_arg) => {
 							l_flags.push_front((l_flag.get_name_clone(), FlagValue::None));
-							non_flag_args.push_front(normal_arg);
+							if flag_only {
+								c = self.push_normal_arg_in_flag_only_error(c, normal_arg);
+							} else {
+								non_flag_args.push_front(normal_arg);
+							}
 							self.parse_next_if_middle_arg(
 								inter_mediate_args,
 								non_flag_args,
@@ -1132,7 +1141,11 @@ impl Parser {
 						LongFound::Name(c_flag) => {
 							match c_flag.derive_flag_value_from_string(normal_arg) {
 								FlagValue::Invalid(normal_arg) => {
-									non_flag_args.push_front(normal_arg);
+									if flag_only {
+										c = self.push_normal_arg_in_flag_only_error(c, normal_arg);
+									} else {
+										non_flag_args.push_front(normal_arg);
+									}
 									c_flags.push_front((long_flag_name, FlagValue::None));
 									self.parse_next_if_middle_arg(
 										inter_mediate_args,
@@ -1161,8 +1174,11 @@ impl Parser {
 						LongFound::Long(c_flag) => {
 							match c_flag.derive_flag_value_from_string(normal_arg) {
 								FlagValue::Invalid(normal_arg) => {
-									non_flag_args.push_front(normal_arg);
-									c_flags.push_front((c_flag.get_name_clone(), FlagValue::None));
+									if flag_only {
+										non_flag_args.push_front(normal_arg);
+									} else {
+										c_flags.push_front((c_flag.get_name_clone(), FlagValue::None));
+									}
 									self.parse_next_if_middle_arg(
 										inter_mediate_args,
 										non_flag_args,
@@ -1209,10 +1225,22 @@ impl Parser {
 			}
 			//ロングフラグが前にあり、その引数である可能性がないとき
 			Some(MiddleArg::LongFlag(name_or_alias, val)) => {
-				non_flag_args.push_front(normal_arg);
+				if flag_only {
+					c = self.push_normal_arg_in_flag_only_error(c, normal_arg);
+				} else {
+					non_flag_args.push_front(normal_arg);
+				}
 				let (l_flags, c_flags, e_list) =
-					self.parse_middle_long_flag(name_or_alias, val, c, l_flags, c_flags, e_list);
-				(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)
+					self.parse_middle_long_flag(name_or_alias, val, &c, l_flags, c_flags, e_list);
+				self.parse_next_if_middle_arg(
+					inter_mediate_args,
+					non_flag_args,
+					c,
+					l_flags,
+					c_flags,
+					e_list,
+					flag_only,
+				)
 			}
 			//ショートフラグの引数である可能性があるとき
 			Some(MiddleArg::ShortFlag(mut short_str, FlagValue::None)) => {
@@ -1265,7 +1293,7 @@ impl Parser {
 			}
 			Some(MiddleArg::ShortFlag(short_str, val)) => {
 				let (l_flags, c_flags, e_list) =
-					self.parse_middle_short_flag(short_str, val, c, l_flags, c_flags, e_list);
+					self.parse_middle_short_flag(short_str, val, &c, l_flags, c_flags, e_list);
 				self.parse_next_if_middle_arg(
 					inter_mediate_args,
 					non_flag_args,
@@ -1277,7 +1305,12 @@ impl Parser {
 				)
 			}
 			Some(MiddleArg::Normal(prev_arg)) => {
-				non_flag_args.push_front(normal_arg);
+				if flag_only {
+					c = self.push_normal_arg_in_flag_only_error(c, normal_arg);
+				} else {
+					non_flag_args.push_front(normal_arg);
+				}
+
 				self.parse_middle_normal_arg(
 					inter_mediate_args,
 					prev_arg,
@@ -1291,9 +1324,24 @@ impl Parser {
 			}
 			None => {
 				non_flag_args.push_front(normal_arg);
-				(inter_mediate_args, non_flag_args, l_flags, c_flags, e_list)
+				(
+					c,
+					inter_mediate_args,
+					non_flag_args,
+					l_flags,
+					c_flags,
+					e_list,
+				)
 			}
 		}
+	}
+
+	fn push_normal_arg_in_flag_only_error(&self, mut c: Context, normal_arg: String) -> Context {
+		let val = MiddleArg::Normal(normal_arg);
+		c.error_info_list
+			.push((val.clone(), ParseError::NotExist, ParseError::NotExist));
+		c.push_front_to_parsing_args(val);
+		c
 	}
 
 	/// Parses args if next middle args exist.
@@ -1301,12 +1349,13 @@ impl Parser {
 		&self,
 		mut inter_mediate_args: VecDeque<MiddleArg>,
 		non_flag_args: VecDeque<String>,
-		c: &Context,
+		c: Context,
 		l_flags: VecDeque<(String, FlagValue)>,
 		c_flags: VecDeque<(String, FlagValue)>,
 		e_list: VecDeque<ErrorInfo>,
 		flag_only: bool,
 	) -> (
+		Context,
 		VecDeque<MiddleArg>,           //inter_mediate_args
 		VecDeque<String>,              //non_flag_args
 		VecDeque<(String, FlagValue)>, //l_flags
@@ -1350,7 +1399,14 @@ impl Parser {
 				e_list,
 				flag_only,
 			),
-			None => (inter_mediate_args, non_flag_args, l_flags, c_flags, e_list),
+			None => (
+				c,
+				inter_mediate_args,
+				non_flag_args,
+				l_flags,
+				c_flags,
+				e_list,
+			),
 		}
 	}
 

@@ -1,0 +1,3 @@
+[tasks.watch]
+command="cargo"
+args=["watch","-x","test"]

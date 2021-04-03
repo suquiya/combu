@@ -28,6 +28,13 @@ impl<T> From<Vec<T>> for Vector<T> {
 	}
 }
 
+impl<T> From<std::collections::VecDeque<T>> for Vector<T> {
+	fn from(vec_deque: std::collections::VecDeque<T>) -> Self {
+		let vec: Vec<T> = vec_deque.into();
+		Vector(Some(vec))
+	}
+}
+
 impl<T> From<Option<Vec<T>>> for Vector<T> {
 	fn from(val: Option<Vec<T>>) -> Self {
 		Vector(val)
@@ -84,6 +91,17 @@ impl<T> Vector<T> {
 		match self {
 			Vector(None) => *self = Vector(Some(other)),
 			Vector(Some(ref mut vec)) => (*vec).append(&mut other),
+		}
+	}
+
+	/// Prepend other(Vec<T>) to this inner.
+	pub fn prepend_vec(&mut self, mut other: Vec<T>) {
+		match self {
+			Vector(None) => *self = Vector(Some(other)),
+			Vector(Some(ref mut vec)) => {
+				other.append(vec);
+				*vec = other;
+			}
 		}
 	}
 
@@ -359,5 +377,27 @@ pub mod flag {
 				}
 			}
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::Vector;
+
+	#[test]
+	fn prepend_test() {
+		let mut main: Vector<String> = vec!["a".to_string(), "b".to_string(), "c".to_string()].into();
+		let other = vec!["test".to_string(), "test2".to_string()];
+		main.prepend_vec(other);
+		assert_eq!(
+			Vector::from(vec![
+				"test".to_string(),
+				"test2".to_string(),
+				"a".to_string(),
+				"b".to_string(),
+				"c".to_string()
+			]),
+			main
+		);
 	}
 }

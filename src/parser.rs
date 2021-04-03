@@ -52,6 +52,15 @@ macro_rules! str_char {
 	}};
 }
 
+macro_rules! vector_to_vecdeque {
+	($vector:expr) => {{
+		match $vector {
+			crate::vector::Vector(None) => VecDeque::new(),
+			crate::vector::Vector(Some(inner)) => inner.into(),
+		}
+	}};
+}
+
 impl Parser {
 	/// Creates a new Parser with flag_pattern and long_flag_prefix.
 	pub fn new(flag_pattern: char, long_flag_prefix: &str) -> Parser {
@@ -163,10 +172,23 @@ impl Parser {
 	) -> (Context, Option<VecDeque<String>>) {
 		match c.parsing_args {
 			None => (c, None),
-			Some(mut inter_middle_args) => {
-				let mut non_flag_args = VecDeque::<String>::new();
+			Some(inter_middle_args) => {
+				let non_flag_args = VecDeque::<String>::new();
 				c.parsing_args = None;
-
+				let l_flags = VecDeque::new();
+				let c_flags = VecDeque::new();
+				let e_list = VecDeque::new();
+				let (_c, _, non_flag_args, l_flags, c_flags, e_list) = self.parse_next_if_middle_arg(
+					inter_middle_args,
+					non_flag_args,
+					c,
+					l_flags,
+					c_flags,
+					e_list,
+					flag_only,
+				);
+				c = _c;
+				c.local_flags_values.prepend_vec(l_flags.into());
 				(c, {
 					if flag_only {
 						None

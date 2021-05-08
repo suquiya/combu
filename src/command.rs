@@ -55,7 +55,7 @@ macro_rules! no_registered_error {
 			"no action is registered.".into(),
 			NoActionRegistered,
 			$context,
-			))
+		))
 	};
 }
 macro_rules! sub_check_field {
@@ -64,13 +64,13 @@ macro_rules! sub_check_field {
 			println!("{}", $sub.$field);
 			$self.$field = take(&mut $context.$context_field);
 			$context.$context_field = take(&mut $sub.$field);
-			}
+		}
 	};
 	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident :Option) => {
 		if $sub.$field.is_some() {
 			$self.$field = $context.$context_field.take();
 			$context.$context_field = $sub.$field.take();
-			}
+		}
 	};
 }
 
@@ -89,14 +89,14 @@ macro_rules! check_sub_field {
 			take(&mut $self.$field)
 		} else {
 			take(&mut $sub.$field)
-			}
+		}
 	};
 	($sub:expr, $field:ident :Option, $self:expr) => {
 		if $sub.$field.is_some() {
 			$sub.$field.take()
 		} else {
 			$self.$field.take()
-			}
+		}
 	};
 }
 
@@ -112,7 +112,7 @@ macro_rules! gen_context_for_self_action {
 		let mut args = VecDeque::from($raw_args.clone());
 		let exe_path = args.pop_front().unwrap();
 		gen_context_for_self_action!($self, $raw_args, args, exe_path)
-		}};
+	}};
 	($self:expr,$raw_args:expr,$args:expr,$exe_path:expr) => {
 		Context::new(
 			$raw_args,
@@ -125,7 +125,7 @@ macro_rules! gen_context_for_self_action {
 			take(&mut $self.version),
 			take(&mut $self.copyright),
 			$self.license.take(),
-			)
+		)
 	};
 	($self:expr, $raw_args:expr,$args:expr,$exe_path:expr, $inter_mediate_args:expr) => {
 		Context::with_all_field(
@@ -143,7 +143,7 @@ macro_rules! gen_context_for_self_action {
 			take(&mut $self.version),
 			take(&mut $self.copyright),
 			$self.license.take(),
-			)
+		)
 	};
 }
 
@@ -160,7 +160,7 @@ macro_rules! gen_context_for_sub_run {
 			$args,
 			$exe_path,
 			Some($inter_mediate_args)
-			)
+		)
 	};
 	(inner,$self:expr, $sub:expr, $raw_args:expr,$args:expr,$exe_path:expr,$inter_mediate_args:expr) => {
 		Context::with_all_field(
@@ -178,7 +178,7 @@ macro_rules! gen_context_for_sub_run {
 			check_sub_field!($sub, version, $self),
 			check_sub_field!($sub, copyright, $self),
 			check_sub_field!($sub, license: Option, $self),
-			)
+		)
 	};
 }
 
@@ -1403,7 +1403,7 @@ mod tests {
 			assert_eq!(
 				$context.now_cmd_license,
 				Some((prefix.clone() + "license", prefix + "license_file"))
-				);
+			);
 		};
 	}
 	#[test]
@@ -1798,7 +1798,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
-				println!("c: {:?}", c);
+				println!("result_c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1823,7 +1823,7 @@ mod tests {
 				);
 				assert_eq!(
 					c.get_inputted_common_flag_value_of("cafter").unwrap(),
-					FlagValue::Bool(true)
+					FlagValue::None
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
 				assert_attrs!("sub_", c);

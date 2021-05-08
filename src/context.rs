@@ -259,6 +259,7 @@ impl Context {
 
 	/// Gets FlagValue's clone of the flag matches flag_name from context.
 	/// contextからフラグ値のcloneを取得する。フラグが設定されていない場合はNoneを返す
+	/// なお明示的に値が指定されない場合、Bool型のフラグであればFlagValue::Bool(true)とし、String型のフラグであればFlagValue::String(String::new())、それ以外の型のフラグではFlagValue::NoneをSomeで包んで返す
 	pub fn get_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_local_flag_value_of(flag_name) {
 			None => self.get_common_flag_value_of(flag_name),
@@ -268,6 +269,7 @@ impl Context {
 
 	/// Gets FlagValue's clone of the inputted flag matches flag_name from context.
 	/// contextからユーザから指定された場合のフラグ値のcloneを取得する。ユーザから入力されていない場合はNoneを返す。
+
 	pub fn get_inputted_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_inputted_local_flag_value_of(flag_name) {
 			None => self.get_inputted_common_flag_value_of(flag_name),
@@ -277,10 +279,15 @@ impl Context {
 
 	/// Gets FlagValue's clone of the common flag matches flag_name from context. If it is not defined, Returns None.
 	/// contextからユーザから指定された場合のコモンフラグ値のcloneを取得する。ユーザから入力されていないが定義されている場合はデフォルト値のクローンを返す。定義もされていない場合はNoneを返す。
+	/// なお明示的に値が指定されない場合、Bool型のフラグであればFlagValue::Bool(true)とし、String型のフラグであればFlagValue::String(String::new())、それ以外の型のフラグではFlagValue::NoneをSomeで包んで返す
 	pub fn get_common_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_inputted_common_flag_value_of(flag_name) {
-			None | Some(FlagValue::None) => match self.common_flags.find(flag_name) {
+			None => match self.common_flags.find(flag_name) {
 				Some(f) => Some(f.default_value.clone()),
+				None => None,
+			},
+			Some(FlagValue::None) => match self.common_flags.find(flag_name) {
+				Some(f) => Some(f.derive_flag_value_if_no_value()),
 				None => None,
 			},
 			val => val,
@@ -289,10 +296,15 @@ impl Context {
 
 	/// Gets FlagValue's clone of the common flag matches flag_name from context. If it is not defined, Returns None.
 	/// contextからユーザから指定された場合のローカルフラグ値のcloneを取得する。ユーザから入力されていないが定義されている場合はデフォルト値のクローンを返す。定義もされていない場合はNoneを返す。
+	/// なお明示的に値が指定されない場合、Bool型のフラグであればFlagValue::Bool(true)とし、String型のフラグであればFlagValue::String(String::new())、それ以外の型のフラグではFlagValue::NoneをSomeで包んで返す
 	pub fn get_local_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_inputted_local_flag_value_of(flag_name) {
-			None | Some(FlagValue::None) => match self.local_flags.find(flag_name) {
+			None => match self.local_flags.find(flag_name) {
 				Some(f) => Some(f.default_value.clone()),
+				None => None,
+			},
+			Some(FlagValue::None) => match self.local_flags.find(flag_name) {
+				Some(f) => Some(f.derive_flag_value_if_no_value()),
 				None => None,
 			},
 			val => val,

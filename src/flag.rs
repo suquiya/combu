@@ -80,6 +80,7 @@ impl FlagType {
 	pub fn get_value_if_no_value(&self) -> FlagValue {
 		match &self {
 			FlagType::Bool => FlagValue::Bool(true),
+			FlagType::String => FlagValue::String(String::new()),
 			_ => FlagValue::None,
 		}
 	}

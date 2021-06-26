@@ -8,8 +8,6 @@ use crate::{
 use core::mem::take;
 use std::{collections::VecDeque, path::PathBuf};
 
-// TODO: 複数フラグ、複数コマンドを一気に登録できるようにしたい
-
 ///The struct for command information store and command execution
 ///This can be root and edge
 ///コマンドの情報格納＆実行用構造体
@@ -408,9 +406,21 @@ impl Command {
 		self
 	}
 
+	/// Add a local flags to command
+	pub fn local_flags(mut self, flags: Vec<Flag>) -> Self {
+		self.l_flags.append_vec(flags);
+		self
+	}
+
 	/// Add a common flag to command
 	pub fn common_flag(mut self, flag: Flag) -> Self {
 		self.c_flags.push(flag);
+		self
+	}
+
+	/// Add a common flag to command
+	pub fn command_flags(mut self, flags: Vec<Flag>) -> Self {
+		self.c_flags.append_vec(flags);
 		self
 	}
 
@@ -432,11 +442,11 @@ impl Command {
 		self
 	}
 
-	// /// Add command's hook
-	/*pub fn hook(mut self, hook: Hook) -> Self {
-		self.hook.push(hook);
+	/// Add sub commands
+	pub fn sub_commands(mut self, sub_commands: Vec<Command>) -> Self {
+		self.sub.append_vec(sub_commands);
 		self
-	}*/
+	}
 
 	/// Sets license
 	pub fn license(mut self, license: License) -> Self {
@@ -2219,9 +2229,8 @@ pub mod presets {
 		}
 
 		//どちらのフラグもある
-		//TODO: 有効なフラグを整理して表示できるようにしたい(この下のかっこ部分を消しても支障のない状態にする)
 
-		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the formaer flag's value): \n");
+		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
 		let head: String;
 		let common_label;
 		let name_and_alias_field_min_width: usize = 7;

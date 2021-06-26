@@ -1125,7 +1125,7 @@ mod tests {
 					c.now_cmd_license,
 					License::AbstAndContent(
 						String::from("root_license"),
-						String::from("root_license_file")
+						String::from("root_license_content")
 					)
 				);
 				done!()
@@ -1876,7 +1876,7 @@ mod tests {
 							.copyright("leaf_copyright")
 							.license(License::AbstAndContent(
 								"leaf_license".into(),
-								"leaf_license_file".into(),
+								"leaf_license_content".into(),
 							))
 							.authors("leaf_authors"),
 					),
@@ -1908,7 +1908,7 @@ mod tests {
 			.version("leaf_version")
 			.license(License::AbstAndContent(
 				"leaf_license".to_owned(),
-				"leaf_license_file".to_owned(),
+				"leaf_license_content".to_owned(),
 			));
 
 		let run_leaf: fn(Command, Command, Command, Action, Vec<String>) -> () =
@@ -2147,7 +2147,7 @@ mod tests {
 			.copyright("sub_copyright")
 			.license(License::AbstAndContent(
 				"sub_license".into(),
-				"sub_license_file".into(),
+				"sub_license_content".into(),
 			));
 		let mut root = Command::new()
 			.action(|c| {

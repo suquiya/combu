@@ -6,7 +6,7 @@ use crate::{
 };
 
 use core::mem::take;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, path::PathBuf};
 
 // TODO: 複数フラグ、複数コマンドを一気に登録できるようにしたい
 
@@ -24,7 +24,7 @@ pub struct Command {
 	///Command copyright
 	pub copyright: String,
 	/// license of command
-	pub license: Option<(String, String)>,
+	pub license: License,
 	/// Command description
 	pub description: Option<String>,
 	///Command usage
@@ -61,13 +61,18 @@ macro_rules! no_registered_error {
 macro_rules! sub_check_field {
 	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident) => {
 		if !$sub.$field.is_empty() {
-			println!("{}", $sub.$field);
 			$self.$field = take(&mut $context.$context_field);
 			$context.$context_field = take(&mut $sub.$field);
 		}
 	};
 	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident :Option) => {
 		if $sub.$field.is_some() {
+			$self.$field = $context.$context_field.take();
+			$context.$context_field = $sub.$field.take();
+		}
+	};
+	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident :License) => {
+		if $sub.$field.has_info() {
 			$self.$field = $context.$context_field.take();
 			$context.$context_field = $sub.$field.take();
 		}
@@ -79,7 +84,7 @@ macro_rules! sub_check {
 		sub_check_field!($context, now_cmd_authors, $sub, $self, authors);
 		sub_check_field!($context, now_cmd_version, $sub, $self, version);
 		sub_check_field!($context, now_cmd_copyright, $sub, $self, copyright);
-		sub_check_field!($context, now_cmd_license, $sub, $self, license: Option);
+		sub_check_field!($context, now_cmd_license, $sub, $self, license: License);
 	};
 }
 
@@ -98,14 +103,67 @@ macro_rules! check_sub_field {
 			$self.$field.take()
 		}
 	};
+	($sub:expr, $field:ident :License, $self:expr) => {
+		if $sub.$field.has_info() {
+			$sub.$field.take()
+		} else {
+			$self.$field.take()
+		}
+	};
 }
 
 /// HelpFunc shows type alias for help function
-pub type HelpFunc = fn(
-	command: &Command,
-	context: &Context,
-	default_help: fn(&Command, &Context) -> String,
-) -> String;
+pub type HelpFunc = fn(command: &Command, context: &Context) -> String;
+
+/// License shows license
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum License {
+	/// Shows no License information.
+	None,
+	/// Shows License As SPDXExpr
+	SPDXExpr(String),
+	/// Shows abstruct of license
+	Abst(String),
+	/// Shows content of license
+	Content(String),
+	/// Shows path of license file
+	File(PathBuf),
+	/// Shows abstruct of license and path of license file
+	AbstAndFile(String, PathBuf),
+	/// Shows abstruct and content of license
+	AbstAndContent(String, String),
+}
+
+impl Default for License {
+	fn default() -> Self {
+		License::Content(String::new())
+	}
+}
+
+impl License {
+	/// Replace self with License::None and returns the previous self's value.
+	pub fn take(&mut self) -> License {
+		let mut dest = License::None;
+		std::mem::swap(self, &mut dest);
+		dest
+	}
+
+	/// Returns true if self is License::None
+	pub fn is_none(&self) -> bool {
+		match self {
+			License::None => true,
+			_ => false,
+		}
+	}
+
+	/// Returns true if self has license information(not License::None).
+	pub fn has_info(&self) -> bool {
+		match self {
+			License::None => false,
+			_ => true,
+		}
+	}
+}
 
 macro_rules! gen_context_for_self_action {
 	($self:expr, $raw_args:expr) => {{
@@ -177,7 +235,7 @@ macro_rules! gen_context_for_sub_run {
 			check_sub_field!($sub, authors, $self),
 			check_sub_field!($sub, version, $self),
 			check_sub_field!($sub, copyright, $self),
-			check_sub_field!($sub, license: Option, $self),
+			check_sub_field!($sub, license: License, $self),
 		)
 	};
 }
@@ -201,7 +259,7 @@ impl Command {
 			action,
 			authors.into(),
 			String::default(),
-			None,
+			License::None,
 			Some(description.into()),
 			String::default(),
 			Vector::default(),
@@ -209,6 +267,7 @@ impl Command {
 			Vector::default(),
 			version.into(),
 			Vector::default(),
+			None,
 		)
 	}
 
@@ -219,7 +278,7 @@ impl Command {
 			action: None,
 			authors: String::default(),
 			copyright: String::default(),
-			license: None,
+			license: License::None,
 			description: None,
 			usage: String::default(),
 			l_flags: Vector::default(),
@@ -238,7 +297,7 @@ impl Command {
 		action: Option<Action>,
 		authors: String,
 		copyright: String,
-		license: Option<(String, String)>,
+		license: License,
 		description: Option<String>,
 		usage: String,
 		local_flags: Vector<Flag>,
@@ -246,6 +305,7 @@ impl Command {
 		alias: Vector<String>,
 		version: String,
 		sub: Vector<Command>,
+		help: Option<HelpFunc>,
 	) -> Command {
 		Command {
 			name,
@@ -260,7 +320,7 @@ impl Command {
 			alias,
 			version,
 			sub,
-			help: None,
+			help,
 		}
 	}
 
@@ -306,245 +366,10 @@ impl Command {
 	/// Show command's help
 	pub fn show_help(&self, c: &Context) {
 		if let Some(help) = self.help {
-			println!(
-				"{}",
-				help(&self, c, |command, context| {
-					command.default_help(context)
-				})
-			);
+			println!("{}", help(&self, c));
 		} else {
-			println!("{}", self.default_help(c));
+			println!("No help exist at this command.");
 		}
-	}
-
-	/// Returuns default help as String
-	pub fn default_help<'a>(&self, c: &Context) -> String {
-		let mut help = String::new();
-		let indent_size: usize = 3;
-		let sp = String::from(" ");
-		let indent: String = sp.repeat(indent_size);
-		match &self.description {
-			Some(description) => {
-				help.push_str(description);
-				help.push_str("\n\n");
-			}
-			_ => {}
-		}
-		help += &format!("Usage:\n{}{}\n\n", &indent, self.usage);
-
-		//フラグ処理
-		let l_flags: &Vector<Flag> = if c.local_flags.is_none() {
-			&self.l_flags
-		} else {
-			&c.local_flags
-		};
-		let c_flags: &Vector<Vector<Flag>>;
-		let vec_inner: Vector<Vector<Flag>>;
-
-		//コモンフラグが残っていた場合
-		if self.c_flags.is_none() {
-			c_flags = &c.common_flags;
-		} else {
-			vec_inner = Vector(Some(vec![self.c_flags.clone()]));
-			c_flags = &vec_inner;
-		}
-
-		//どちらのフラグもある
-		//TODO: 有効なフラグを整理して表示できるようにしたい(この下のかっこ部分を消しても支障のない状態にする)
-
-		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the formaer flag's value): \n");
-		let head: String;
-		let common_label;
-		let name_and_alias_field_min_width: usize = 7;
-		if c.common_flags.sum_of_length() > 0 {
-			//コモンフラグが設定されている場合
-			head = indent.repeat(2);
-			common_label = true;
-		} else {
-			//設定されていない場合、ローカルフラグだけなのでラベルはいらない
-			head = indent.clone();
-			common_label = false;
-		}
-
-		if let Vector(Some(l_flags)) = l_flags {
-			if !common_label {
-				help.push_str(&indent);
-				help.push_str("Local: \n");
-			}
-			help = l_flags.iter().fold(help, |help, l_flag| {
-				l_flag.help(help + &head, name_and_alias_field_min_width + 5)
-			});
-		}
-		let depth = c_flags.len();
-		if let Vector(Some(c_flags)) = c_flags {
-			if common_label {
-				help = help + &indent + "Common";
-			}
-			let self_common_index = depth - 1;
-			let route_without_root = depth > c.routes.len();
-			let mut common_head = true;
-			help = c_flags
-				.iter()
-				.enumerate()
-				.rfold(help, |help, (index, c_flags)| {
-					//コモンフラグ書き出し
-					if let Vector(Some(c_flags)) = c_flags {
-						let mut help = help;
-						if common_label {
-							if index < self_common_index {
-								let mut from_owned: String;
-								let from = if route_without_root {
-									if index < 1 {
-										let cur_path = std::path::Path::new(c.current());
-										from_owned = cur_path
-											.file_stem()
-											.unwrap_or(std::ffi::OsStr::new("root"))
-											.to_str()
-											.unwrap_or("root")
-											.to_owned();
-										match cur_path.extension() {
-											None => {}
-											Some(val) => {
-												from_owned += &format!("[.{}]", val.to_str().unwrap_or("exe"))
-											}
-										}
-
-										&from_owned
-									} else {
-										c.routes.get(index - 1).unwrap()
-									}
-								} else {
-									c.routes.get(index).unwrap()
-								};
-								if common_head {
-									help += &format!("[inherited from {}]: \n", from)
-								} else {
-									common_head = false;
-									help += &format!("{}[inherited from {}]: \n", &indent, from)
-								}
-							} else {
-								help += &format!(
-								"(common flags are available in this command and sub command{} under this): \n",
-								{
-									if self.sub.len() < 2 {
-										""
-									} else {
-										"s"
-									}
-								}
-								);
-								common_head = false;
-							}
-						}
-
-						help = c_flags.iter().fold(help, |help, c_flag| {
-							c_flag.help(help + &head, name_and_alias_field_min_width)
-						});
-						help
-					} else {
-						help
-					}
-				});
-			help += "\n";
-		}
-
-		if let Vector(Some(sub_commands)) = &self.sub {
-			help += &format!(
-				"Sub Command{}: \n",
-				if sub_commands.len() < 2 { "" } else { "s" }
-			);
-			help = sub_commands.iter().fold(help, |help, sub_command| {
-				//サブコマンドの説明出力
-				let mut help = help + &indent + &sub_command.name;
-				let mut name_and_alias_width = sub_command.name.len();
-				if let Vector(Some(alias)) = &sub_command.alias {
-					let (h_str, w) = alias
-						.iter()
-						.fold((help, name_and_alias_width), |(help, w), alias| {
-							(help + ", " + alias, w + 2 + alias.len())
-						});
-					help = h_str;
-					name_and_alias_width = w;
-				}
-				if name_and_alias_width < name_and_alias_field_min_width {
-					help += &sp.repeat(name_and_alias_field_min_width - name_and_alias_width);
-				}
-
-				help = if let Some(description) = &sub_command.description {
-					help + "\t" + description
-				} else {
-					help
-				};
-				help + "\n"
-			});
-			let loc_owned: String;
-			let location: &str = {
-				if self.name.is_empty() {
-					let path = std::path::Path::new(c.current());
-					let mut l: String = path
-						.file_stem()
-						.unwrap_or(std::ffi::OsStr::new("root"))
-						.to_str()
-						.unwrap_or("root")
-						.to_owned();
-					match path.extension() {
-						None => {}
-						Some(ext) => {
-							l = l + "[." + ext.to_str().unwrap_or("exe") + "]";
-						}
-					}
-					loc_owned = l;
-					&loc_owned
-				} else {
-					//セルフネームがある
-					if depth < 2 {
-						//コモンフラグが1コマンド分しかない→現在はルートコマンド
-						&self.name
-					} else {
-						loc_owned = if let Vector(Some(routes)) = &c.routes {
-							routes.iter().rfold(
-								{
-									if depth > routes.len() {
-										let path = std::path::Path::new(c.current());
-										let mut l = path
-											.file_stem()
-											.unwrap_or(std::ffi::OsStr::new("root"))
-											.to_str()
-											.unwrap_or("root")
-											.to_owned();
-										match path.extension() {
-											None => {}
-											Some(val) => {
-												l = l + "[." + val.to_str().unwrap_or("exe") + "]";
-											}
-										}
-										l
-									} else {
-										String::new()
-									}
-								},
-								|str, route| {
-									//現在どのコマンドに対応しているか
-									str + &sp + route
-								},
-							)
-						} else {
-							panic!("Routes of context should be not none under sub command.")
-						};
-						&loc_owned
-					}
-				}
-			};
-			help = help
-				+ "\n" + &format!(
-				//"See '{0} help <subcommand>' or '{0} <subcommand> --help' for more information.",
-				"{0} <subcommand> --help for more information.",
-				location
-			);
-			help += "\n";
-		}
-
-		return help;
 	}
 
 	/// Set Command's name
@@ -614,7 +439,7 @@ impl Command {
 	}*/
 
 	/// Sets license
-	pub fn license(mut self, license: Option<(String, String)>) -> Self {
+	pub fn license(mut self, license: License) -> Self {
 		self.license = license;
 		self
 	}
@@ -697,7 +522,7 @@ impl From<String> for Command {
 			action: None,
 			authors: String::default(),
 			copyright: String::default(),
-			license: None,
+			license: License::default(),
 			description: None,
 			usage: String::default(),
 			l_flags: Vector::default(),
@@ -1298,10 +1123,10 @@ mod tests {
 				assert_eq!(c.now_cmd_copyright, "root_copyright".to_owned());
 				assert_eq!(
 					c.now_cmd_license,
-					Some((
+					License::AbstAndContent(
 						String::from("root_license"),
 						String::from("root_license_file")
-					))
+					)
 				);
 				done!()
 			})
@@ -1313,7 +1138,10 @@ mod tests {
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.version("root_version")
 			.copyright("root_copyright")
-			.license(Some(("root_license".into(), "root_license_file".into())));
+			.license(License::AbstAndContent(
+				"root_license".into(),
+				"root_license_content".into(),
+			));
 
 		let _ = root.single_run(arg);
 	}
@@ -1358,10 +1186,10 @@ mod tests {
 				assert_eq!(c.now_cmd_copyright, "root_copyright".to_owned());
 				assert_eq!(
 					c.now_cmd_license,
-					Some((
+					License::AbstAndContent(
 						String::from("root_license"),
-						String::from("root_license_file")
-					))
+						String::from("root_license_content")
+					)
 				);
 				done!()
 			})
@@ -1377,7 +1205,10 @@ mod tests {
 			}))
 			.version("root_version")
 			.copyright("root_copyright")
-			.license(Some(("root_license".into(), "root_license_file".into())));
+			.license(License::AbstAndContent(
+				"root_license".into(),
+				"root_license_content".into(),
+			));
 		let _ = root.run(arg);
 	}
 
@@ -1390,7 +1221,10 @@ mod tests {
 			.common_flag(Flag::new_bool("cafter"))
 			.version("root_version")
 			.copyright("root_copyright")
-			.license(Some(("root_license".into(), "root_license_file".into())))
+			.license(License::AbstAndContent(
+				"root_license".into(),
+				"root_license_content".into(),
+			))
 			.authors("root_authors")
 	}
 
@@ -1402,7 +1236,7 @@ mod tests {
 			assert_eq!($context.now_cmd_copyright, prefix.clone() + "copyright");
 			assert_eq!(
 				$context.now_cmd_license,
-				Some((prefix.clone() + "license", prefix + "license_file"))
+				License::AbstAndContent(prefix.clone() + "license", prefix + "license_content")
 			);
 		};
 	}
@@ -1677,7 +1511,10 @@ mod tests {
 			.authors("sub_authors")
 			.version("sub_version")
 			.copyright("sub_copyright")
-			.license(Some(("sub_license".into(), "sub_license_file".into())));
+			.license(License::AbstAndContent(
+				"sub_license".into(),
+				"sub_license_content".into(),
+			));
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|c| {
@@ -1989,7 +1826,10 @@ mod tests {
 					})
 					.version("sub_version")
 					.copyright("sub_copyright")
-					.license(Some(("sub_license".into(), "root_license_file".into())))
+					.license(License::AbstAndContent(
+						"sub_license".into(),
+						"root_license_content".into(),
+					))
 					.authors("sub_authors")
 					.sub_command(
 						Command::with_name("leaf")
@@ -2034,7 +1874,10 @@ mod tests {
 							.local_flag(Flag::new_bool("local").short_alias('l'))
 							.version("leaf_version")
 							.copyright("leaf_copyright")
-							.license(Some(("leaf_license".into(), "leaf_license_file".into())))
+							.license(License::AbstAndContent(
+								"leaf_license".into(),
+								"leaf_license_file".into(),
+							))
 							.authors("leaf_authors"),
 					),
 			);
@@ -2063,10 +1906,10 @@ mod tests {
 			.authors("leaf_authors")
 			.copyright("leaf_copyright")
 			.version("leaf_version")
-			.license(Some((
+			.license(License::AbstAndContent(
 				"leaf_license".to_owned(),
 				"leaf_license_file".to_owned(),
-			)));
+			));
 
 		let run_leaf: fn(Command, Command, Command, Action, Vec<String>) -> () =
 			|root, sub, leaf, action, args| {
@@ -2302,7 +2145,10 @@ mod tests {
 			.authors("sub_authors")
 			.version("sub_version")
 			.copyright("sub_copyright")
-			.license(Some(("sub_license".into(), "sub_license_file".into())));
+			.license(License::AbstAndContent(
+				"sub_license".into(),
+				"sub_license_file".into(),
+			));
 		let mut root = Command::new()
 			.action(|c| {
 				println!("test_action: {:?}", c);
@@ -2333,11 +2179,271 @@ mod tests {
 			.usage("root usage")
 			.sub_command(Command::with_name("aaa").usage("aaa usage"))
 			.sub_command(Command::with_name("bbb").usage("bbb usage"));
-		assert_eq!(String::new(), root.default_help());
-		panic!("panic");
 	}*/
 }
 
-/*mod presets {
-	use super::{Command, Vector};
-}*/
+/// Presets of Command
+pub mod presets {
+	use super::{Action, Command, Context, Flag, License, Vector};
+
+	/// Preset of help function
+	pub fn help<'a>(cmd: &Command, ctx: &Context) -> String {
+		let mut help = String::new();
+		let indent_size: usize = 3;
+		let sp = String::from(" ");
+		let indent: String = sp.repeat(indent_size);
+		match &cmd.description {
+			Some(description) => {
+				help.push_str(description);
+				help.push_str("\n\n");
+			}
+			_ => {}
+		}
+		help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
+
+		//フラグ処理
+		let l_flags: &Vector<Flag> = if ctx.local_flags.is_none() {
+			&cmd.l_flags
+		} else {
+			&ctx.local_flags
+		};
+		let c_flags: &Vector<Vector<Flag>>;
+		let vec_inner: Vector<Vector<Flag>>;
+
+		//コモンフラグが残っていた場合
+		if cmd.c_flags.is_none() {
+			c_flags = &ctx.common_flags;
+		} else {
+			vec_inner = Vector(Some(vec![cmd.c_flags.clone()]));
+			c_flags = &vec_inner;
+		}
+
+		//どちらのフラグもある
+		//TODO: 有効なフラグを整理して表示できるようにしたい(この下のかっこ部分を消しても支障のない状態にする)
+
+		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the formaer flag's value): \n");
+		let head: String;
+		let common_label;
+		let name_and_alias_field_min_width: usize = 7;
+		if ctx.common_flags.sum_of_length() > 0 {
+			//コモンフラグが設定されている場合
+			head = indent.repeat(2);
+			common_label = true;
+		} else {
+			//設定されていない場合、ローカルフラグだけなのでラベルはいらない
+			head = indent.clone();
+			common_label = false;
+		}
+
+		if let Vector(Some(l_flags)) = l_flags {
+			if !common_label {
+				help.push_str(&indent);
+				help.push_str("Local: \n");
+			}
+			help = l_flags.iter().fold(help, |help, l_flag| {
+				l_flag.help(help + &head, name_and_alias_field_min_width + 5)
+			});
+		}
+		let depth = c_flags.len();
+		if let Vector(Some(c_flags)) = c_flags {
+			if common_label {
+				help = help + &indent + "Common";
+			}
+			let self_common_index = depth - 1;
+			let route_without_root = depth > ctx.routes.len();
+			let mut common_head = true;
+			help = c_flags
+				.iter()
+				.enumerate()
+				.rfold(help, |help, (index, c_flags)| {
+					//コモンフラグ書き出し
+					if let Vector(Some(c_flags)) = c_flags {
+						let mut help = help;
+						if common_label {
+							if index < self_common_index {
+								let mut from_owned: String;
+								let from = if route_without_root {
+									if index < 1 {
+										let cur_path = std::path::Path::new(ctx.current());
+										from_owned = cur_path
+											.file_stem()
+											.unwrap_or(std::ffi::OsStr::new("root"))
+											.to_str()
+											.unwrap_or("root")
+											.to_owned();
+										match cur_path.extension() {
+											None => {}
+											Some(val) => {
+												from_owned += &format!("[.{}]", val.to_str().unwrap_or("exe"))
+											}
+										}
+
+										&from_owned
+									} else {
+										ctx.routes.get(index - 1).unwrap()
+									}
+								} else {
+									ctx.routes.get(index).unwrap()
+								};
+								if common_head {
+									help += &format!("[inherited from {}]: \n", from)
+								} else {
+									common_head = false;
+									help += &format!("{}[inherited from {}]: \n", &indent, from)
+								}
+							} else {
+								help += &format!(
+								"(common flags are available in this command and sub command{} under this): \n",
+								{
+									if cmd.sub.len() < 2 {
+										""
+									} else {
+										"s"
+									}
+								}
+								);
+								common_head = false;
+							}
+						}
+
+						help = c_flags.iter().fold(help, |help, c_flag| {
+							c_flag.help(help + &head, name_and_alias_field_min_width)
+						});
+						help
+					} else {
+						help
+					}
+				});
+			help += "\n";
+		}
+
+		if let Vector(Some(sub_commands)) = &cmd.sub {
+			help += &format!(
+				"Sub Command{}: \n",
+				if sub_commands.len() < 2 { "" } else { "s" }
+			);
+			help = sub_commands.iter().fold(help, |help, sub_command| {
+				//サブコマンドの説明出力
+				let mut help = help + &indent + &sub_command.name;
+				let mut name_and_alias_width = sub_command.name.len();
+				if let Vector(Some(alias)) = &sub_command.alias {
+					let (h_str, w) = alias
+						.iter()
+						.fold((help, name_and_alias_width), |(help, w), alias| {
+							(help + ", " + alias, w + 2 + alias.len())
+						});
+					help = h_str;
+					name_and_alias_width = w;
+				}
+				if name_and_alias_width < name_and_alias_field_min_width {
+					help += &sp.repeat(name_and_alias_field_min_width - name_and_alias_width);
+				}
+
+				help = if let Some(description) = &sub_command.description {
+					help + "\t" + description
+				} else {
+					help
+				};
+				help + "\n"
+			});
+			let loc_owned: String;
+			let location: &str = {
+				if cmd.name.is_empty() {
+					let path = std::path::Path::new(ctx.current());
+					let mut l: String = path
+						.file_stem()
+						.unwrap_or(std::ffi::OsStr::new("root"))
+						.to_str()
+						.unwrap_or("root")
+						.to_owned();
+					match path.extension() {
+						None => {}
+						Some(ext) => {
+							l = l + "[." + ext.to_str().unwrap_or("exe") + "]";
+						}
+					}
+					loc_owned = l;
+					&loc_owned
+				} else {
+					//セルフネームがある
+					if depth < 2 {
+						//コモンフラグが1コマンド分しかない→現在はルートコマンド
+						&cmd.name
+					} else {
+						loc_owned = if let Vector(Some(routes)) = &ctx.routes {
+							routes.iter().rfold(
+								{
+									if depth > routes.len() {
+										let path = std::path::Path::new(ctx.current());
+										let mut l = path
+											.file_stem()
+											.unwrap_or(std::ffi::OsStr::new("root"))
+											.to_str()
+											.unwrap_or("root")
+											.to_owned();
+										match path.extension() {
+											None => {}
+											Some(val) => {
+												l = l + "[." + val.to_str().unwrap_or("exe") + "]";
+											}
+										}
+										l
+									} else {
+										String::new()
+									}
+								},
+								|str, route| {
+									//現在どのコマンドに対応しているか
+									str + &sp + route
+								},
+							)
+						} else {
+							panic!("Routes of context should be not none under sub command.")
+						};
+						&loc_owned
+					}
+				}
+			};
+			help = help
+				+ "\n" + &format!(
+				//"See '{0} help <subcommand>' or '{0} <subcommand> --help' for more information.",
+				"{0} <subcommand> --help for more information.",
+				location
+			);
+			help += "\n";
+		}
+
+		return help;
+	}
+
+	/// Create usage preset
+	pub fn usage<T: Into<String>>(name: T) {
+		format!("{} [SUBCOMMAND OR ARG] [OPTIONS]", name.into());
+	}
+
+	/// Create root command with base
+	pub fn root_with_base<T: Into<String>>(
+		name: T,
+		authors: T,
+		version: T,
+		description: T,
+		license: License,
+		action: Option<Action>,
+	) -> Command {
+		Command::with_all_field(
+			name.into(),
+			action,
+			authors.into(),
+			String::default(),
+			license,
+			Some(description.into()),
+			String::default(),
+			Vector::default(),
+			Vector::default(),
+			Vector::default(),
+			version.into(),
+			Vector::default(),
+			Some(help),
+		)
+	}
+}

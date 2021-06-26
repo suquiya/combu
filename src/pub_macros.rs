@@ -18,7 +18,7 @@ macro_rules! check_help {
 	($context:ident) => {
 		if $context.is_flag_true("help") {
 			return Ok($crate::ShowHelpRequest($context));
-			}
+		}
 	};
 }
 
@@ -29,7 +29,7 @@ macro_rules! check_version {
 		if $context.is_flag_true("version") {
 			println!($context.version);
 			return $crate::done!();
-			}
+		}
 	};
 }
 
@@ -40,7 +40,7 @@ macro_rules! check_authors {
 		if $context.is_flag_true("authors") {
 			println!($context.authors);
 			return $crate::done!();
-			}
+		}
 	};
 }
 
@@ -48,7 +48,7 @@ macro_rules! check_authors {
 /// Gets license file path of crate from cargo.toml.
 macro_rules! crate_license_file {
 	() => {
-		env!("CARGO_PKG_LICENSE_NAME")
+		env!("CARGO_PKG_LICENSE_FILE")
 	};
 }
 
@@ -75,7 +75,7 @@ macro_rules! check_license {
 		if $context.is_flag_true("license") {
 			$license_func;
 			return done!();
-			}
+		}
 	};
 }
 
@@ -85,7 +85,7 @@ macro_rules! check_copyright {
 	($context:ident) => {
 		if $context.is_flag_true("copyright") {
 			println!("{}", $context.copyright);
-			}
+		}
 	};
 }
 
@@ -181,20 +181,74 @@ macro_rules! root_from_crate {
 /// Macro for preset root.
 macro_rules! preset_root {
 	() => {
-		Command::with_base(
+		$crate::command::presets::root_with_base(
 			$crate::crate_name!(),
 			$crate::crate_authors!(),
 			$crate::crate_version!(),
 			$crate::crate_description!(),
+			$crate::command::License::SPDXExpr($crate::crate_license!().into()),
 			None
 			),
 	};
 	($action:expr)=>{
-		Command::with_base(
+		$crate::command::presets::root_with_base(
 			$crate::crate_name!(),
 			$crate::crate_authors!(),
 			$crate::crate_version!(),
 			$crate::crate_description!(),
+			$crate::command::License::SPDXExpr($crate::crate_license!().into()),
 			Some($action))
 	}
+}
+
+#[macro_export]
+/// Wrap with option if argument is not None.
+macro_rules! option_wrap {
+	() => {
+		None
+	};
+	(None) => {
+		None
+	};
+	($inner:expr) => {
+		Some($inner)
+	};
+}
+
+#[macro_export]
+/// create cmd helper with full detail
+macro_rules! cmd {
+	(
+		$name:expr=>
+		[
+			action=>$action:expr,
+			authors=>$authors:expr,
+			copyright=>$copyright:expr,
+			license=>$license:expr,
+			description=>$desc:expr,
+			usage=>$usage:expr,
+			local_flags:$l_flags:expr,
+			commcon_flags:$c_flags:expr,
+			alias: $alias:expr,
+			version: $ver:expr,
+			sub: $sub:expr,
+			help: $help:expr
+		]
+	) => {
+		Command::with_all_field(
+			$name,
+			$crate::option_wrap!($action),
+			$authors,
+			$copyright,
+			$license,
+			$desc,
+			$usage,
+			$l_flags,
+			$c_flags,
+			$alias,
+			$ver,
+			$sub,
+			$help,
+		)
+	};
 }

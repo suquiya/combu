@@ -1,5 +1,5 @@
 use combu::{action_result, check_help, done, preset_root};
-use combu::{Command, Context, Flag};
+use combu::{Context, Flag};
 use std::env;
 
 fn main() {

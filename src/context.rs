@@ -1,4 +1,5 @@
 use crate::{
+	command::License,
 	parser::{ErrorInfo, MiddleArg},
 	vector::flag::{FlagSearch, LongFound},
 	Flag, FlagValue, Vector,
@@ -37,7 +38,7 @@ pub struct Context {
 	/// version
 	pub now_cmd_version: String,
 	/// licence information
-	pub now_cmd_license: Option<(String, String)>,
+	pub now_cmd_license: License,
 	/// copyright
 	pub now_cmd_copyright: String,
 }
@@ -54,7 +55,7 @@ impl Context {
 		now_cmd_authors: String,
 		now_cmd_version: String,
 		now_cmd_copyright: String,
-		now_cmd_license: Option<(String, String)>,
+		now_cmd_license: License,
 	) -> Context {
 		Context {
 			raw_args,
@@ -89,7 +90,7 @@ impl Context {
 		now_cmd_authors: String,
 		now_cmd_version: String,
 		now_cmd_copyright: String,
-		now_cmd_license: Option<(String, String)>,
+		now_cmd_license: License,
 	) -> Context {
 		Context {
 			raw_args,
@@ -361,7 +362,7 @@ impl<'a> From<Vec<String>> for Context {
 			error_info_list: Vector::default(),
 			now_cmd_authors: String::default(),
 			now_cmd_version: String::default(),
-			now_cmd_license: Some((String::default(), String::default())),
+			now_cmd_license: License::default(),
 			now_cmd_copyright: String::default(),
 		}
 	}

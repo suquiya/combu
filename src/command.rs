@@ -13,7 +13,7 @@ use std::collections::VecDeque;
 ///This can be root and edge
 ///コマンドの情報格納＆実行用構造体
 #[derive(Clone, Default)]
-pub struct Command {
+pub struct Command<T: License = PLicense> {
 	///Command name
 	pub name: String,
 	///Command action
@@ -23,7 +23,7 @@ pub struct Command {
 	///Command copyright
 	pub copyright: String,
 	/// PLicense of command
-	pub license: PLicense,
+	pub license: T,
 	/// Command description
 	pub description: Option<String>,
 	///Command usage
@@ -113,6 +113,18 @@ macro_rules! check_sub_field {
 
 /// HelpFunc shows type alias for help function
 pub type HelpFunc = fn(command: &Command, context: &Context) -> String;
+
+/// License shows trait for license information
+pub trait License: Default + Clone {
+	/// Replace self with License::None and returns the previous self's value.
+	fn take(&mut self) -> Self;
+	/// Returns true if self has license information.
+	fn has_info(&self) -> bool;
+	/// Returns true if self has no license information.
+	fn is_none(&self) -> bool {
+		!self.has_info()
+	}
+}
 
 macro_rules! gen_context_for_self_action {
 	($self:expr, $raw_args:expr) => {{
@@ -2424,24 +2436,21 @@ pub mod presets {
 		}
 	}
 
-	impl License {
-		/// Replace self with License::None and returns the previous self's value.
-		pub fn take(&mut self) -> License {
+	impl super::License for License {
+		fn take(&mut self) -> License {
 			let mut dest = License::None;
 			std::mem::swap(self, &mut dest);
 			dest
 		}
 
-		/// Returns true if self is License::None
-		pub fn is_none(&self) -> bool {
+		fn is_none(&self) -> bool {
 			match self {
 				License::None => true,
 				_ => false,
 			}
 		}
 
-		/// Returns true if self has license information(not License::None).
-		pub fn has_info(&self) -> bool {
+		fn has_info(&self) -> bool {
 			match self {
 				License::None => false,
 				_ => true,

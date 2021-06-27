@@ -1,5 +1,5 @@
 use crate::{
-	command::License,
+	command::presets::License,
 	parser::{ErrorInfo, MiddleArg},
 	vector::flag::{FlagSearch, LongFound},
 	Flag, FlagValue, Vector,

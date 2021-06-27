@@ -196,7 +196,7 @@ macro_rules! preset_root {
 			$crate::crate_authors!(),
 			$crate::crate_version!(),
 			$crate::crate_description!(),
-			$crate::command::License::SPDXExpr($crate::crate_license!().into()),
+			$crate::command::presets::License::Expr($crate::crate_license!().into()),
 			Some($action))
 	}
 }

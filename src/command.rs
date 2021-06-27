@@ -2182,14 +2182,6 @@ mod tests {
 			);
 		let _ = root.run(arg.clone());
 	}
-
-	/*#[test]
-	fn help_test() {
-		let root = base_root()
-			.usage("root usage")
-			.sub_command(Command::with_name("aaa").usage("aaa usage"))
-			.sub_command(Command::with_name("bbb").usage("bbb usage"));
-	}*/
 }
 
 /// Presets of Command
@@ -2227,8 +2219,6 @@ pub mod presets {
 			vec_inner = Vector(Some(vec![cmd.c_flags.clone()]));
 			c_flags = &vec_inner;
 		}
-
-		//どちらのフラグもある
 
 		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
 		let head: String;

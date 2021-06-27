@@ -6,7 +6,8 @@ use crate::{
 };
 
 use core::mem::take;
-use std::{collections::VecDeque, path::PathBuf};
+use presets::License as PLicense;
+use std::collections::VecDeque;
 
 ///The struct for command information store and command execution
 ///This can be root and edge
@@ -21,8 +22,8 @@ pub struct Command {
 	pub authors: String,
 	///Command copyright
 	pub copyright: String,
-	/// license of command
-	pub license: License,
+	/// PLicense of command
+	pub license: PLicense,
 	/// Command description
 	pub description: Option<String>,
 	///Command usage
@@ -112,56 +113,6 @@ macro_rules! check_sub_field {
 
 /// HelpFunc shows type alias for help function
 pub type HelpFunc = fn(command: &Command, context: &Context) -> String;
-
-/// License shows license
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum License {
-	/// Shows no License information.
-	None,
-	/// Shows License As SPDXExpr
-	SPDXExpr(String),
-	/// Shows abstruct of license
-	Abst(String),
-	/// Shows content of license
-	Content(String),
-	/// Shows path of license file
-	File(PathBuf),
-	/// Shows abstruct of license and path of license file
-	AbstAndFile(String, PathBuf),
-	/// Shows abstruct and content of license
-	AbstAndContent(String, String),
-}
-
-impl Default for License {
-	fn default() -> Self {
-		License::Content(String::new())
-	}
-}
-
-impl License {
-	/// Replace self with License::None and returns the previous self's value.
-	pub fn take(&mut self) -> License {
-		let mut dest = License::None;
-		std::mem::swap(self, &mut dest);
-		dest
-	}
-
-	/// Returns true if self is License::None
-	pub fn is_none(&self) -> bool {
-		match self {
-			License::None => true,
-			_ => false,
-		}
-	}
-
-	/// Returns true if self has license information(not License::None).
-	pub fn has_info(&self) -> bool {
-		match self {
-			License::None => false,
-			_ => true,
-		}
-	}
-}
 
 macro_rules! gen_context_for_self_action {
 	($self:expr, $raw_args:expr) => {{
@@ -257,7 +208,7 @@ impl Command {
 			action,
 			authors.into(),
 			String::default(),
-			License::None,
+			PLicense::None,
 			Some(description.into()),
 			String::default(),
 			Vector::default(),
@@ -276,7 +227,7 @@ impl Command {
 			action: None,
 			authors: String::default(),
 			copyright: String::default(),
-			license: License::None,
+			license: PLicense::None,
 			description: None,
 			usage: String::default(),
 			l_flags: Vector::default(),
@@ -295,7 +246,7 @@ impl Command {
 		action: Option<Action>,
 		authors: String,
 		copyright: String,
-		license: License,
+		license: PLicense,
 		description: Option<String>,
 		usage: String,
 		local_flags: Vector<Flag>,
@@ -449,7 +400,7 @@ impl Command {
 	}
 
 	/// Sets license
-	pub fn license(mut self, license: License) -> Self {
+	pub fn license(mut self, license: PLicense) -> Self {
 		self.license = license;
 		self
 	}
@@ -517,14 +468,6 @@ impl Command {
 	}
 }
 
-/*
-impl Drop for Command {
-	fn drop(&mut self) {
-		println!("drop:{}", self.name);
-	}
-}
-*/
-
 impl From<String> for Command {
 	fn from(name: String) -> Self {
 		Command {
@@ -532,7 +475,7 @@ impl From<String> for Command {
 			action: None,
 			authors: String::default(),
 			copyright: String::default(),
-			license: License::default(),
+			license: PLicense::default(),
 			description: None,
 			usage: String::default(),
 			l_flags: Vector::default(),
@@ -1133,7 +1076,7 @@ mod tests {
 				assert_eq!(c.now_cmd_copyright, "root_copyright".to_owned());
 				assert_eq!(
 					c.now_cmd_license,
-					License::AbstAndContent(
+					PLicense::AbstAndContent(
 						String::from("root_license"),
 						String::from("root_license_content")
 					)
@@ -1148,7 +1091,7 @@ mod tests {
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.version("root_version")
 			.copyright("root_copyright")
-			.license(License::AbstAndContent(
+			.license(PLicense::AbstAndContent(
 				"root_license".into(),
 				"root_license_content".into(),
 			));
@@ -1196,7 +1139,7 @@ mod tests {
 				assert_eq!(c.now_cmd_copyright, "root_copyright".to_owned());
 				assert_eq!(
 					c.now_cmd_license,
-					License::AbstAndContent(
+					PLicense::AbstAndContent(
 						String::from("root_license"),
 						String::from("root_license_content")
 					)
@@ -1215,7 +1158,7 @@ mod tests {
 			}))
 			.version("root_version")
 			.copyright("root_copyright")
-			.license(License::AbstAndContent(
+			.license(PLicense::AbstAndContent(
 				"root_license".into(),
 				"root_license_content".into(),
 			));
@@ -1231,7 +1174,7 @@ mod tests {
 			.common_flag(Flag::new_bool("cafter"))
 			.version("root_version")
 			.copyright("root_copyright")
-			.license(License::AbstAndContent(
+			.license(PLicense::AbstAndContent(
 				"root_license".into(),
 				"root_license_content".into(),
 			))
@@ -1246,7 +1189,7 @@ mod tests {
 			assert_eq!($context.now_cmd_copyright, prefix.clone() + "copyright");
 			assert_eq!(
 				$context.now_cmd_license,
-				License::AbstAndContent(prefix.clone() + "license", prefix + "license_content")
+				PLicense::AbstAndContent(prefix.clone() + "license", prefix + "license_content")
 			);
 		};
 	}
@@ -1521,7 +1464,7 @@ mod tests {
 			.authors("sub_authors")
 			.version("sub_version")
 			.copyright("sub_copyright")
-			.license(License::AbstAndContent(
+			.license(PLicense::AbstAndContent(
 				"sub_license".into(),
 				"sub_license_content".into(),
 			));
@@ -1836,7 +1779,7 @@ mod tests {
 					})
 					.version("sub_version")
 					.copyright("sub_copyright")
-					.license(License::AbstAndContent(
+					.license(PLicense::AbstAndContent(
 						"sub_license".into(),
 						"root_license_content".into(),
 					))
@@ -1884,7 +1827,7 @@ mod tests {
 							.local_flag(Flag::new_bool("local").short_alias('l'))
 							.version("leaf_version")
 							.copyright("leaf_copyright")
-							.license(License::AbstAndContent(
+							.license(PLicense::AbstAndContent(
 								"leaf_license".into(),
 								"leaf_license_content".into(),
 							))
@@ -1916,7 +1859,7 @@ mod tests {
 			.authors("leaf_authors")
 			.copyright("leaf_copyright")
 			.version("leaf_version")
-			.license(License::AbstAndContent(
+			.license(PLicense::AbstAndContent(
 				"leaf_license".to_owned(),
 				"leaf_license_content".to_owned(),
 			));
@@ -2155,7 +2098,7 @@ mod tests {
 			.authors("sub_authors")
 			.version("sub_version")
 			.copyright("sub_copyright")
-			.license(License::AbstAndContent(
+			.license(PLicense::AbstAndContent(
 				"sub_license".into(),
 				"sub_license_content".into(),
 			));
@@ -2186,7 +2129,9 @@ mod tests {
 
 /// Presets of Command
 pub mod presets {
-	use super::{Action, Command, Context, Flag, License, Vector};
+	use std::path::PathBuf;
+
+	use super::{Action, Command, Context, Flag, Vector};
 
 	/// Preset of help function
 	pub fn help<'a>(cmd: &Command, ctx: &Context) -> String {
@@ -2416,8 +2361,8 @@ pub mod presets {
 	}
 
 	/// Create usage preset
-	pub fn usage<T: Into<String>>(name: T) {
-		format!("{} [SUBCOMMAND OR ARG] [OPTIONS]", name.into());
+	pub fn usage<T: Into<String>>(name: T) -> String {
+		format!("{} [SUBCOMMAND OR ARG] [OPTIONS]", name.into())
 	}
 
 	/// Create root command with base
@@ -2444,5 +2389,63 @@ pub mod presets {
 			Vector::default(),
 			Some(help),
 		)
+	}
+
+	/// License shows license
+	#[derive(Clone, PartialEq, Eq, Debug)]
+	pub enum License {
+		/// Shows no License information.
+		None,
+		/// Shows License As SPDXExpr
+		Expr(String),
+		/// Shows content of license
+		Content(String),
+		/// Shows path of license file
+		File(PathBuf),
+		/// Shows func which can output license information
+		Func(fn() -> String),
+		/// Shows spdx expressiton and file path of license
+		SPDXAndFile(String, PathBuf),
+		/// Shows spdx expression and content of license
+		SPDXAndContent(String, String),
+		/// Shows spdx expression of license and func which can output license information.
+		SPDXAndFunc(String, fn(spdx: String) -> String),
+		/// Shows abstruct of license and path of license file
+		AbstAndFile(String, PathBuf),
+		/// Shows abstruct and content of license
+		AbstAndContent(String, String),
+		/// Shows license's abstruct and func which can output license information.
+		AbstAndFunc(String, fn() -> String),
+	}
+
+	impl Default for License {
+		fn default() -> Self {
+			License::Content(String::new())
+		}
+	}
+
+	impl License {
+		/// Replace self with License::None and returns the previous self's value.
+		pub fn take(&mut self) -> License {
+			let mut dest = License::None;
+			std::mem::swap(self, &mut dest);
+			dest
+		}
+
+		/// Returns true if self is License::None
+		pub fn is_none(&self) -> bool {
+			match self {
+				License::None => true,
+				_ => false,
+			}
+		}
+
+		/// Returns true if self has license information(not License::None).
+		pub fn has_info(&self) -> bool {
+			match self {
+				License::None => false,
+				_ => true,
+			}
+		}
 	}
 }

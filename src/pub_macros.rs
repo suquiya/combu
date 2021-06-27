@@ -252,3 +252,53 @@ macro_rules! cmd {
 		)
 	};
 }
+
+#[macro_export]
+/// create license helper
+macro_rules! license {
+	() => {
+		License::None
+	};
+	(spdx=>$license:expr)=>{
+		License::SPDXExpr($license.into())
+	};
+	(spdx_from_crate) => {
+		license!(spdx=>$create::crate_license!())
+	};
+	(file=>$license_file_path:expr) => {
+		License::File($license_file_path.into())
+	};
+	(file_from_crate)=>{
+		license!(file=>$crate::crate_license_file!())
+	};
+	(abst=>$abst:expr)=>{
+		License::Abst($abst.into())
+	};
+	(content=>$content:expr)=>{
+		License::Content($content.into())
+	};
+	(spdx=>$spdx:expr, content=>$content:expr)=>{
+		License::SPDXAndContent($spdx.into(),$content.into())
+	};
+	(spdx=>$spdx:expr, file_from_crate)=>{
+		license!(spdx=>$spdx,file=>$crate::crate_license_file!())
+	};
+	(spdx=>$spdx:expr, file=>$file:expr)=>{
+		License::SPDXAndFile($spdx.into(),$file.into())
+	};
+	(spdx_from_crate, $detail:expr)=>{
+		license!(spdx=>$crate::crate_license!(),$detail)
+	};
+	(abst=>$abst:expr, $content:expr)=>{
+		License::AbstAndContent($abst.into(),$content.into())
+	};
+	(abst=>$abst:expr, file=>$file:expr)=>{
+		License::AbstAndFile($abst.into(),$file.into())
+	};
+	($abst:expr, file_from_crate)=>{
+		license!($abst, file=>$crate::crate_license_file!())
+	};
+	($abst:expr, $file:expr)=>{
+		License::AbstAndFile($abst,$file)
+	};
+}

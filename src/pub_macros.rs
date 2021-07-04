@@ -271,13 +271,10 @@ macro_rules! license {
 	(none) => {
 		$crate::command::License(None)
 	};
-	(expr=>$expr:expr, outputter=>$fn:expr) => {
-		$crate::command::License(Some(($expr, $fn)))
+	($expr:expr,$fn:expr)=>{
+		$crate::command::License(Some(($expr,$fn)))
 	};
 	($expr:expr,outputter=>$fn:expr)=>{
-		license!(expr=>$expr,outputter=>$fn)
-	};
-	($expr:expr,$fn:expr)=>{
 		license!(expr=>$expr,outputter=>$fn)
 	};
 	($expr:expr, content=>$content:expr) => {
@@ -292,7 +289,10 @@ macro_rules! license {
 	($expr:expr, $i:ident=>$c:expr$(,)?)=>{
 		license!($expr,$i=>$c)
 	};
-	($e:ident=>$expr:expr, $i:ident=>$c:expr$(,)?)=>{
+	(expr=>$expr:expr, $c:expr$(,)?)=>{
+		license!($expr,$c)
+	};
+	(expr=>$expr:expr, $i:ident=>$c:expr$(,)?)=>{
 		license!($expr,$i=>$c)
 	}
 }

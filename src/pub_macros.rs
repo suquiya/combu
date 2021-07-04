@@ -186,7 +186,6 @@ macro_rules! preset_root {
 			$crate::crate_authors!(),
 			$crate::crate_version!(),
 			$crate::crate_description!(),
-			$crate::command::License::SPDXExpr($crate::crate_license!().into()),
 			None
 			),
 	};
@@ -196,7 +195,6 @@ macro_rules! preset_root {
 			$crate::crate_authors!(),
 			$crate::crate_version!(),
 			$crate::crate_description!(),
-			$crate::command::presets::License::Expr($crate::crate_license!().into()),
 			Some($action))
 	}
 }
@@ -254,51 +252,32 @@ macro_rules! cmd {
 }
 
 #[macro_export]
+/// Creates function returns given string
+macro_rules! string_fn {
+	($string:expr) => {
+		|_ctx: &Context| -> String { $string }
+	};
+	(into=>$str:expr) => {
+		string_fn!($str.into())
+	};
+	(file_path=>$file_path:expr) => {
+		string_fn!(include_str!($file_path))
+	};
+}
+
+#[macro_export]
 /// create license helper
 macro_rules! license {
-	() => {
-		License::None
+	(none) => {
+		$crate::command::License(None)
 	};
-	(spdx=>$license:expr)=>{
-		License::SPDXExpr($license.into())
+	($(expr=>)*$expr:expr, $(outputter=>)*$fn:expr$(,)*) => {
+		$crate::command::License(Some(($expr, $fn)))
 	};
-	(spdx_from_crate) => {
-		license!(spdx=>$create::crate_license!())
+	($(expr=>)*$expr:expr, content=>$content:expr$(,)*) => {
+		license!($expr, $crate::string_fn!($content))
 	};
-	(file=>$license_file_path:expr) => {
-		License::File($license_file_path.into())
-	};
-	(file_from_crate)=>{
-		license!(file=>$crate::crate_license_file!())
-	};
-	(abst=>$abst:expr)=>{
-		License::Abst($abst.into())
-	};
-	(content=>$content:expr)=>{
-		License::Content($content.into())
-	};
-	(spdx=>$spdx:expr, content=>$content:expr)=>{
-		License::SPDXAndContent($spdx.into(),$content.into())
-	};
-	(spdx=>$spdx:expr, file_from_crate)=>{
-		license!(spdx=>$spdx,file=>$crate::crate_license_file!())
-	};
-	(spdx=>$spdx:expr, file=>$file:expr)=>{
-		License::SPDXAndFile($spdx.into(),$file.into())
-	};
-	(spdx_from_crate, $detail:expr)=>{
-		license!(spdx=>$crate::crate_license!(),$detail)
-	};
-	(abst=>$abst:expr, $content:expr)=>{
-		License::AbstAndContent($abst.into(),$content.into())
-	};
-	(abst=>$abst:expr, file=>$file:expr)=>{
-		License::AbstAndFile($abst.into(),$file.into())
-	};
-	($abst:expr, file_from_crate)=>{
-		license!($abst, file=>$crate::crate_license_file!())
-	};
-	($abst:expr, $file:expr)=>{
-		License::AbstAndFile($abst,$file)
+	($(expr=>)*$expr:expr, file_path=>$file_path:expr$(,)*) => {
+		license!($expr, $crate::string_fn!(file_path: $file_path))
 	};
 }

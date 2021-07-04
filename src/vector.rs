@@ -136,7 +136,7 @@ impl<T> Vector<T> {
 		}
 	}
 
-	/// Returns true if ths has inner vec(as Some(Vec<T>)).
+	/// Returns true if this has inner vec(as Some(Vec<T>)).
 	pub fn has_inner_vec(&self) -> bool {
 		match self {
 			Vector(None) => false,

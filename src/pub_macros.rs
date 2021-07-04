@@ -225,12 +225,12 @@ macro_rules! cmd {
 			license=>$license:expr,
 			description=>$desc:expr,
 			usage=>$usage:expr,
-			local_flags:$l_flags:expr,
-			commcon_flags:$c_flags:expr,
-			alias: $alias:expr,
-			version: $ver:expr,
-			sub: $sub:expr,
-			help: $help:expr
+			local_flags=>$l_flags:expr,
+			commcon_flags=>$c_flags:expr,
+			alias=> $alias:expr,
+			version=> $ver:expr,
+			sub=> $sub:expr,
+			help=> $help:expr
 		]
 	) => {
 		Command::with_all_field(
@@ -271,13 +271,28 @@ macro_rules! license {
 	(none) => {
 		$crate::command::License(None)
 	};
-	($(expr=>)*$expr:expr, $(outputter=>)*$fn:expr$(,)*) => {
+	(expr=>$expr:expr, outputter=>$fn:expr) => {
 		$crate::command::License(Some(($expr, $fn)))
 	};
-	($(expr=>)*$expr:expr, content=>$content:expr$(,)*) => {
+	($expr:expr,outputter=>$fn:expr)=>{
+		license!(expr=>$expr,outputter=>$fn)
+	};
+	($expr:expr,$fn:expr)=>{
+		license!(expr=>$expr,outputter=>$fn)
+	};
+	($expr:expr, content=>$content:expr) => {
 		license!($expr, $crate::string_fn!($content))
 	};
-	($(expr=>)*$expr:expr, file_path=>$file_path:expr$(,)*) => {
-		license!($expr, $crate::string_fn!(file_path: $file_path))
+	($expr:expr, file_path=>$file_path:expr) => {
+		license!($expr, $crate::string_fn!(file_path=>$file_path))
 	};
+	($expr:expr, $c:expr$(,)?)=>{
+		license!($expr,$c)
+	};
+	($expr:expr, $i:ident=>$c:expr$(,)?)=>{
+		license!($expr,$i=>$c)
+	};
+	($e:ident=>$expr:expr, $i:ident=>$c:expr$(,)?)=>{
+		license!($expr,$i=>$c)
+	}
 }

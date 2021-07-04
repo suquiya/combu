@@ -1237,7 +1237,7 @@ mod tests {
 			.version("root_version")
 			.copyright("root_copyright")
 			.license(license!(
-				"root_license".into(),
+				expr=>"root_license".into(),
 				content=>"root_license_content".into()
 			));
 		let _ = root.run(arg);

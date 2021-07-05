@@ -252,6 +252,21 @@ macro_rules! cmd {
 }
 
 #[macro_export]
+/// Helps for creating flag.
+macro_rules! flag {
+	($name:ident=>[$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, @$description:expr,@def $default:expr]) => {
+		Flag::with_all_field(
+			String::from(stringify!($name)),
+			String::from($description),
+			$crate::Vector::default(),
+			$crate::Vector::default(),
+			FlagType::Bool,
+			$crate::FlagValue::Bool($default),
+		);
+	};
+}
+
+#[macro_export]
 /// Creates function returns given string
 macro_rules! string_fn {
 	($string:expr) => {

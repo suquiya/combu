@@ -1,5 +1,5 @@
 use combu::command::*;
-use combu::{done, Done, Flag, FlagType, ShowHelpRequest};
+use combu::{done, flag, Done, Flag, FlagType, ShowHelpRequest};
 
 fn main() {
 	let root = Command::new()
@@ -46,4 +46,8 @@ fn main() {
 		.sub_command(Command::with_name("sub2").desctiption("sub command 2"))
 		.sub_command(Command::with_name("t").desctiption("test desc"));
 	let _ = root.run_with_auto_arg_collect();
+	println!(
+		"{:?}",
+		flag!(test_flag=>[bool,-s,-f,--long,@"test",@def false])
+	);
 }

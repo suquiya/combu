@@ -39,7 +39,6 @@ impl FlagType {
 			FlagType::String => "String",
 			FlagType::Int => "Int",
 			FlagType::Float => "Float",
-			//_ => "Unknown",
 		}
 	}
 	/// Get this FlagType variant's default value

@@ -4,6 +4,9 @@ macro_rules! vector {
 	() => {
 		$crate::Vector(None)
 	};
+	(None) => {
+		$crate::Vector(None)
+	};
 	($elem:expr; $n:expr)=>{
 		$crate::Vector(Some(vec![$elem,$n]))
 	};
@@ -209,7 +212,7 @@ macro_rules! option_wrap {
 		None
 	};
 	($inner:expr) => {
-		Some($inner)
+		Some($inner.into())
 	};
 }
 
@@ -217,7 +220,7 @@ macro_rules! option_wrap {
 /// create cmd helper with full detail
 macro_rules! cmd {
 	(
-		$name:expr=>
+		$name:ident=>
 		[
 			action=>$action:expr,
 			authors=>$authors:expr,
@@ -234,17 +237,17 @@ macro_rules! cmd {
 		]
 	) => {
 		Command::with_all_field(
-			$name,
+			String::from(stringify!($name)),
 			$crate::option_wrap!($action),
-			$authors,
-			$copyright,
+			$authors.into(),
+			$copyright.into(),
 			$license,
-			$desc,
-			$usage,
+			option_wrap!($desc),
+			$usage.into(),
 			$l_flags,
 			$c_flags,
 			$alias,
-			$ver,
+			$ver.into(),
 			$sub,
 			$help,
 		)
@@ -260,9 +263,41 @@ macro_rules! flag {
 			String::from($description),
 			$crate::Vector::default(),
 			$crate::Vector::default(),
-			FlagType::Bool,
+			$crate::flag_type!($type),
 			$crate::FlagValue::Bool($default),
 		);
+	};
+}
+
+#[macro_export]
+/// Gets FlagType from keyword
+macro_rules! flag_type {
+	(bool) => {
+		$crate::flag_type!(Bool)
+	};
+	(int) => {
+		$crate::flag_type!(Int)
+	};
+	(Integer) => {
+		$crate::flag_type!(Int)
+	};
+	(integer) => {
+		$crate::flag_type!(Int)
+	};
+	(string) => {
+		$crate::flag_type!(String)
+	};
+	(str) => {
+		$crate::flag_type!(String)
+	};
+	(Str) => {
+		$crate::flag_type!(String)
+	};
+	(float) => {
+		$crate::flag_type!(Float)
+	};
+	($i:ident) => {
+		FlagType::$i
 	};
 }
 

@@ -468,8 +468,11 @@ macro_rules! option_wrap {
 	(None) => {
 		None
 	};
-	($inner:expr) => {
+	($inner:literal) => {
 		Some($inner.into())
+	};
+	($inner:expr) => {
+		Some($inner)
 	};
 }
 
@@ -486,7 +489,7 @@ macro_rules! cmd {
 			description=>$desc:expr,
 			usage=>$usage:expr,
 			local_flags=>$l_flags:expr,
-			commcon_flags=>$c_flags:expr,
+			common_flags=>$c_flags:expr,
 			alias=> $alias:expr,
 			version=> $ver:expr,
 			sub=> $sub:expr,
@@ -499,22 +502,42 @@ macro_rules! cmd {
 			$authors.into(),
 			$copyright.into(),
 			$license,
-			option_wrap!($desc),
+			$crate::option_wrap!($desc),
 			$usage.into(),
 			$l_flags,
 			$c_flags,
 			$alias,
 			$ver.into(),
 			$sub,
-			$help,
+			$crate::option_wrap!($help),
 		)
+	};
+}
+
+#[macro_export]
+/// Helps for creating flag*s*.
+macro_rules! flags {
+	($($flag_arg:tt),* $(,)?) => {
+		$crate::vector![$($crate::flag!$flag_arg),*]
+	};
+	($($flag_name:ident=>$flag_arg:tt),* $(,)?)=>{
+		flags!($([$flag_name=>$flag_arg]),*);
+	};
+	($($flag_name:ident=$flag_arg:tt),* $(,)?)=>{
+		flags!($([$flag_name=>$flag_arg]),*);
+	};
+	($($flag_name:ident:$flag_arg:tt),* $(,)?)=>{
+		flags!($([$flag_name=>$flag_arg]),*);
+	};
+	($($flag_name:ident$flag_arg:tt),* $(,)?)=>{
+		flags!($([$flag_name=>$flag_arg]),*);
 	};
 }
 
 #[macro_export]
 /// Helps for creating flag.
 macro_rules! flag {
-	($name:ident=>[$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, @$description:expr,@def $default:expr]) => {
+	($name:ident=>[$type:ident,$(-$s:ident),*,$(--$long:ident),*, =$description:expr,@$default:expr]) => {
 		Flag::with_all_field(
 			String::from(stringify!($name)),
 			String::from($description),
@@ -524,6 +547,33 @@ macro_rules! flag {
 			$crate::flag_value!($type, $default),
 		);
 	};
+	($(@)?$name:ident=>[$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(@)?$default:expr]) => {
+		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	};
+	($(@)?$name:ident=>[$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(?)?$default:expr]) => {
+		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	};
+	($(@)?$name:ident=>{$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(@)?$default:expr}) => {
+		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	};
+	($(@)?$name:ident=>{$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(?)?$default:expr}) => {
+		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	};
+	($(@)?$name:ident=>($type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(@)?$default:expr)) => {
+		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	};
+	($(@)?$name:ident=>($type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(?)?$default:expr)) => {
+		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	};
+	($(@)?$name:ident:$args:tt)=>{
+		flag!($name=>$args)
+	};
+	($(@)?$name:ident=$args:tt)=>{
+		flag!($name=>$args)
+	};
+	($(@)?$name:ident$args:tt)=>{
+		flag!($name=>$args)
+	}
 }
 
 #[macro_export]
@@ -630,7 +680,7 @@ macro_rules! flag_value {
 /// Creates function returns given string
 macro_rules! string_fn {
 	($string:expr) => {
-		|_ctx: &Context| -> String { $string }
+		|_ctx: &$crate::Context| -> String { $string }
 	};
 	(into=>$str:expr) => {
 		string_fn!($str.into())

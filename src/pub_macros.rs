@@ -264,7 +264,7 @@ macro_rules! flag {
 			$crate::Vector::default(),
 			$crate::Vector::default(),
 			$crate::flag_type!($type),
-			$crate::FlagValue::Bool($default),
+			$crate::flag_value!($type, $default),
 		);
 	};
 }
@@ -275,29 +275,97 @@ macro_rules! flag_type {
 	(bool) => {
 		$crate::flag_type!(Bool)
 	};
+	(b) => {
+		flag_type!(b)
+	};
 	(int) => {
 		$crate::flag_type!(Int)
 	};
+	(i) => {
+		flag_type!(int)
+	};
 	(Integer) => {
-		$crate::flag_type!(Int)
+		flag_type!(int)
 	};
 	(integer) => {
-		$crate::flag_type!(Int)
+		flag_type!(int)
+	};
+	(float) => {
+		$crate::flag_type!(Float)
+	};
+	(f) => {
+		flag_type!(f)
 	};
 	(string) => {
 		$crate::flag_type!(String)
 	};
 	(str) => {
-		$crate::flag_type!(String)
+		flag_type!(string)
 	};
 	(Str) => {
-		$crate::flag_type!(String)
-	};
-	(float) => {
-		$crate::flag_type!(Float)
+		flag_type!(string)
 	};
 	($i:ident) => {
 		FlagType::$i
+	};
+}
+
+#[macro_export]
+/// Creates flag_value
+macro_rules! flag_value {
+	(bool,$val:expr) => {
+		$crate::FlagValue::Bool($val)
+	};
+	(b, $val:expr) => {
+		flag_value!(bool, $val)
+	};
+	(Bool,$val:expr) => {
+		flag_value!(bool, $val)
+	};
+	(true) => {
+		flag_value!(bool, true)
+	};
+	(false) => {
+		flag_value!(bool, false)
+	};
+	(int, $val:expr) => {
+		$crate::FlagValue::Int($val)
+	};
+	(i, $val:expr) => {
+		flag_value!(int, $val)
+	};
+	(Int, $val:expr) => {
+		flag_value!(int, $val)
+	};
+	(Integer, $val:expr) => {
+		flag_value!(int, $val)
+	};
+	(integer, $val:expr) => {
+		flag_value!(int, $val)
+	};
+	(float, $val:expr) => {
+		$crate::FlagValue::Float($val)
+	};
+	(f,$val:expr) => {
+		flag_value!(float, $val)
+	};
+	(Float, $val:expr) => {
+		flag_value!(float, $val)
+	};
+	(str, $val:expr) => {
+		$crate::FlagValue::String($val)
+	};
+	(s,$val:expr) => {
+		flag_value!(str, $val)
+	};
+	(Str, $val:expr) => {
+		flag_value!(str, $val)
+	};
+	(String, $val:expr) => {
+		flag_value!(str, $val)
+	};
+	(string, $val:expr) => {
+		flag_value!(str, $val)
 	};
 }
 

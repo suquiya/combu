@@ -125,7 +125,7 @@ fn act(c: Context) -> Result<ActionResult, ActionError> {
 
 ### Run
 
-```
+```bash
 $ cargo run --example single a b c d e
 abcde
 $ cargo run --example single a b c d e -r

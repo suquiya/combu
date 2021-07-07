@@ -1,20 +1,25 @@
-use combu::{cmd, done, flag, vector, Done, Flag, FlagType, ShowHelpRequest, Vector};
+use combu::{
+	cmd, crate_authors, done, flag, vector, Done, Flag, FlagType, ShowHelpRequest, Vector,
+};
 use combu::{command::*, flags};
 
 fn main() {
-	let action = |c| {
+	/*let action = |c| {
 		println!("root_action: {:?}", c);
 		Ok(ShowHelpRequest(c))
-	};
+	};*/
 	let sub = sub();
 	let r = cmd!(root=>
 	[
-		action,
-		<"suquiya",
+		|c| {
+			println!("root_action: {:?}", c);
+			Ok(ShowHelpRequest(c))
+		},
+		<crate_authors!(),
 		@"suquiya @2021",
 		#("license_name",content=>"license_content"),
 		="description",
-		~"usage",
+		:"usage",
 		l#flags!(local=>{bool, -l,--long,="test",false},),
 		c#Vector(None),
 		&vector!["alias".into()],

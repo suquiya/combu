@@ -491,6 +491,15 @@ macro_rules! cmd {
 	($name:literal$sep:tt$t:tt)=>{
 		cmd!($name.into()=>$t)
 	};
+	($name:literal$sep:tt$t:tt)=>{
+		cmd!($name.into()=>$t)
+	};
+	($name:expr=>{$($t:tt)+})=>{
+		cmd!($name=>[$($t)+])
+	};
+	($name:expr=>($($t:tt)+))=>{
+		cmd!($name=>[$($t)+])
+	};
 	(
 		$name:expr=>
 		[
@@ -499,7 +508,7 @@ macro_rules! cmd {
 			@$copyright:expr,
 			#$license:tt,
 			$(=)+$desc:expr,
-			~$usage:expr,
+			:$usage:expr,
 			l#$l_flags:expr,
 			c#$c_flags:expr,
 			&$alias:expr,
@@ -569,10 +578,10 @@ macro_rules! flag {
 	($(@)?$name:ident=>($($t:tt)+)) => {
 		flag!($name=>[$($t)+])
 	};
-	($(@)?$name:ident:$args:tt)=>{
+	($(@)?$name:ident=:$args:tt)=>{
 		flag!($name=>$args)
 	};
-	($(@)?$name:ident=$args:tt)=>{
+	($(@)?$name:ident$sep:tt$args:tt)=>{
 		flag!($name=>$args)
 	};
 	($(@)?$name:ident$args:tt)=>{

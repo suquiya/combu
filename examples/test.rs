@@ -1,4 +1,4 @@
-use combu::{cmd, done, flag, license, vector, Done, Flag, FlagType, ShowHelpRequest, Vector};
+use combu::{cmd, done, flag, vector, Done, Flag, FlagType, ShowHelpRequest, Vector};
 use combu::{command::*, flags};
 
 fn main() {
@@ -7,31 +7,34 @@ fn main() {
 		Ok(ShowHelpRequest(c))
 	};
 	let sub = sub();
-	let root = cmd!(
-		root=>[
-			action=>action,
-			authors=>"suquiya",
-			copyright=>"suquiya @2021",
-			license=>license!("license_name".into(),content=>"license_content".into()),
-			description=>"description",
-			usage=>"usage",
-			local_flags=>Vector(None),
-			common_flags=>Vector(None),
-			alias=>vector!["alias".into()],
-			version=>"0.0.1",
-			sub=>vector![sub],
-			help=>presets::help
+	let r = cmd!(root=>
+	[
+		action,
+		<"suquiya",
+		@"suquiya @2021",
+		#("license_name",content=>"license_content"),
+		="description",
+		~"usage",
+		l#flags!(local=>{bool, -l,--long,="test",false},),
+		c#Vector(None),
+		&vector!["alias".into()],
+		n "0.0.1",
+		|vector![sub],
+		?presets::help,
 		]
 	);
-	let _ = root.run_with_auto_arg_collect();
+
+	//local2:{bool, -a,--long2,="test2",false}
+
+	let _ = r.run_with_auto_arg_collect();
 	// flag![(test_flag=>[bool,-s,-f,--long,@"test",@def false]),];
 	println!(
 		"{:?}",
-		flag!(test_flag=>[bool, -s,-f,--long,--long2,="test",false])
+		flag!(test_flag[bool, -s,-f,--long,--long2,="test",false])
 	);
 	println!(
 		"{:?}",
-		flags!(test_flag:{bool, -s,-f,--long,--long2,="test",false},test_flag2:{bool, -a,-b,--long3,="test2",false})
+		flags!(test_flag{bool, -s,-f,--long,--long2,="test",false},test_flag2:{bool, -a,-b,--long3,="test2",false},)
 	);
 }
 

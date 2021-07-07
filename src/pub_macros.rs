@@ -479,29 +479,41 @@ macro_rules! option_wrap {
 #[macro_export]
 /// create cmd helper with full detail
 macro_rules! cmd {
+	($name:ident=>$t:tt)=>{
+		cmd!(stringify!($name)=>$t)
+	};
+	($name:ident=:$t:tt)=>{
+		cmd!(stringify!($name)=>$t)
+	};
+	($name:ident$sep:tt$t:tt)=>{
+		cmd!(stringify!($name)=>$t)
+	};
+	($name:literal$sep:tt$t:tt)=>{
+		cmd!($name.into()=>$t)
+	};
 	(
-		$name:ident=>
+		$name:expr=>
 		[
-			action=>$action:expr,
-			authors=>$authors:expr,
-			copyright=>$copyright:expr,
-			license=>$license:expr,
-			description=>$desc:expr,
-			usage=>$usage:expr,
-			local_flags=>$l_flags:expr,
-			common_flags=>$c_flags:expr,
-			alias=> $alias:expr,
-			version=> $ver:expr,
-			sub=> $sub:expr,
-			help=> $help:expr
+			$(=)?$action:expr,
+			<$authors:expr,
+			@$copyright:expr,
+			#$license:tt,
+			$(=)+$desc:expr,
+			~$usage:expr,
+			l#$l_flags:expr,
+			c#$c_flags:expr,
+			&$alias:expr,
+			n $ver:expr,
+			| $sub:expr,
+			?$help:expr $(,)?
 		]
 	) => {
 		Command::with_all_field(
-			String::from(stringify!($name)),
+			String::from($name),
 			$crate::option_wrap!($action),
 			$authors.into(),
 			$copyright.into(),
-			$license,
+			$crate::license!$license,
 			$crate::option_wrap!($desc),
 			$usage.into(),
 			$l_flags,
@@ -512,6 +524,7 @@ macro_rules! cmd {
 			$crate::option_wrap!($help),
 		)
 	};
+
 }
 
 #[macro_export]
@@ -520,16 +533,13 @@ macro_rules! flags {
 	($($flag_arg:tt),* $(,)?) => {
 		$crate::vector![$($crate::flag!$flag_arg),*]
 	};
-	($($flag_name:ident=>$flag_arg:tt),* $(,)?)=>{
-		flags!($([$flag_name=>$flag_arg]),*);
-	};
-	($($flag_name:ident=$flag_arg:tt),* $(,)?)=>{
-		flags!($([$flag_name=>$flag_arg]),*);
-	};
-	($($flag_name:ident:$flag_arg:tt),* $(,)?)=>{
-		flags!($([$flag_name=>$flag_arg]),*);
-	};
 	($($flag_name:ident$flag_arg:tt),* $(,)?)=>{
+		flags!($([$flag_name$flag_arg]),*);
+	};
+	($flag_name:ident$flag_arg:tt,$($t:tt)+)=>{
+		flags!($flag_name=>$flag_arg,$($t)+)
+	};
+	($($flag_name:ident$sep:tt$flag_arg:tt),* $(,)?)=>{
 		flags!($([$flag_name=>$flag_arg]),*);
 	};
 }
@@ -553,17 +563,11 @@ macro_rules! flag {
 	($(@)?$name:ident=>[$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(?)?$default:expr]) => {
 		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
 	};
-	($(@)?$name:ident=>{$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(@)?$default:expr}) => {
-		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	($(@)?$name:ident=>{$($t:tt)+})=>{
+		flag!($name=>[$($t)+])
 	};
-	($(@)?$name:ident=>{$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(?)?$default:expr}) => {
-		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
-	};
-	($(@)?$name:ident=>($type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(@)?$default:expr)) => {
-		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
-	};
-	($(@)?$name:ident=>($type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(?)?$default:expr)) => {
-		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	($(@)?$name:ident=>($($t:tt)+)) => {
+		flag!($name=>[$($t)+])
 	};
 	($(@)?$name:ident:$args:tt)=>{
 		flag!($name=>$args)
@@ -679,11 +683,11 @@ macro_rules! flag_value {
 #[macro_export]
 /// Creates function returns given string
 macro_rules! string_fn {
+	($string:literal) => {
+		$crate::string_fn!($string.to_owned())
+	};
 	($string:expr) => {
 		|_ctx: &$crate::Context| -> String { $string }
-	};
-	(into=>$str:expr) => {
-		string_fn!($str.into())
 	};
 	(file_path=>$file_path:expr) => {
 		string_fn!(include_str!($file_path))
@@ -696,14 +700,17 @@ macro_rules! license {
 	(none) => {
 		$crate::command::License(None)
 	};
+	($expr:literal, $fn:expr)=>{
+		$crate::license!($expr.into(),$fn)
+	};
 	($expr:expr,$fn:expr)=>{
 		$crate::command::License(Some(($expr,$fn)))
 	};
 	($expr:expr,outputter=>$fn:expr)=>{
-		license!(expr=>$expr,outputter=>$fn)
+		license!($expr,$fn)
 	};
 	($expr:expr, content=>$content:expr) => {
-		license!($expr, $crate::string_fn!($content))
+		$crate::license!($expr, $crate::string_fn!($content))
 	};
 	($expr:expr, file_path=>$file_path:expr) => {
 		license!($expr, $crate::string_fn!(file_path=>$file_path))

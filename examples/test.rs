@@ -1,23 +1,21 @@
-use combu::{
-	cmd, crate_authors, done, flag, vector, Done, Flag, FlagType, ShowHelpRequest, Vector,
-};
-use combu::{command::*, flags};
+use combu::{command::*, default_flag_value};
+use combu::{done, flag, flags, Done, Flag, ShowHelpRequest};
 
 fn main() {
 	/*let action = |c| {
 		println!("root_action: {:?}", c);
 		Ok(ShowHelpRequest(c))
 	};*/
-	let sub = sub();
-	let r = cmd!(root=>
+	let _sub = sub();
+	/*let r = cmd!(root:
 	[
 		|c| {
 			println!("root_action: {:?}", c);
 			Ok(ShowHelpRequest(c))
 		},
-		<crate_authors!(),
-		@"suquiya @2021",
-		#("license_name",content=>"license_content"),
+		<...,
+		@[2021,suquiya],
+		+("license_name",content=>"license_content"),
 		="description",
 		:"usage",
 		l#flags!(local=>{bool, -l,--long,="test",false},),
@@ -26,21 +24,51 @@ fn main() {
 		n "0.0.1",
 		|vector![sub],
 		?presets::help,
-		]
-	);
+	]
+	);*/
 
 	//local2:{bool, -a,--long2,="test2",false}
 
-	let _ = r.run_with_auto_arg_collect();
+	//let _ = r.run_with_auto_arg_collect();
 	// flag![(test_flag=>[bool,-s,-f,--long,@"test",@def false]),];
+	let _t = "test";
 	println!(
 		"{:?}",
-		flag!(test_flag[bool, -s,-f,--long,--long2,="test",false])
+		flag!(test_flag=>[bool,_t,-s,-f,--long,--long2,?false])
+	);
+	println!("{:?}", flag!(test_flag=>[bool,_t,-s,-f,?false]));
+	println!("{:?}", flag!(test_flag=>[bool,_t,?false]));
+	println!("{:?}", flag!(test_flag=>[bool,_t,false]));
+	println!("{:?}", flag!(test_flag=>[bool,"aaa",?false]));
+	println!("{:?}", flag!(test_flag=>[bool,"aaa",@false]));
+	println!("{:?}", flag!(test_flag=>[bool,"aaa",false]));
+	println!("{:?}", flag!(test_flag=>[bool,"aaa"]));
+	println!("{:?}", flag!(test_flag=>[str,"aaa","aaa"]));
+	println!("{:?}", flag!(test_flag=>[bool,_t,--long,--long2,?false]));
+	println!(
+		"{:?}",
+		flag!(test_flag=>[bool,"desc",-s,-f,--long,--long2,?false])
+	);
+	println!(
+		"{:?}",
+		flag!(test_flag[bool,-s,-f,--long,--long2,=_t,?false])
+	);
+	println!(
+		"{:?}",
+		flag!(test_flag=>[bool,-s,-f,--long,--long2,="desc",?false])
+	);
+	println!("{:?}", flag!(test_flag=>[bool,-s,-f,="desc",?false]));
+	println!("{:?}", flag!(test_flag=>[bool,,="desc",?false]));
+	println!("{:?}", flag!(test_flag=>[bool,,="desc",false]));
+	println!(
+		"{:?}",
+		flag!(test_flag[bool,-s,-f,--long,--long2,_t,?false])
 	);
 	println!(
 		"{:?}",
 		flags!(test_flag{bool, -s,-f,--long,--long2,="test",false},test_flag2:{bool, -a,-b,--long3,="test2",false},)
 	);
+	println!("{:?}", default_flag_value!(bool));
 }
 
 fn sub() -> Command {

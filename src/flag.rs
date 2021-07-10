@@ -224,20 +224,13 @@ impl Flag {
 		flag_type: FlagType,
 		default_value: FlagValue,
 	) -> Flag {
-		let calculated_default_value = if default_value.is_type(&flag_type) {
-			default_value
-		} else {
-			let flag_type_str = flag_type.name();
-			eprintln!("FlagType is {},but inputted default_value is not {}. default_value will be {}'s default.",flag_type_str,flag_type_str,flag_type_str);
-			flag_type.default_flag_value()
-		};
 		Flag {
 			name,
 			description,
 			short_alias,
 			long_alias,
 			flag_type,
-			default_value: calculated_default_value,
+			default_value,
 		}
 	}
 

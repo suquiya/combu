@@ -500,13 +500,19 @@ macro_rules! cmd {
 	($name:expr=>($($t:tt)+))=>{
 		cmd!($name=>[$($t)+])
 	};
+	($name:expr=>[$(=)?$action:expr,<...,$($t:tt)+])=>{
+		cmd!($name=>[=$action,<$crate::crate_authors!(),$($t)+])
+	};
+	($name:expr=>[$(=)?$action:expr,<from_crate,$($t:tt)+])=>{
+		cmd!($name=>[=$action,<$crate::crate_authors!(),$($t)+])
+	};
 	(
 		$name:expr=>
 		[
 			$(=)?$action:expr,
 			<$authors:expr,
-			@$copyright:expr,
-			#$license:tt,
+			@$copyright:tt,
+			+$license:tt,
 			$(=)+$desc:expr,
 			:$usage:expr,
 			l#$l_flags:expr,
@@ -521,7 +527,7 @@ macro_rules! cmd {
 			String::from($name),
 			$crate::option_wrap!($action),
 			$authors.into(),
-			$copyright.into(),
+			$crate::copyright!($copyright),
 			$crate::license!$license,
 			$crate::option_wrap!($desc),
 			$usage.into(),
@@ -533,7 +539,50 @@ macro_rules! cmd {
 			$crate::option_wrap!($help),
 		)
 	};
+}
 
+#[macro_export]
+/// Create copyright macro
+macro_rules! copyright {
+	($raw_str:literal) => {
+		$raw_str.to_string()
+	};
+	(...) => {
+		$crate::copyright!("Copyright (c) ", "", $crate::crate_authors!())
+	};
+	({$($t:tt)+})=>{
+		copyright!([$($t:tt)+])
+	};
+	(($($t:tt)+))=>{
+		copyright!([$($t:tt)+])
+	};
+	([$year:expr]) => {
+		$crate::copyright!($year, $crate::crate_authors!())
+	};
+	([$year:expr,$holder:ident]) => {
+		$crate::copyright!($year, stringify!($holder))
+	};
+	([$year:expr,$holder:expr]) => {
+		copyright!($year, $holder)
+	};
+	($year:expr,$holder:ident) => {
+		copyright!($year, stringify!($holder))
+	};
+	($year:expr,$holder:expr) => {
+		$crate::copyright!("Copyright (c)", $year, $holder)
+	};
+	([$prefix:expr, $year:expr,$holder:ident]) => {
+		$crate::copyright!($prefix, $year, stringify!($holder))
+	};
+	([$prefix:expr, $year:expr,$holder:expr]) => {
+		$crate::copyright!($prefix, $year, $holder)
+	};
+	($prefix:expr, $year:expr,$holder:ident) => {
+		copyright!($prefix, $year, stringify!($holder))
+	};
+	($prefix:expr, $year:expr,$holder:expr) => {
+		concat!($prefix, " ", $year, " ", $holder).to_owned()
+	};
 }
 
 #[macro_export]
@@ -543,7 +592,7 @@ macro_rules! flags {
 		$crate::vector![$($crate::flag!$flag_arg),*]
 	};
 	($($flag_name:ident$flag_arg:tt),* $(,)?)=>{
-		flags!($([$flag_name$flag_arg]),*);
+		flags!($([$flag_name:$flag_arg]),*);
 	};
 	($flag_name:ident$flag_arg:tt,$($t:tt)+)=>{
 		flags!($flag_name=>$flag_arg,$($t)+)
@@ -556,37 +605,58 @@ macro_rules! flags {
 #[macro_export]
 /// Helps for creating flag.
 macro_rules! flag {
-	($name:ident=>[$type:ident,$(-$s:ident),*,$(--$long:ident),*, =$description:expr,@$default:expr]) => {
+	($(@)?$name:ident$flag_arg:tt)=>{
+		flag!(stringify!($name)=>$flag_arg)
+	};
+	($(@)?$name:ident=>$flag_arg:tt)=>{
+		flag!(stringify!($name)=>$flag_arg)
+	};
+	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*?$default:expr]) => {
 		Flag::with_all_field(
-			String::from(stringify!($name)),
+			String::from($name),
 			String::from($description),
 			$crate::vector![$($crate::char!($s)),*],
-			$crate::vector![$(stringify!($long).to_owned()),*],
+			$crate::vector![$(stringify!($l).to_owned()),*],
 			$crate::flag_type!($type),
 			$crate::flag_value!($type, $default),
-		);
+		)
 	};
-	($(@)?$name:ident=>[$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(@)?$default:expr]) => {
-		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,?$default:expr])=>{
+		flag!($name=>[$type,$description,$(-$s),*,$(--$l),*?$default])
 	};
-	($(@)?$name:ident=>[$type:ident$(,)?$(-$s:ident),*$(,)?$(--$long:ident),*, =$description:expr,$(?)?$default:expr]) => {
-		flag!($name=>[$type,$(-$s),*,$(--$long),*, =$description, @$default])
+	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*@$default:expr]) => {
+		flag!($name=>[$type,$description,$(-$s),*,$(--$l),*?$default])
 	};
-	($(@)?$name:ident=>{$($t:tt)+})=>{
+	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,@$default:expr]) => {
+		flag!($name=>[$type,$description,$(-$s),*$(,)?$(--$l:ident),*,@$default])
+	};
+	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*$(,)?])=>{
+		flag!($name=>[$type,$description,$(-$s),*, $(-$l),* ?$crate::default_value!($type)])
+	};
+	($(@)?$name:expr=>[$type:ident,$description:expr,$(@)?$default:expr])=>{
+		flag![$name=>[$type,$description,?$default]]
+	};
+	($(@)?$name:expr=>[$type:ident,$(-$s:ident),*$(,)?$(--$l:ident),*,=$description:expr,$(?)?$default:expr]) => {
+		flag!($name=>[$type,$description,$(-$s),*,$(--$l),*,?$default])
+	};
+	($(@)?$name:expr=>[$type:ident,$(-$s:ident),*$(,)?$(--$l:ident),*,$description:ident,$(?)?$default:expr]) => {
+		flag!($name=>[$type,$(-$s),*,$(--$l),*,=$description,?$default])
+	};
+	($(@)?$name:expr=>[$type:ident,$(=)?$description:expr])=>{
+		flag!($name=>[$type,$description,$crate::default_value!($type)])
+	};
+	($(@)?$name:expr=>{$($t:tt)+})=>{
 		flag!($name=>[$($t)+])
 	};
-	($(@)?$name:ident=>($($t:tt)+)) => {
+	($(@)?$name:expr=>($($t:tt)+))=>{
 		flag!($name=>[$($t)+])
 	};
-	($(@)?$name:ident=:$args:tt)=>{
-		flag!($name=>$args)
+	($(@)?$name:ident=:[$($t:tt)+])=>{
+		flag!(stringify!($name)=>[$($t)+])
 	};
-	($(@)?$name:ident$sep:tt$args:tt)=>{
-		flag!($name=>$args)
+	($(@)?$name:ident$($sep:tt)?[$($t:tt)+])=>{
+		flag!(stringify!($name)=>[$($t)+])
 	};
-	($(@)?$name:ident$args:tt)=>{
-		flag!($name=>$args)
-	}
 }
 
 #[macro_export]
@@ -616,17 +686,17 @@ macro_rules! flag_type {
 	(f) => {
 		flag_type!(f)
 	};
-	(string) => {
-		$crate::flag_type!(String)
-	};
 	(str) => {
-		flag_type!(string)
+		$crate::flag_type!(string)
 	};
 	(Str) => {
 		flag_type!(string)
 	};
+	(string) => {
+		$crate::flag_type!(String)
+	};
 	($i:ident) => {
-		FlagType::$i
+		$crate::FlagType::$i
 	};
 }
 
@@ -672,6 +742,9 @@ macro_rules! flag_value {
 	(Float, $val:expr) => {
 		flag_value!(float, $val)
 	};
+	(str,$val:literal) => {
+		$crate::flag_value!(str, $val.into())
+	};
 	(str, $val:expr) => {
 		$crate::FlagValue::String($val)
 	};
@@ -686,6 +759,73 @@ macro_rules! flag_value {
 	};
 	(string, $val:expr) => {
 		flag_value!(str, $val)
+	};
+}
+
+#[macro_export]
+/// Creates default_flag_value
+macro_rules! default_flag_value {
+	($type:ident) => {
+		$crate::flag_value!($type, $crate::default_value!($type))
+	};
+}
+
+#[macro_export]
+/// get Default falue from type
+macro_rules! default_value {
+	(b) => {
+		default_flag_value!(bool, $val)
+	};
+	(Bool) => {
+		default_flag_value!(bool, $val)
+	};
+	(bool) => {
+		bool::default()
+	};
+	(true) => {
+		default_flag_value!(bool, true)
+	};
+	(false) => {
+		default_flag_value!(bool, false)
+	};
+	(i) => {
+		default_flag_value!(int, $val)
+	};
+	(Int) => {
+		default_flag_value!(int, $val)
+	};
+	(Integer) => {
+		default_flag_value!(int, $val)
+	};
+	(integer) => {
+		default_flag_value!(int, $val)
+	};
+	(int) => {
+		isize::default()
+	};
+	(f) => {
+		default_flag_value!(float, $val)
+	};
+	(Float) => {
+		default_flag_value!(float, $val)
+	};
+	(float) => {
+		f64::default()
+	};
+	(s) => {
+		default_flag_value!(str)
+	};
+	(Str) => {
+		default_flag_value!(str)
+	};
+	(String) => {
+		default_flag_value!(str)
+	};
+	(string) => {
+		default_flag_value!(str)
+	};
+	(str) => {
+		String::default()
 	};
 }
 

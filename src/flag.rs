@@ -1,7 +1,7 @@
 use crate::Vector;
 
 /// Struct for Flag setting's information
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Flag {
 	/// This flag's name
 	pub name: String,

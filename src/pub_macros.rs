@@ -603,6 +603,20 @@ macro_rules! flags {
 }
 
 #[macro_export]
+/// string_from macro. based on Strong::from, but no arg can generate String::new()
+macro_rules! string_from {
+	() => {
+		String::new()
+	};
+	($from:expr)=>{
+		String::from($from)
+	};
+	($($from_tt:tt)+)=>{
+		String::from($($from_tt)+)
+	};
+}
+
+#[macro_export]
 /// Helps for creating flag.
 macro_rules! flag {
 	($(@)?$name:ident$flag_arg:tt)=>{
@@ -611,39 +625,75 @@ macro_rules! flag {
 	($(@)?$name:ident=>$flag_arg:tt)=>{
 		flag!(stringify!($name)=>$flag_arg)
 	};
-	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*?$default:expr]) => {
+	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*?$($default:expr)?]) => {
 		Flag::with_all_field(
 			String::from($name),
-			String::from($description),
+			$crate::string_from!($($description)?),
 			$crate::vector![$($crate::char!($s)),*],
 			$crate::vector![$(stringify!($l).to_owned()),*],
 			$crate::flag_type!($type),
-			$crate::flag_value!($type, $default),
+			$crate::flag_value!($type, $($default)?),
 		)
 	};
-	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,?$default:expr])=>{
-		flag!($name=>[$type,$description,$(-$s),*,$(--$l),*?$default])
+	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*,?$($default:expr)?])=>{
+		flag!($name=>[$type,$($description)?,$(-$s),*,$(--$l),*$(?$default)?])
 	};
-	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*@$default:expr]) => {
-		flag!($name=>[$type,$description,$(-$s),*,$(--$l),*?$default])
+	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*@$($default:expr)?]) => {
+		flag!($name=>[$type,$($description)?,$(-$s),*,$(--$l),*?$($default)?])
 	};
-	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,@$default:expr]) => {
-		flag!($name=>[$type,$description,$(-$s),*$(,)?$(--$l:ident),*,@$default])
+	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*,@$($default:expr)?]) => {
+		flag!($name=>[$type,$($description)?,$(-$s),*$(,)?$(--$l:ident),*,@$($default)?])
 	};
-	($(@)?$name:expr=>[$type:ident,$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*$(,)?])=>{
-		flag!($name=>[$type,$description,$(-$s),*, $(-$l),* ?$crate::default_value!($type)])
+	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(?)?$($default:expr)?])=>{
+		flag![$name=>[$type,$($description)?,?$($default)?]]
 	};
-	($(@)?$name:expr=>[$type:ident,$description:expr,$(@)?$default:expr])=>{
-		flag![$name=>[$type,$description,?$default]]
+	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,@$default:expr])=>{
+		flag![$name=>[$type,$($description)?,?$default]]
 	};
-	($(@)?$name:expr=>[$type:ident,$(-$s:ident),*$(,)?$(--$l:ident),*,=$description:expr,$(?)?$default:expr]) => {
-		flag!($name=>[$type,$description,$(-$s),*,$(--$l),*,?$default])
+	($(@)?$name:expr=>[$(>)?$type:ident,$(-$s:ident),*$(,)?$(--$l:ident),*,=$($description:expr)?,$(?)?$default:expr]) => {
+		flag!($name=>[$type,$($description)?,$(-$s),*,$(--$l),*,?$default])
 	};
-	($(@)?$name:expr=>[$type:ident,$(-$s:ident),*$(,)?$(--$l:ident),*,$description:ident,$(?)?$default:expr]) => {
-		flag!($name=>[$type,$(-$s),*,$(--$l),*,=$description,?$default])
+	($(@)?$name:expr=>[$(>)?$type:ident,$(-$s:ident),*$(,)?$(--$l:ident),*,$($description:ident)?,$(?)?$default:expr]) => {
+		flag!($name=>[$type,$(-$s),*,$(--$l),*,=$($description)?,?$default])
 	};
-	($(@)?$name:expr=>[$type:ident,$(=)?$description:expr])=>{
-		flag!($name=>[$type,$description,$crate::default_value!($type)])
+	($(@)?$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?])=>{
+		flag!($name=>[$type,$($description)?,$crate::default_value!($type)])
+	};
+	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*$(>)?$type:ident$(,)??$default:expr])=>{
+		flag!($name=>[$type,$description,$(-$s),* $(--$l),*?$default])
+	};
+	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,$(>)?$type:ident$(,)??$default:expr])=>{
+		flag!($name=>[$description,$(-$s),* $(--$l),*$type?$default])
+	};
+	($(@)?$name:expr=>[$(-$s:ident),*$(,)?$(--$l:ident),*,=$description:expr,$(>)?$type:ident$(,)??$default:expr])=>{
+		flag!($name=>[$description,$(-$s),*$(--$l),*$type?$default])
+	};
+	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*$(>)?$type:ident$(,)?])=>{
+		flag!($name=>[$description,$(-$s),* $(--$l),* $type?$crate::default_value!($type)])
+	};
+	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,$(>)?$type:ident$(,)?])=>{
+		flag!($name=>[$description,$(-$s),* $(--$l),* $type])
+	};
+	($(@)?$name:expr=>[$(-$s:ident),*$(,)?$(--$l:ident),*,=$description:expr,$(>)?$type:ident$(,)?])=>{
+		flag!($name=>[$description,$(-$s),*$(--$l),*$type])
+	};
+	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),* ?false])=>{
+		flag!($name=>[$description,$(-$s),*$(--$l),* >bool?false])
+	};
+	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,?false])=>{
+		flag!($name=>[$description,$(-$s),*$(--$l),* >bool?false])
+	};
+	($(@)?$name:expr=>[$(=)?$description:expr,?false])=>{
+		flag!($name=>[$description,>bool?false])
+	};
+	($(@)?$name:expr=>[$i:ident$(,)?])=>{
+		$crate::_flag_one_ident!($name=>[$i])
+	};
+	($(@)?$name:expr=>[>$type:ident])=>{
+		flag!($name=>[$type,])
+	};
+	($(@)?$name:expr=>[$(=)?$description:expr])=>{
+		flag!($name=>[str,$description])
 	};
 	($(@)?$name:expr=>{$($t:tt)+})=>{
 		flag!($name=>[$($t)+])
@@ -660,18 +710,86 @@ macro_rules! flag {
 }
 
 #[macro_export]
+/// sub macro for flag
+macro_rules! _flag_one_ident {
+	($(@)?$name:expr=>[bool])=>{
+		$crate::flag!($name=>[>bool])
+	};
+	($(@)?$name:expr=>[b])=>{
+		$crate::flag!($name=>[>b])
+	};
+	($(@)?$name:expr=>[B])=>{
+		$crate::flag!($name=>[>B])
+	};
+	($(@)?$name:expr=>[Bool])=>{
+		$crate::flag!($name=>[>Bool])
+	};
+	($(@)?$name:expr=>[int])=>{
+		$crate::flag!($name=>[>int])
+	};
+	($(@)?$name:expr=>[i])=>{
+		$crate::flag!($name=>[>i])
+	};
+	($(@)?$name:expr=>[Integer])=>{
+		$crate::flag!($name=>[>Integer])
+	};
+	($(@)?$name:expr=>[I])=>{
+		$crate::flag!($name=>[>I])
+	};
+	($(@)?$name:expr=>[integer])=>{
+		$crate::flag!($name=>[>integer])
+	};
+	($(@)?$name:expr=>[Int])=>{
+		$crate::flag!($name=>[>Int])
+	};
+	($(@)?$name:expr=>[>$type:ident])=>{
+		$crate::flag!($name=>[$type,""])
+	};
+	($(@)?$name:expr=>[float])=>{
+		$crate::flag!($name=>[>float])
+	};
+	($(@)?$name:expr=>[f])=>{
+		$crate::flag!($name=>[>f])
+	};
+	($(@)?$name:expr=>[F])=>{
+		$crate::flag!($name=>[>F])
+	};
+	($(@)?$name:expr=>[Float])=>{
+		$crate::flag!($name=>[>Float])
+	};
+	($(@)?$name:expr=>[Str])=>{
+		$crate::flag!($name=>[>Str])
+	};
+	($(@)?$name:expr=>[string])=>{
+		$crate::flag!($name=>[>string])
+	};
+	($(@)?$name:expr=>[String])=>{
+		$crate::flag!($name=>[>String])
+	};
+	($(@)?$name:expr=>[$description:ident])=>{
+		$crate::flag!($name=>[str,$description])
+	}
+}
+
+#[macro_export]
 /// Gets FlagType from keyword
 macro_rules! flag_type {
 	(bool) => {
 		$crate::flag_type!(Bool)
 	};
 	(b) => {
-		flag_type!(b)
+		$crate::flag_type!(bool)
+	};
+	(B) => {
+		flag_type!(boool)
 	};
 	(int) => {
 		$crate::flag_type!(Int)
 	};
 	(i) => {
+		flag_type!(int)
+	};
+	(I) => {
 		flag_type!(int)
 	};
 	(Integer) => {
@@ -686,11 +804,20 @@ macro_rules! flag_type {
 	(f) => {
 		flag_type!(f)
 	};
+	(F) => {
+		flag_type!(f)
+	};
 	(str) => {
 		$crate::flag_type!(string)
 	};
 	(Str) => {
 		flag_type!(string)
+	};
+	(s) => {
+		flag_type!(str)
+	};
+	(S) => {
+		flag_type!(str)
 	};
 	(string) => {
 		$crate::flag_type!(String)
@@ -707,10 +834,10 @@ macro_rules! flag_value {
 		$crate::FlagValue::Bool($val)
 	};
 	(b, $val:expr) => {
-		flag_value!(bool, $val)
+		$crate::flag_value!(bool, $val)
 	};
 	(Bool,$val:expr) => {
-		flag_value!(bool, $val)
+		$crate::flag_value!(bool, $val)
 	};
 	(true) => {
 		flag_value!(bool, true)
@@ -760,6 +887,9 @@ macro_rules! flag_value {
 	(string, $val:expr) => {
 		flag_value!(str, $val)
 	};
+	($i:ident$(,)?) => {
+		$crate::flag_value!($i, $crate::default_value!($i))
+	};
 }
 
 #[macro_export]
@@ -774,55 +904,55 @@ macro_rules! default_flag_value {
 /// get Default falue from type
 macro_rules! default_value {
 	(b) => {
-		default_flag_value!(bool, $val)
+		$crate::default_value!(bool)
 	};
 	(Bool) => {
-		default_flag_value!(bool, $val)
+		$crate::default_value!(bool)
 	};
 	(bool) => {
 		bool::default()
 	};
 	(true) => {
-		default_flag_value!(bool, true)
+		default_value!(bool)
 	};
 	(false) => {
-		default_flag_value!(bool, false)
+		default_value!(bool)
 	};
 	(i) => {
-		default_flag_value!(int, $val)
+		default_value!(int)
 	};
 	(Int) => {
-		default_flag_value!(int, $val)
+		default_value!(int)
 	};
 	(Integer) => {
-		default_flag_value!(int, $val)
+		default_value!(int)
 	};
 	(integer) => {
-		default_flag_value!(int, $val)
+		default_value!(int)
 	};
 	(int) => {
 		isize::default()
 	};
 	(f) => {
-		default_flag_value!(float, $val)
+		default_value!(float)
 	};
 	(Float) => {
-		default_flag_value!(float, $val)
+		default_value!(float)
 	};
 	(float) => {
 		f64::default()
 	};
 	(s) => {
-		default_flag_value!(str)
+		default_value!(str)
 	};
 	(Str) => {
-		default_flag_value!(str)
+		default_value!(str)
 	};
 	(String) => {
-		default_flag_value!(str)
+		default_value!(str)
 	};
 	(string) => {
-		default_flag_value!(str)
+		default_value!(str)
 	};
 	(str) => {
 		String::default()

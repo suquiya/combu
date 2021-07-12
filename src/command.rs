@@ -359,10 +359,8 @@ impl Command {
 	}
 
 	/// Run command with collecting args automatically
-	pub fn run_with_auto_arg_collect(mut self) -> run_result!() {
-		//let args: Vec<String> = std::env::args().collect();
-		//self.run(args);
-		match &self.sub {
+	pub fn run_with_auto_arg_collect(&mut self) -> run_result!() {
+		match self.sub {
 			Vector(None) => {
 				let r = self.single_run(std::env::args().collect::<Vec<String>>());
 				r

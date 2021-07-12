@@ -37,7 +37,7 @@ fn main() {
 	//let _ = r.run_with_auto_arg_collect();
 	// flag![(test_flag=>[bool,-s,-f,--long,@"test",@def false]),];
 	let _t = "test";
-	let mut full = Flag {
+	let full = Flag {
 		name: "test_flag".into(),
 		description: _t.into(),
 		short_alias: Vector(Some(vec!['s', 'f'])),
@@ -59,65 +59,50 @@ fn main() {
 		flag!(test_flag=>[bool,_t,?]),
 		flag!(test_flag=>[bool,_t,?false])
 	);
-	println!(
-		"{:?}",
+	assert_eq!(
+		full.clone().description(""),
 		flag!(test_flag=>[bool,,-s,-f,--long,--long2,?false])
 	);
 	println!("{:?}", flag!(test_flag=>[bool,,-s,-f,?false]));
-	println!("{:?}", flag!(test_flag=>[bool,,?false]));
-	println!("{:?}", flag!(test_flag=>[bool,,false]));
 	println!("{:?}", flag!(test_flag=>[bool,"aaa",?false]));
 	println!("{:?}", flag!(test_flag=>[bool,"aaa",@false]));
 	println!("{:?}", flag!(test_flag=>[Bool,"aaa",false]));
 	println!("{:?}", flag!(test_flag=>[Bool,"aaa"]));
 	assert_eqs!(
+		Flag::new_bool("test_flag"),
 		flag!(test_flag=>[>bool,]),
 		flag!(test_flag=>[>bool]),
-		flag!(test_flag=>[>Bool])
+		flag!(test_flag=>[>Bool]),
+		flag!(test_flag=>[bool,,?false]),
+		flag!(test_flag=>[bool,,false])
 	);
 	println!("{:?}", flag!(test_flag=>[="desc",?false]));
-	println!("{:?}", flag!(test_flag=>[="desc",-s,-f,?false]));
 	println!("{:?}", flag!(test_flag=>[="desc",bool?false]));
 	let _i = "donly";
 	println!("{:?}", flag!(test_flag=>[_i]));
 	println!("{:?}", flag!(test_flag=>[="desc bool after",bool]));
 	println!("{:?}", flag!(test_flag=>[="desc",-s,-f, bool?false]));
 	println!("{:?}", flag!(test_flag=>["desc",-s,-f, bool?false]));
-	println!(
-		"{:?}",
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool?false])
+	assert_eqs!(
+		{ full.clone().description("desc") },
+		flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool?false]),
+		flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool?false]),
+		flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool]),
+		flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool]),
+		flag!(test_flag:[="desc",-s,-f,--long,--long2,?false]),
+		flag!(test_flag=[="desc",-s,-f,--long,--long2 ?false]),
+		flag!(test_flag[-s,-f,--long,--long2,="desc",bool?false]),
+		flag!(test_flag=>[-s,-f,--long,--long2,="desc",bool])
 	);
-	println!(
-		"{:?}",
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool?false])
+	assert_eqs!(
+		Flag::new("test_flag", FlagType::Bool, "desc")
+			.short_alias('s')
+			.short_alias('f'),
+		flag!(test_flag=>[="desc",-s,-f, bool]),
+		flag!(test_flag=>["desc",-s,-f, bool]),
+		flag!(test_flag=>[="desc",-s,-f,?false])
 	);
-	println!("{:?}", flag!(test_flag=>[="desc",-s,-f, bool]));
-	println!("{:?}", flag!(test_flag=>["desc",-s,-f, bool]));
-	println!(
-		"{:?}",
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool])
-	);
-	println!(
-		"{:?}",
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool])
-	);
-	println!(
-		"{:?}",
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2,?false])
-	);
-	println!("{:?}", flag!(dd=>["d",?false]));
-	println!(
-		"{:?}",
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2 ?false])
-	);
-	println!(
-		"{:?}",
-		flag!(test_flag=>[-s,-f,--long,--long2,="longb",bool?false])
-	);
-	println!(
-		"{:?}",
-		flag!(test_flag=>[-s,-f,--long,--long2,="longb",bool])
-	);
+	println!("{:?}", flag!(test_flag=>["desc",?false]));
 	println!("{:?}", flag!(test_flag["desc"]));
 	println!("{:?}", flag!(test_flag["desc",b]));
 	println!("{:?}", flag!(test_flag[_t]));

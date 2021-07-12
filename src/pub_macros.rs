@@ -622,17 +622,30 @@ macro_rules! flag {
 	($(@)?$name:ident$flag_arg:tt)=>{
 		flag!(stringify!($name)=>$flag_arg)
 	};
+	($(@)?$name:ident=:[$($t:tt)+])=>{
+		flag!(stringify!($name)=>[$($t)+])
+	};
+	($(@)?$name:ident$($sep:tt)?[$($t:tt)+])=>{
+		flag!(stringify!($name)=>[$($t)+])
+	};
 	($(@)?$name:ident=>$flag_arg:tt)=>{
 		flag!(stringify!($name)=>$flag_arg)
 	};
+	($(@)?$name:expr=>{$($t:tt)+})=>{
+		flag!($name=>[$($t)+])
+	};
+	($(@)?$name:expr=>($($t:tt)+))=>{
+		flag!($name=>[$($t)+])
+	};
 	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*?$($default:expr)?]) => {
-		Flag::with_all_field(
-			String::from($name),
-			$crate::string_from!($($description)?),
-			$crate::vector![$($crate::char!($s)),*],
-			$crate::vector![$(stringify!($l).to_owned()),*],
-			$crate::flag_type!($type),
-			$crate::flag_value!($type, $($default)?),
+		flag!(
+			String::from($name)=>[
+				$crate::string_from!($($description)?),
+				$crate::vector![$($crate::char!($s)),*],
+				$crate::vector![$(stringify!($l).to_owned()),*],
+				$crate::flag_type!($type),
+				$crate::flag_value!($type, $($default)?)
+			]
 		)
 	};
 	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*,?$($default:expr)?])=>{
@@ -644,7 +657,7 @@ macro_rules! flag {
 	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*,@$($default:expr)?]) => {
 		flag!($name=>[$type,$($description)?,$(-$s),*$(,)?$(--$l:ident),*,@$($default)?])
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(?)?$($default:expr)?])=>{
+	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$($default:expr)?])=>{
 		flag![$name=>[$type,$($description)?,?$($default)?]]
 	};
 	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,@$default:expr])=>{
@@ -695,17 +708,15 @@ macro_rules! flag {
 	($(@)?$name:expr=>[$(=)?$description:expr])=>{
 		flag!($name=>[str,$description])
 	};
-	($(@)?$name:expr=>{$($t:tt)+})=>{
-		flag!($name=>[$($t)+])
-	};
-	($(@)?$name:expr=>($($t:tt)+))=>{
-		flag!($name=>[$($t)+])
-	};
-	($(@)?$name:ident=:[$($t:tt)+])=>{
-		flag!(stringify!($name)=>[$($t)+])
-	};
-	($(@)?$name:ident$($sep:tt)?[$($t:tt)+])=>{
-		flag!(stringify!($name)=>[$($t)+])
+	($name:expr=>[$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr,$(>)?$type:expr,$(?)?$default:expr])=>{
+		Flag::with_all_field(
+			$name,
+			$description,
+			$short_alias,
+			$long_alias,
+			$type,
+			$default
+		)
 	};
 }
 

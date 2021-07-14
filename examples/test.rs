@@ -1,9 +1,10 @@
-use combu::{command::*, default_flag_value, FlagType, FlagValue, Vector};
-use combu::{done, flag, flags, Done, Flag, ShowHelpRequest};
+use combu::{command::*, FlagType, FlagValue, Vector};
+use combu::{done, flag, Done, Flag, ShowHelpRequest};
 
 macro_rules! assert_eqs {
 	($left:expr,$($right:expr),+) => {
 		$(assert_eq!($left,$right);)+
+		//println!("OK: {:?}",$left);
 	};
 }
 fn main() {
@@ -37,6 +38,7 @@ fn main() {
 	//let _ = r.run_with_auto_arg_collect();
 	// flag![(test_flag=>[bool,-s,-f,--long,@"test",@def false]),];
 	let _t = "test";
+	let _t_string = String::from(_t);
 	let full = Flag {
 		name: "test_flag".into(),
 		description: _t.into(),
@@ -45,93 +47,177 @@ fn main() {
 		default_value: FlagValue::Bool(false),
 		flag_type: FlagType::Bool,
 	};
-	assert_eq!(
+	let flag_name = String::from("test_flag");
+	let flag_name2 = flag_name.clone();
+	assert_eqs!(
 		full,
-		flag!(test_flag=>[bool,_t,-s,-f,--long,--long2,?false])
+		flag!(->String::from("test_flag")=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		),
+		flag!(->[String::from("test_flag")]=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		),
+		flag!(&String::from("test_flag")=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		),
+		flag!("test_flag"=>[
+			String::from(_t),
+			Vector(Some(vec!['s', 'f'])),
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			FlagType::Bool,
+			FlagValue::Bool(false)
+		]),
+		flag!(&flag_name=>[
+			String::from(_t),
+			Vector(Some(vec!['s', 'f'])),
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			FlagType::Bool,
+			FlagValue::Bool(false)
+		]),
+		flag!(
+			&flag_name2 = [
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		),
+		flag!(test_flag=>[
+			String::from(_t),
+			Vector(Some(vec!['s', 'f'])),
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			FlagType::Bool,
+			FlagValue::Bool(false)
+		]),
+		flag!(test_flag[
+			String::from(_t),
+			Vector(Some(vec!['s', 'f'])),
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			FlagType::Bool,
+			FlagValue::Bool(false)
+		]),
+		flag!(
+			[test_flag][
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		)
 	);
-	let mut s = full.clone();
-	s.long_alias.take();
-	assert_eq!(s, flag!(test_flag=>[bool,_t,-s,-f,?false]));
-	s.short_alias.take();
+
 	assert_eqs!(
-		s,
-		flag!(test_flag=>[bool,_t,false]),
-		flag!(test_flag=>[bool,_t,?]),
-		flag!(test_flag=>[bool,_t,?false])
+		Flag::with_name("test_flag"),
+		flag!(test_flag),
+		flag!("test_flag")
 	);
-	assert_eq!(
-		full.clone().description(""),
-		flag!(test_flag=>[bool,,-s,-f,--long,--long2,?false])
-	);
-	println!("{:?}", flag!(test_flag=>[bool,,-s,-f,?false]));
-	println!("{:?}", flag!(test_flag=>[bool,"aaa",?false]));
-	println!("{:?}", flag!(test_flag=>[bool,"aaa",@false]));
-	println!("{:?}", flag!(test_flag=>[Bool,"aaa",false]));
-	println!("{:?}", flag!(test_flag=>[Bool,"aaa"]));
-	assert_eqs!(
-		Flag::new_bool("test_flag"),
-		flag!(test_flag=>[>bool,]),
-		flag!(test_flag=>[>bool]),
-		flag!(test_flag=>[>Bool]),
-		flag!(test_flag=>[bool,,?false]),
-		flag!(test_flag=>[bool,,false])
-	);
-	println!("{:?}", flag!(test_flag=>[="desc",?false]));
-	println!("{:?}", flag!(test_flag=>[="desc",bool?false]));
-	let _i = "donly";
-	println!("{:?}", flag!(test_flag=>[_i]));
-	println!("{:?}", flag!(test_flag=>[="desc bool after",bool]));
-	println!("{:?}", flag!(test_flag=>[="desc",-s,-f, bool?false]));
-	println!("{:?}", flag!(test_flag=>["desc",-s,-f, bool?false]));
-	assert_eqs!(
-		{ full.clone().description("desc") },
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool?false]),
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool?false]),
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool]),
-		flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool]),
-		flag!(test_flag:[="desc",-s,-f,--long,--long2,?false]),
-		flag!(test_flag=[="desc",-s,-f,--long,--long2 ?false]),
-		flag!(test_flag[-s,-f,--long,--long2,="desc",bool?false]),
-		flag!(test_flag=>[-s,-f,--long,--long2,="desc",bool])
-	);
-	assert_eqs!(
-		Flag::new("test_flag", FlagType::Bool, "desc")
-			.short_alias('s')
-			.short_alias('f'),
-		flag!(test_flag=>[="desc",-s,-f, bool]),
-		flag!(test_flag=>["desc",-s,-f, bool]),
-		flag!(test_flag=>[="desc",-s,-f,?false])
-	);
-	println!("{:?}", flag!(test_flag=>["desc",?false]));
-	println!("{:?}", flag!(test_flag["desc"]));
-	println!("{:?}", flag!(test_flag["desc",b]));
-	println!("{:?}", flag!(test_flag[_t]));
-	println!("{:?}", flag!(test_flag=>[str,"aaa","aaa"]));
-	println!("{:?}", flag!(test_flag=>[bool,_t,--long,--long2,?false]));
-	println!(
-		"{:?}",
-		flag!(test_flag=>[bool,"desc",-s,-f,--long,--long2,?false])
-	);
-	println!(
-		"{:?}",
-		flag!(test_flag[bool,-s,-f,--long,--long2,=_t,?false])
-	);
-	println!(
-		"{:?}",
-		flag!(test_flag=>[bool,-s,-f,--long,--long2,="desc",?false])
-	);
-	println!("{:?}", flag!(test_flag=>[bool,-s,-f,="desc",?false]));
-	println!("{:?}", flag!(test_flag=>[bool,,="desc",?false]));
-	println!("{:?}", flag!(test_flag=>[bool,,="desc",false]));
-	println!(
-		"{:?}",
-		flag!(test_flag[bool,-s,-f,--long,--long2,_t,?false])
-	);
-	println!(
-		"{:?}",
-		flags!(test_flag{bool, -s,-f,--long,--long2,="test",false},test_flag2:{bool, -a,-b,--long3,="test2",false},)
-	);
-	println!("{:?}", default_flag_value!(bool));
+	// assert_eq!(
+	// 	full,
+	// 	flag!(test_flag=>[bool,_t,-s,-f,--long,--long2,?false])
+	// );
+	// let mut s = full.clone();
+	// s.long_alias.take();
+	// assert_eq!(s, flag!(test_flag=>[bool,_t,-s,-f,?false]));
+	// s.short_alias.take();
+	// assert_eqs!(
+	// 	s,
+	// 	flag!(test_flag=>[bool,_t,false]),
+	// 	flag!(test_flag=>[bool,_t,?]),
+	// 	flag!(test_flag=>[bool,_t,?false])
+	// );
+	// assert_eq!(
+	// 	full.clone().description(""),
+	// 	flag!(test_flag=>[bool,,-s,-f,--long,--long2,?false])
+	// );
+	// println!("{:?}", flag!(test_flag=>[bool,,-s,-f,?false]));
+	// println!("{:?}", flag!(test_flag=>[bool,"aaa",?false]));
+	// println!("{:?}", flag!(test_flag=>[bool,"aaa",@false]));
+	// println!("{:?}", flag!(test_flag=>[Bool,"aaa",false]));
+	// println!("{:?}", flag!(test_flag=>[Bool,"aaa"]));
+	// assert_eqs!(
+	// 	Flag::new_bool("test_flag"),
+	// 	flag!(test_flag=>[>bool,]),
+	// 	flag!(test_flag=>[>bool]),
+	// 	flag!(test_flag=>[>Bool]),
+	// 	flag!(test_flag=>[bool,,?false]),
+	// 	flag!(test_flag=>[bool,,false])
+	// );
+	// println!("{:?}", flag!(test_flag=>[="desc",?false]));
+	// println!("{:?}", flag!(test_flag=>[="desc",bool?false]));
+	// let _i = "donly";
+	// println!("{:?}", flag!(test_flag=>[_i]));
+	// println!("{:?}", flag!(test_flag=>[="desc bool after",bool]));
+	// println!("{:?}", flag!(test_flag=>[="desc",-s,-f, bool?false]));
+	// println!("{:?}", flag!(test_flag=>["desc",-s,-f, bool?false]));
+	// assert_eqs!(
+	// 	{ full.clone().description("desc") },
+	// 	flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool?false]),
+	// 	flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool?false]),
+	// 	flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool]),
+	// 	flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool]),
+	// 	flag!(test_flag:[="desc",-s,-f,--long,--long2,?false]),
+	// 	flag!(test_flag=[="desc",-s,-f,--long,--long2 ?false]),
+	// 	flag!(test_flag[-s,-f,--long,--long2,="desc",bool?false]),
+	// 	flag!(test_flag=>[-s,-f,--long,--long2,="desc",bool])
+	// );
+	// assert_eqs!(
+	// 	Flag::new("test_flag", FlagType::Bool, "desc")
+	// 		.short_alias('s')
+	// 		.short_alias('f'),
+	// 	flag!(test_flag=>[="desc",-s,-f, bool]),
+	// 	flag!(test_flag=>["desc",-s,-f, bool]),
+	// 	flag!(test_flag=>[="desc",-s,-f,?false])
+	// );
+	// println!("{:?}", flag!(test_flag=>["desc",?false]));
+	// println!("{:?}", flag!(test_flag["desc"]));
+	// println!("{:?}", flag!(test_flag["desc",b]));
+	// println!("{:?}", flag!(test_flag[_t]));
+	// println!("{:?}", flag!(test_flag=>[str,"aaa","aaa"]));
+	// println!("{:?}", flag!(test_flag=>[bool,_t,--long,--long2,?false]));
+	// println!(
+	// 	"{:?}",
+	// 	flag!(test_flag=>[bool,"desc",-s,-f,--long,--long2,?false])
+	// );
+	// println!(
+	// 	"{:?}",
+	// 	flag!(test_flag[bool,-s,-f,--long,--long2,=_t,?false])
+	// );
+	// println!(
+	// 	"{:?}",
+	// 	flag!(test_flag=>[bool,-s,-f,--long,--long2,="desc",?false])
+	// );
+	// println!("{:?}", flag!(test_flag=>[bool,-s,-f,="desc",?false]));
+	// println!("{:?}", flag!(test_flag=>[bool,,="desc",?false]));
+	// println!("{:?}", flag!(test_flag=>[bool,,="desc",false]));
+	// println!(
+	// 	"{:?}",
+	// 	flag!(test_flag[bool,-s,-f,--long,--long2,_t,?false])
+	// );
+	// println!(
+	// 	"{:?}",
+	// 	flags!(
+	//			*test_flag{bool, -s,-f,--long,--long2,="test",false},
+	//			@[String::from("test_flag")]=>{bool, -s,-f,--long,--long2,="test",false},
+	//			[test_flag2]=>{bool, -a,-b,--long3,="test2",false},)
+	// 	);
+	// println!("{:?}", default_flag_value!(bool));
 }
 
 fn sub() -> Command {

@@ -608,8 +608,14 @@ macro_rules! string_from {
 	() => {
 		String::new()
 	};
+	(&$from:expr)=>{
+		$from
+	};
 	($from:expr)=>{
 		String::from($from)
+	};
+	(&$($from_tt:tt)+)=>{
+		String::from($($from_tt)+)
 	};
 	($($from_tt:tt)+)=>{
 		String::from($($from_tt)+)
@@ -619,104 +625,97 @@ macro_rules! string_from {
 #[macro_export]
 /// Helps for creating flag.
 macro_rules! flag {
-	($(@)?$name:ident$flag_arg:tt)=>{
-		flag!(stringify!($name)=>$flag_arg)
+	(@$($t:tt)+)=>{
+		flag!($($t)+)
 	};
-	($(@)?$name:ident=:[$($t:tt)+])=>{
-		flag!(stringify!($name)=>[$($t)+])
+	(&$($t:tt)+)=>{
+		flag!(->$($t)+)
 	};
-	($(@)?$name:ident$($sep:tt)?[$($t:tt)+])=>{
-		flag!(stringify!($name)=>[$($t)+])
+	($name:ident$t:tt)=>{
+		flag!($name=>$t)
 	};
-	($(@)?$name:ident=>$flag_arg:tt)=>{
-		flag!(stringify!($name)=>$flag_arg)
+	(->$name:ident$t:tt)=>{
+		flag!(->$name=>$t)
 	};
-	($(@)?$name:expr=>{$($t:tt)+})=>{
-		flag!($name=>[$($t)+])
+	($name:ident$sep:tt$t:tt)=>{
+		flag!(stringify!($name)=>$t)
 	};
-	($(@)?$name:expr=>($($t:tt)+))=>{
-		flag!($name=>[$($t)+])
+	([->$name:expr]$t:tt)=>{
+		flag!([->$name]=>$t)
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*?$($default:expr)?]) => {
-		flag!(
-			String::from($name)=>[
-				$crate::string_from!($($description)?),
-				$crate::vector![$($crate::char!($s)),*],
-				$crate::vector![$(stringify!($l).to_owned()),*],
-				$crate::flag_type!($type),
-				$crate::flag_value!($type, $($default)?)
-			]
-		)
+	([->$name:expr]$sep:tt$t:tt)=>{
+		flag!(->$name=>$t)
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*,?$($default:expr)?])=>{
-		flag!($name=>[$type,$($description)?,$(-$s),*,$(--$l),*$(?$default)?])
+	(->[$name:expr]$t:tt)=>{
+		flag!(->[$name]=>$t)
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*@$($default:expr)?]) => {
-		flag!($name=>[$type,$($description)?,$(-$s),*,$(--$l),*?$($default)?])
+	(->[$name:expr]$sep:tt$t:tt)=>{
+		flag!(->$name=>$t)
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$(-$s:ident),*$(,)?$(--$l:ident),*,@$($default:expr)?]) => {
-		flag!($name=>[$type,$($description)?,$(-$s),*$(,)?$(--$l:ident),*,@$($default)?])
+	([$($name_flagment:tt)+]$t:tt)=>{
+		flag!([$($name_flagment)+]=>$t)
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,$($default:expr)?])=>{
-		flag![$name=>[$type,$($description)?,?$($default)?]]
+	([$($name_flagment:tt)+]$sep:tt$t:tt)=>{
+		flag!($($name_flagment)+ =>$t)
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$($description:expr)?,@$default:expr])=>{
-		flag![$name=>[$type,$($description)?,?$default]]
+	($name:expr=>$t:tt)=>{
+		flag!(->$crate::string_from!($name)=>$t)
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$(-$s:ident),*$(,)?$(--$l:ident),*,=$($description:expr)?,$(?)?$default:expr]) => {
-		flag!($name=>[$type,$($description)?,$(-$s),*,$(--$l),*,?$default])
+	(->$name:expr=>[])=>{
+		flag!(->$name)
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$(-$s:ident),*$(,)?$(--$l:ident),*,$($description:ident)?,$(?)?$default:expr]) => {
-		flag!($name=>[$type,$(-$s),*,$(--$l),*,=$($description)?,?$default])
+	(->$name:ident:$t:tt)=>{
+		flag!(->$name=>$t)
 	};
-	($(@)?$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?])=>{
-		flag!($name=>[$type,$($description)?,$crate::default_value!($type)])
+	(->$name:ident=$t:tt)=>{
+		flag!(->$name=>$t)
 	};
-	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*$(>)?$type:ident$(,)??$default:expr])=>{
-		flag!($name=>[$type,$description,$(-$s),* $(--$l),*?$default])
+	(->$name:expr)=>{
+		flag!(->$name=>[
+			$crate::default_value!(str),
+			Vector::default(),
+			Vector::default(),
+			FlagType::default(),
+			FlagValue::String(String::default())
+			])
 	};
-	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,$(>)?$type:ident$(,)??$default:expr])=>{
-		flag!($name=>[$description,$(-$s),* $(--$l),*$type?$default])
+	($name:expr=>[])=>{
+		flag!(->$crate::string_from!($name))
 	};
-	($(@)?$name:expr=>[$(-$s:ident),*$(,)?$(--$l:ident),*,=$description:expr,$(>)?$type:ident$(,)??$default:expr])=>{
-		flag!($name=>[$description,$(-$s),*$(--$l),*$type?$default])
+	($name:ident)=>{
+		flag!(stringify!($name)=>[])
 	};
-	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*$(>)?$type:ident$(,)?])=>{
-		flag!($name=>[$description,$(-$s),* $(--$l),* $type?$crate::default_value!($type)])
+	($($name:expr)?)=>{
+		flag!(->$crate::string_from!($($name)?))
 	};
-	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,$(>)?$type:ident$(,)?])=>{
-		flag!($name=>[$description,$(-$s),* $(--$l),* $type])
-	};
-	($(@)?$name:expr=>[$(-$s:ident),*$(,)?$(--$l:ident),*,=$description:expr,$(>)?$type:ident$(,)?])=>{
-		flag!($name=>[$description,$(-$s),*$(--$l),*$type])
-	};
-	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),* ?false])=>{
-		flag!($name=>[$description,$(-$s),*$(--$l),* >bool?false])
-	};
-	($(@)?$name:expr=>[$(=)?$description:expr,$(-$s:ident),*$(,)?$(--$l:ident),*,?false])=>{
-		flag!($name=>[$description,$(-$s),*$(--$l),* >bool?false])
-	};
-	($(@)?$name:expr=>[$(=)?$description:expr,?false])=>{
-		flag!($name=>[$description,>bool?false])
-	};
-	($(@)?$name:expr=>[$i:ident$(,)?])=>{
-		$crate::_flag_one_ident!($name=>[$i])
-	};
-	($(@)?$name:expr=>[>$type:ident])=>{
-		flag!($name=>[$type,])
-	};
-	($(@)?$name:expr=>[$(=)?$description:expr])=>{
-		flag!($name=>[str,$description])
-	};
-	($name:expr=>[$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr,$(>)?$type:expr,$(?)?$default:expr])=>{
+	(->$name:expr=>[
+		$(=)?$description:expr,
+		$(s#)?$short_alias:expr,
+		$(l#)?$long_alias:expr,
+		$(>)?$type:expr,
+		$(?)?$default:expr$(,)?]) => {
 		Flag::with_all_field(
 			$name,
 			$description,
 			$short_alias,
 			$long_alias,
 			$type,
-			$default
+			$default,
 		)
+	};
+	(->$name:ident$sep:tt$t:tt)=>{
+		flag!(->$name=>$t)
+	};
+}
+
+#[macro_export]
+/// name convert macro
+macro_rules! flag_name_parse {
+	(&$ident:ident) => {
+		$ident
+	};
+	($ident:ident) => {
+		stringify!($ident)
 	};
 }
 

@@ -625,68 +625,8 @@ macro_rules! string_from {
 #[macro_export]
 /// Helps for creating flag.
 macro_rules! flag {
-	(@$($t:tt)+)=>{
-		flag!($($t)+)
-	};
-	(&$($t:tt)+)=>{
-		flag!(->$($t)+)
-	};
-	($name:ident$t:tt)=>{
-		flag!($name=>$t)
-	};
-	(->$name:ident$t:tt)=>{
-		flag!(->$name=>$t)
-	};
-	($name:ident$sep:tt$t:tt)=>{
-		flag!(stringify!($name)=>$t)
-	};
-	([->$name:expr]$t:tt)=>{
-		flag!([->$name]=>$t)
-	};
-	([->$name:expr]$sep:tt$t:tt)=>{
-		flag!(->$name=>$t)
-	};
-	(->[$name:expr]$t:tt)=>{
-		flag!(->[$name]=>$t)
-	};
-	(->[$name:expr]$sep:tt$t:tt)=>{
-		flag!(->$name=>$t)
-	};
-	([$($name_flagment:tt)+]$t:tt)=>{
-		flag!([$($name_flagment)+]=>$t)
-	};
-	([$($name_flagment:tt)+]$sep:tt$t:tt)=>{
-		flag!($($name_flagment)+ =>$t)
-	};
-	($name:expr=>$t:tt)=>{
-		flag!(->$crate::string_from!($name)=>$t)
-	};
-	(->$name:expr=>[])=>{
-		flag!(->$name)
-	};
-	(->$name:ident:$t:tt)=>{
-		flag!(->$name=>$t)
-	};
-	(->$name:ident=$t:tt)=>{
-		flag!(->$name=>$t)
-	};
-	(->$name:expr)=>{
-		flag!(->$name=>[
-			$crate::default_value!(str),
-			Vector::default(),
-			Vector::default(),
-			FlagType::default(),
-			FlagValue::String(String::default())
-			])
-	};
-	($name:expr=>[])=>{
-		flag!(->$crate::string_from!($name))
-	};
-	($name:ident)=>{
-		flag!(stringify!($name)=>[])
-	};
-	($($name:expr)?)=>{
-		flag!(->$crate::string_from!($($name)?))
+	(->[$name:expr]=>$($t:tt)+)=>{
+		$crate::_fp!(->[$name]=>$($t)+)
 	};
 	(->$name:expr=>[
 		$(=)?$description:expr,
@@ -703,19 +643,58 @@ macro_rules! flag {
 			$default,
 		)
 	};
-	(->$name:ident$sep:tt$t:tt)=>{
-		flag!(->$name=>$t)
+	($($t:tt)+)=>{
+		$crate::_fp!($($t)+)
 	};
 }
 
 #[macro_export]
-/// name convert macro
-macro_rules! flag_name_parse {
-	(&$ident:ident) => {
-		$ident
+/// inner macro for flag - parse name and tify little after name.
+macro_rules! _fp {
+	(@$($t:tt)+) => {
+		$crate::_fp!($($t)+)
 	};
-	($ident:ident) => {
-		stringify!($ident)
+	(&$($t:tt)+) => {
+		$crate::_fp!(->$($t)+)
+	};
+	(->$name:ident$t:tt)=>{
+ 		$crate::_fp!(->$name=>$t)
+ 	};
+	(->[$name:expr]$t:tt)=>{
+	 	$crate::_fp!(->$name=>$t)
+	};
+	(->[$name:expr]$sep:tt$t:tt)=>{
+	 	$crate::_fp!(->$name=>$t)
+	};
+	(->$name:ident$sep:tt$t:tt)=>{
+		$crate::flag!(->$name=>$t)
+	};
+	(->$name:expr=>$t:tt)=>{
+		$crate::flag!(->$name=>$t)
+	};
+	([$($t:tt)+]$ta:tt)=>{
+		$crate::_fp!($($t)+ =>$ta)
+	};
+	([$($t:tt)+]$($ta:tt)+)=>{
+		$crate::_fp!($($t)+ $($ta)+)
+	};
+	($name:ident$t:tt)=>{
+		$crate::_fp!(stringify!($name)=>$t)
+	};
+	($name:ident$sep:tt$t:tt)=>{
+		$crate::_fp!(stringify!($name)=>$t)
+	};
+	($name:expr=>$t:tt)=>{
+		$crate::_fp!(->$crate::string_from!($name)=>$t)
+	};
+	($name:expr=>$($t:tt)+)=>{
+		$crate::_fp!(->$crate::string_from!($name)=>[$($t)+])
+	};
+	(->[$name:expr]$t:tt)=>{
+	 	$crate::_fp!(->$name=>$t)
+	};
+	($name:ident$sep:tt$($t:tt)+)=>{
+		$crate::_fp!(stringify!($name)=>[$($t)+])
 	};
 }
 

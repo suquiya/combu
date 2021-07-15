@@ -2,7 +2,7 @@ use combu::{command::*, FlagType, FlagValue, Vector};
 use combu::{done, flag, Done, Flag, ShowHelpRequest};
 
 macro_rules! assert_eqs {
-	($left:expr,$($right:expr),+) => {
+	($left:expr,$($right:expr),+$(,)?) => {
 		$(assert_eq!($left,$right);)+
 		//println!("OK: {:?}",$left);
 	};
@@ -47,8 +47,9 @@ fn main() {
 		default_value: FlagValue::Bool(false),
 		flag_type: FlagType::Bool,
 	};
-	let flag_name = String::from("test_flag");
-	let flag_name2 = flag_name.clone();
+	let _flag_name = String::from("test_flag");
+	let _flag_name2 = _flag_name.clone();
+	let _flag_name3 = _flag_name.clone();
 	assert_eqs!(
 		full,
 		flag!(->String::from("test_flag")=>[
@@ -59,7 +60,31 @@ fn main() {
 				FlagValue::Bool(false)
 			]
 		),
+		flag!(@->String::from("test_flag")=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		),
 		flag!(->[String::from("test_flag")]=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		),
+		flag!([->String::from("test_flag")]=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		),
+		flag!([->String::from("test_flag")][
 				String::from(_t),
 				Vector(Some(vec!['s', 'f'])),
 				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
@@ -82,7 +107,7 @@ fn main() {
 			FlagType::Bool,
 			FlagValue::Bool(false)
 		]),
-		flag!(&flag_name=>[
+		flag!(&_flag_name=>[
 			String::from(_t),
 			Vector(Some(vec!['s', 'f'])),
 			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
@@ -90,7 +115,16 @@ fn main() {
 			FlagValue::Bool(false)
 		]),
 		flag!(
-			&flag_name2 = [
+			&_flag_name2 = [
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		),
+		flag!(
+			&_flag_name3[
 				String::from(_t),
 				Vector(Some(vec!['s', 'f'])),
 				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
@@ -120,14 +154,32 @@ fn main() {
 				FlagType::Bool,
 				FlagValue::Bool(false)
 			]
+		),
+		flag!(
+			[test_flag]=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
+		),
+		flag!(
+			[test_flag] = [
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]
 		)
 	);
 
-	assert_eqs!(
-		Flag::with_name("test_flag"),
-		flag!(test_flag),
-		flag!("test_flag")
-	);
+	// assert_eqs!(
+	// 	Flag::with_name("test_flag"),
+	// 	flag!(test_flag),
+	// 	flag!("test_flag")
+	// );
 	// assert_eq!(
 	// 	full,
 	// 	flag!(test_flag=>[bool,_t,-s,-f,--long,--long2,?false])

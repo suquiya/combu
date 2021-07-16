@@ -51,7 +51,7 @@ fn main() {
 	let _flag_name2 = _flag_name.clone();
 	let _flag_name3 = _flag_name.clone();
 	assert_eqs!(
-		full,
+		full.clone(),
 		flag!(->String::from("test_flag")=>[
 				String::from(_t),
 				Vector(Some(vec!['s', 'f'])),
@@ -174,16 +174,37 @@ fn main() {
 			]
 		)
 	);
-
-	// assert_eqs!(
-	// 	Flag::with_name("test_flag"),
-	// 	flag!(test_flag),
-	// 	flag!("test_flag")
-	// );
-	// assert_eq!(
-	// 	full,
-	// 	flag!(test_flag=>[bool,_t,-s,-f,--long,--long2,?false])
-	// );
+	let _f = String::from("test_flag");
+	assert_eqs!(
+		Flag::with_name("test_flag"),
+		flag!(->String::from("test_flag")),
+		flag!([->String::from("test_flag")]),
+		flag!(->[String::from("test_flag")]),
+		flag!("test_flag"),
+		flag!(test_flag),
+		flag!(->_f),
+	);
+	assert_eqs!(
+		full,
+		flag!(test_flag=>[
+			bool,
+			_t,
+			Vector(Some(vec!['s', 'f'])),
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+		flag!(test_flag=>[
+			bool,
+			_t,
+			[s, f],
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+		flag!(test_flag=>[
+			bool,
+			_t,
+			[s f],
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false])
+	);
 	// let mut s = full.clone();
 	// s.long_alias.take();
 	// assert_eq!(s, flag!(test_flag=>[bool,_t,-s,-f,?false]));

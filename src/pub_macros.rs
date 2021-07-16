@@ -626,7 +626,7 @@ macro_rules! string_from {
 /// Helps for creating flag.
 macro_rules! flag {
 	(->[$name:expr]=>$($t:tt)+)=>{
-		$crate::_fp!(->[$name]=>$($t)+)
+		$crate::__f!(->[$name]=>$($t)+)
 	};
 	(->$name:expr=>[
 		$(=)?$description:expr,
@@ -643,119 +643,202 @@ macro_rules! flag {
 			$default,
 		)
 	};
-	($($t:tt)+)=>{
-		$crate::_fp!($($t)+)
+	($($t:tt)*)=>{
+		$crate::__f!($($t)*)
 	};
 }
 
 #[macro_export]
 /// inner macro for flag - parse name and tify little after name.
-macro_rules! _fp {
+macro_rules! __f {
 	(@$($t:tt)+) => {
-		$crate::_fp!($($t)+)
+		$crate::__f!($($t)+)
 	};
 	(&$($t:tt)+) => {
-		$crate::_fp!(->$($t)+)
+		$crate::__f!(->$($t)+)
 	};
 	(->$name:ident$t:tt)=>{
- 		$crate::_fp!(->$name=>$t)
+ 		$crate::__f!(->$name=>$t)
  	};
-	(->[$name:expr]$t:tt)=>{
-	 	$crate::_fp!(->$name=>$t)
+	(->[$name:expr]$($t:tt)?)=>{
+	 	$crate::__f!(->$name$(=>$t)?)
 	};
 	(->[$name:expr]$sep:tt$t:tt)=>{
-	 	$crate::_fp!(->$name=>$t)
+	 	$crate::__f!(->$name=>$t)
+	};
+	(->$name:expr=>{$($t:tt)*})=>{
+		$crate::__f!(->$name=>[$($t)*])
+	};
+	(->$name:expr=>($($t:tt)*))=>{
+		$crate::__f!(->$name=>[$($t)*])
+	};
+	(->$name:expr=>[$($t:tt)*])=>{
+		$crate::_f!(->$name=>[$($t)*])
 	};
 	(->$name:ident$sep:tt$t:tt)=>{
-		$crate::flag!(->$name=>$t)
-	};
-	(->$name:expr=>$t:tt)=>{
-		$crate::flag!(->$name=>$t)
+		$crate::__f!(->$name=>$t)
 	};
 	([$($t:tt)+]$ta:tt)=>{
-		$crate::_fp!($($t)+ =>$ta)
+		$crate::__f!($($t)+ =>$ta)
 	};
-	([$($t:tt)+]$($ta:tt)+)=>{
-		$crate::_fp!($($t)+ $($ta)+)
+	([$($t:tt)+]$($ta:tt)*)=>{
+		$crate::__f!($($t)+ $($ta)*)
 	};
 	($name:ident$t:tt)=>{
-		$crate::_fp!(stringify!($name)=>$t)
+		$crate::__f!(stringify!($name)=>$t)
 	};
 	($name:ident$sep:tt$t:tt)=>{
-		$crate::_fp!(stringify!($name)=>$t)
+		$crate::__f!(stringify!($name)=>$t)
 	};
-	($name:expr=>$t:tt)=>{
-		$crate::_fp!(->$crate::string_from!($name)=>$t)
+	($name:ident)=>{
+		$crate::__f!($name=>[])
+	};
+	($name:expr$(=>$t:tt)?)=>{
+		$crate::__f!(->$crate::string_from!($name)$(=>$t)?)
 	};
 	($name:expr=>$($t:tt)+)=>{
-		$crate::_fp!(->$crate::string_from!($name)=>[$($t)+])
+		$crate::__f!(->$crate::string_from!($name)=>[$($t)+])
 	};
 	(->[$name:expr]$t:tt)=>{
-	 	$crate::_fp!(->$name=>$t)
+	 	$crate::__f!(->$name=>$t)
 	};
 	($name:ident$sep:tt$($t:tt)+)=>{
-		$crate::_fp!(stringify!($name)=>[$($t)+])
+		$crate::__f!(stringify!($name)=>[$($t)+])
 	};
+	(->$name:expr)=>{
+		$crate::__f!(->$name=>[])
+	}
+}
+
+#[macro_export]
+/// macro for innser flag
+macro_rules! _f {
+	(->$name:expr=>[]) => {
+		$crate::flag!(
+			->$name=>[
+				String::default(),
+				Vector::default(),
+				Vector::default(),
+				FlagType::String,
+				FlagValue::String(String::default())
+			]
+		)
+	};
+	(->$name:expr=>[
+		$(>)?$type:ident,
+		$(=)?$description:expr,
+		$(s#)?[$($st:tt)*],
+		$(l#)?$long_alias:expr,
+		$(?)?$default:expr])=>{
+		$crate::_f!(->$name=>[
+			$crate::string_from!($description),
+			$crate::short_alias![$($st)*],
+			$long_alias,
+			$crate::flag_type!($type),
+			$crate::flag_value!($type,$default)
+			])
+	};
+	(->$name:expr=>[
+		$(>)?$type:ident,
+		$(=)?$description:expr,
+		$(s#)?$short_alias:expr,
+		$(l#)?$long_alias:expr,
+		$(?)?$default:expr])=>{
+		$crate::_f!(->$name=>[
+			$crate::string_from!($description),
+			$short_alias,
+			$long_alias,
+			$crate::flag_type!($type),
+			$crate::flag_value!($type,$default)
+			])
+	};
+	(->$name:expr=>[$(=)?$description:expr,
+		$(s#)?$short_alias:expr,
+		$(l#)?$long_alias:expr,
+		$(>)?$type:expr,
+		$(?)?$default:expr$(,)?])=>{
+			$crate::flag!(->$name=>[$description,$short_alias,$long_alias,$type,$default])
+		};
+}
+
+#[macro_export]
+/// short_alias_expander
+macro_rules! short_alias {
+	() => {
+		short_alias!(None)
+	};
+	(None) => {
+		$crate::vector!(None)
+	};
+	($(-$s:ident),+$(,)?)=>{
+		short_alias![$($s),+]
+	};
+	($($s:ident),+$(,)?)=>{
+		$crate::short_alias![$($s) +]
+	};
+	($($s:ident)+)=>{
+		$crate::vector![$($crate::char![$s]),+]
+	}
 }
 
 #[macro_export]
 /// sub macro for flag
 macro_rules! _flag_one_ident {
-	($(@)?$name:expr=>[bool])=>{
+	(->$name:expr=>[bool])=>{
 		$crate::flag!($name=>[>bool])
 	};
-	($(@)?$name:expr=>[b])=>{
+	(->$name:expr=>[b])=>{
 		$crate::flag!($name=>[>b])
 	};
-	($(@)?$name:expr=>[B])=>{
+	(->$name:expr=>[B])=>{
 		$crate::flag!($name=>[>B])
 	};
-	($(@)?$name:expr=>[Bool])=>{
+	(->$name:expr=>[Bool])=>{
 		$crate::flag!($name=>[>Bool])
 	};
-	($(@)?$name:expr=>[int])=>{
+	(->$name:expr=>[int])=>{
 		$crate::flag!($name=>[>int])
 	};
-	($(@)?$name:expr=>[i])=>{
+	(->$name:expr=>[i])=>{
 		$crate::flag!($name=>[>i])
 	};
-	($(@)?$name:expr=>[Integer])=>{
+	(->$name:expr=>[Integer])=>{
 		$crate::flag!($name=>[>Integer])
 	};
-	($(@)?$name:expr=>[I])=>{
+	(->$name:expr=>[I])=>{
 		$crate::flag!($name=>[>I])
 	};
-	($(@)?$name:expr=>[integer])=>{
+	(->$name:expr=>[integer])=>{
 		$crate::flag!($name=>[>integer])
 	};
-	($(@)?$name:expr=>[Int])=>{
+	(->$name:expr=>[Int])=>{
 		$crate::flag!($name=>[>Int])
 	};
-	($(@)?$name:expr=>[>$type:ident])=>{
+	(->$name:expr=>[>$type:ident])=>{
 		$crate::flag!($name=>[$type,""])
 	};
-	($(@)?$name:expr=>[float])=>{
+	(->$name:expr=>[float])=>{
 		$crate::flag!($name=>[>float])
 	};
-	($(@)?$name:expr=>[f])=>{
+	(->$name:expr=>[f])=>{
 		$crate::flag!($name=>[>f])
 	};
-	($(@)?$name:expr=>[F])=>{
+	(->$name:expr=>[F])=>{
 		$crate::flag!($name=>[>F])
 	};
-	($(@)?$name:expr=>[Float])=>{
+	(->$name:expr=>[Float])=>{
 		$crate::flag!($name=>[>Float])
 	};
-	($(@)?$name:expr=>[Str])=>{
+	(->$name:expr=>[Str])=>{
 		$crate::flag!($name=>[>Str])
 	};
-	($(@)?$name:expr=>[string])=>{
+	(->$name:expr=>[string])=>{
 		$crate::flag!($name=>[>string])
 	};
-	($(@)?$name:expr=>[String])=>{
+	(->$name:expr=>[String])=>{
 		$crate::flag!($name=>[>String])
 	};
-	($(@)?$name:expr=>[$description:ident])=>{
+	(->$name:expr=>[$description:ident])=>{
 		$crate::flag!($name=>[str,$description])
 	}
 }

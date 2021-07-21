@@ -1,18 +1,30 @@
 #[macro_export]
 /// Creates new Vector.
 macro_rules! vector {
-	() => {
-		$crate::Vector(None)
+	(:$ptype:ty,$($t:tt)*)=>{
+		vector!($($t)*;:$ptype)
 	};
-	(None) => {
-		vector!(None)
+	(=>$ptype:ty,$($t:tt)*)=>{
+		vector!($($t)*;=>$ptype)
 	};
-	($elem:expr; $n:expr)=>{
-		$crate::Vector(Some(vec![$elem,$n]))
+	($($(;)?$(:)?$type:ty$(,)?)?) => {
+		$crate::Vector$(::<$type>)?(None)
 	};
-	($($x:expr),+ $(,)?)=>{
-		$crate::Vector(Some(vec![$($x),+]))
-	}
+	(None$($(;)?$(:)?$type:ty)?) => {
+		$crate::Vector$(::<$type>)?(None)
+	};
+	($elem:expr; $n:expr$(;$(:)?$type:ty)?)=>{
+		$crate::Vector$(::<$type>)?(Some(vec![$elem,$n]))
+	};
+	($elem:expr; $n:expr;=>$type:ty)=>{
+		$crate::Vector$(::<$type>)?(Some(vec![$elem.into(),$n]))
+	};
+	($($x:expr),+ $(,)?$(;$(:)?$type:ty)?)=>{
+		$crate::Vector$(::<$type>)?(Some(vec![$($x),+]))
+	};
+	($($x:expr),+ $(,)?;=>$type:ty)=>{
+		$crate::Vector$(::<$type>)?(Some(vec![$($x.into()),+]))
+	};
 }
 
 #[macro_export]
@@ -625,16 +637,27 @@ macro_rules! string_from {
 #[macro_export]
 /// Helps for creating flag.
 macro_rules! flag {
-	(->[$name:expr]=>$($t:tt)+)=>{
-		$crate::__f!(->[$name]=>$($t)+)
+	(@$($t:tt)*) => {
+		$crate::_fsp!(@$($t)*)
 	};
+	(&$($t:tt)+) => {
+		$crate::_fsp!(&$($t)+)
+	};
+	($($t:tt)*)=>{
+		$crate::_ffp!($($t)*)
+	};
+}
+
+#[macro_export]
+/// flag basic constructor
+macro_rules! _flag_basic_constructor {
 	(->$name:expr=>[
 		$(=)?$description:expr,
 		$(s#)?$short_alias:expr,
 		$(l#)?$long_alias:expr,
 		$(>)?$type:expr,
 		$(?)?$default:expr$(,)?]) => {
-		Flag::with_all_field(
+		$crate::Flag::with_all_field(
 			$name,
 			$description,
 			$short_alias,
@@ -643,83 +666,115 @@ macro_rules! flag {
 			$default,
 		)
 	};
-	($($t:tt)*)=>{
-		$crate::__f!($($t)*)
-	};
 }
 
 #[macro_export]
-/// inner macro for flag - parse name and tify little after name.
-macro_rules! __f {
-	(@$($t:tt)+) => {
-		$crate::__f!($($t)+)
-	};
-	(&$($t:tt)+) => {
-		$crate::__f!(->$($t)+)
-	};
+/// inner for first parse name and tify little after name.
+macro_rules! _ffp {
 	(->$name:ident$t:tt)=>{
- 		$crate::__f!(->$name=>$t)
+ 		$crate::_fsp!(->$name=>$t)
  	};
-	(->[$name:expr]$($t:tt)?)=>{
-	 	$crate::__f!(->$name$(=>$t)?)
+	(->[$name:expr]$t:tt)=>{
+	 	$crate::_fsp!(->[$name]=>$t)?
 	};
-	(->[$name:expr]$sep:tt$t:tt)=>{
-	 	$crate::__f!(->$name=>$t)
+	(->[$name:expr]$sep:tt$($t:tt)+)=>{
+	 	$crate::_fsp!(->[$name]=>$($t)+)
 	};
-	(->$name:expr=>{$($t:tt)*})=>{
-		$crate::__f!(->$name=>[$($t)*])
-	};
-	(->$name:expr=>($($t:tt)*))=>{
-		$crate::__f!(->$name=>[$($t)*])
-	};
-	(->$name:expr=>[$($t:tt)*])=>{
-		$crate::_f!(->$name=>[$($t)*])
+	(->$name:expr=>$($t:tt)*)=>{
+		$crate::_fsp!(->$name=>$($t)*)
 	};
 	(->$name:ident$sep:tt$t:tt)=>{
-		$crate::__f!(->$name=>$t)
+		$crate::_fsp!(->$name=>$t)
 	};
-	([$($t:tt)+]$ta:tt)=>{
-		$crate::__f!($($t)+ =>$ta)
+	([$($t:tt)+]$($ta:tt)?)=>{
+		$crate::_fsp!([$($t)+]$(=>$ta)?)
 	};
-	([$($t:tt)+]$($ta:tt)*)=>{
-		$crate::__f!($($t)+ $($ta)*)
+	([$($t:tt)+]$sep:tt$($ta:tt)+)=>{
+		$crate::_fsp!([$($t)+]=>$($ta)+)
 	};
 	($name:ident$t:tt)=>{
-		$crate::__f!(stringify!($name)=>$t)
+		$crate::_ffp!($name=>$t)
 	};
 	($name:ident$sep:tt$t:tt)=>{
-		$crate::__f!(stringify!($name)=>$t)
+		$crate::_fsp!($name=>$t)
 	};
 	($name:ident)=>{
-		$crate::__f!($name=>[])
+		$crate::_fsp!($name)
 	};
 	($name:expr$(=>$t:tt)?)=>{
-		$crate::__f!(->$crate::string_from!($name)$(=>$t)?)
-	};
-	($name:expr=>$($t:tt)+)=>{
-		$crate::__f!(->$crate::string_from!($name)=>[$($t)+])
-	};
-	(->[$name:expr]$t:tt)=>{
-	 	$crate::__f!(->$name=>$t)
+		$crate::_fsp!($name=>$($t)?)
 	};
 	($name:ident$sep:tt$($t:tt)+)=>{
-		$crate::__f!(stringify!($name)=>[$($t)+])
+		$crate::_fsp!($name=>$($t)+)
+	};
+	($name:expr=>$($t:tt)*)=>{
+		$crate::_fsp!($name=>$($t)*)
+	};
+	(->[$name:expr])=>{
+	 	$crate::_fsp!(->[$name])
 	};
 	(->$name:expr)=>{
-		$crate::__f!(->$name=>[])
+		$crate::_fsp!(->$name)
 	}
 }
 
 #[macro_export]
 /// macro for innser flag
-macro_rules! _f {
+macro_rules! _fsp {
+	(@$($t:tt)*)=>{
+		$crate::flag!($($t)*)
+	};
+	(&$($t:tt)*)=>{
+		$crate::flag!(->$($t)*)
+	};
+	($name:ident=>$($t:tt)*)=>{
+		$crate::_fsp!(stringify!($name)=>$($t)*)
+	};
+	($name:ident)=>{
+		$crate::_fsp!(stringify!($name))
+	};
+	([$($nt:tt)*]$(=>$t:tt)*)=>{
+		$crate::_fsp!($($nt)* =>$($t)*)
+	};
+	($name:expr=>$($t:tt)*)=>{
+		$crate::_fsp!(->$crate::string_from!($name)=>$($t)*)
+	};
+	($name:expr)=>{
+		$crate::_fsp!(->$crate::string_from!($name))
+	};
+	(->[$name:expr]=>$($t:tt)*)=>{
+		$crate::_fsp!(->$name=>$($t)*)
+	};
+	(->$name:expr=>$($t:tt)*)=>{
+		$crate::_ftp!(->$name=>$($t)*)
+	};
+	(->[$name:expr])=>{
+		$crate::_fsp!(->$name)
+	};
+	(->$name:expr)=>{
+		$crate::_fsp!(->$name=>)
+	};
+}
+
+#[macro_export]
+/// macro for innser flag
+macro_rules! _ftp {
+	(->$name:expr=>)=>{
+		$crate::_ftp!(->$name=>[])
+	};
+	(->$name:expr=>{$($t:tt)*})=>{
+		$crate::_ftp![$($t)*]
+	};
+	(->$name:expr=>($($t:tt)*))=>{
+		$crate::_ftp![$($t)*]
+	};
 	(->$name:expr=>[]) => {
-		$crate::flag!(
+		$crate::_ftp!(
 			->$name=>[
 				String::default(),
 				Vector::default(),
 				Vector::default(),
-				FlagType::String,
+				FlagType::default(),
 				FlagValue::String(String::default())
 			]
 		)
@@ -727,15 +782,26 @@ macro_rules! _f {
 	(->$name:expr=>[
 		$(>)?$type:ident,
 		$(=)?$description:expr,
-		$(s#)?[$($st:tt)*],
-		$(l#)?$long_alias:expr,
-		$(?)?$default:expr])=>{
-		$crate::_f!(->$name=>[
-			$crate::string_from!($description),
-			$crate::short_alias![$($st)*],
-			$long_alias,
-			$crate::flag_type!($type),
-			$crate::flag_value!($type,$default)
+		$($(-)?$s:ident)*,
+		$($t:tt)+
+	])=>{
+		$crate::_ftp!(->$name=>[
+			$type,
+			$description,
+			[$($s)*],
+			$($t)+
+		])
+	};
+	(->$name:expr=>[
+		$(>)?$type:ident,
+		$(=)?$description:expr,
+		$(s#)?$(-)?[$($st:tt)*]
+		$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[
+			$type,
+			$description,
+			$crate::short_alias![$($st)*]
+			$($t)*
 			])
 	};
 	(->$name:expr=>[
@@ -744,12 +810,12 @@ macro_rules! _f {
 		$(s#)?$short_alias:expr,
 		$(l#)?$long_alias:expr,
 		$(?)?$default:expr])=>{
-		$crate::_f!(->$name=>[
+		$crate::_ftp!(->$name=>[
 			$crate::string_from!($description),
 			$short_alias,
 			$long_alias,
-			$crate::flag_type!($type),
-			$crate::flag_value!($type,$default)
+			>$crate::flag_type!($type),
+			?$crate::flag_value!($type,$default)
 			])
 	};
 	(->$name:expr=>[$(=)?$description:expr,
@@ -757,7 +823,7 @@ macro_rules! _f {
 		$(l#)?$long_alias:expr,
 		$(>)?$type:expr,
 		$(?)?$default:expr$(,)?])=>{
-			$crate::flag!(->$name=>[$description,$short_alias,$long_alias,$type,$default])
+			$crate::_flag_basic_constructor!(->$name=>[$description,$short_alias,$long_alias,$type,$default])
 		};
 }
 
@@ -768,16 +834,73 @@ macro_rules! short_alias {
 		short_alias!(None)
 	};
 	(None) => {
-		$crate::vector!(None)
+		$crate::vector!(None;char)
 	};
-	($(-$s:ident),+$(,)?)=>{
-		short_alias![$($s),+]
-	};
-	($($s:ident),+$(,)?)=>{
-		$crate::short_alias![$($s) +]
+	(-[$($t:tt)*])=>{
+		$crate::short_alias!($($t)*)
 	};
 	($($s:ident)+)=>{
-		$crate::vector![$($crate::char![$s]),+]
+		$crate::vector![$($crate::char![$s]),+;:char]
+	};
+	($(-$s:ident),+$(,)?)=>{
+		$crate::short_alias![$($s)+]
+	};
+	($($(-)?$s:ident)+$(,)?)=>{
+		$crate::short_alias![$($s)+]
+	};
+	($($(-)?$s:ident),+$(,)?)=>{
+		$crate::short_alias![$($s)+]
+	};
+
+	($($s:literal),+)=>{
+		$crate::vector![$($s),+;:char]
+	};
+	(->$s:expr)=>{
+		$s
+	};
+}
+
+#[macro_export]
+/// long_alias_expander
+macro_rules! long_alias {
+	()=>{
+		long_alias!(None)
+	};
+	(None) => {
+		$crate::vector!(None;String)
+	};
+	(--[$($t:tt)*])=>{
+		long_alias!($($t)*)
+	};
+	($($l:ident)+)=>{
+		$crate::long_alias!($(stringify!($l)),+)
+	};
+	($(--$l:ident),+$(,)?)=>{
+		$crate::long_alias!($($l)+)
+	};
+	($(--$l:ident)+$(,)?)=>{
+		$crate::long_alias!($($l)+)
+	};
+	($($(--)?$l:ident),+$(,)?)=>{
+		$crate::long_alias!($($l)+)
+	};
+	($($(--)?$l:ident)+$(,)?)=>{
+		$crate::long_alias!($($l)+)
+	};
+	($($(--)?$l:literal)+$(,)?)=>{
+		$crate::long_alias!($($l),+)
+	};
+	($($(--)?$l:literal),+$(,)?)=>{
+		$crate::long_alias!($($l),+)
+	};
+	($($l:expr),+)=>{
+		$crate::vector!($($l),+;=>String)
+	};
+	($long:expr)=>{
+		$crate::long_alias!(->$long)
+	};
+	(->$long:expr)=>{
+		$long
 	}
 }
 

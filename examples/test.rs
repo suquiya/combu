@@ -181,6 +181,7 @@ fn main() {
 		flag!([->String::from("test_flag")]),
 		flag!(->[String::from("test_flag")]),
 		flag!("test_flag"),
+		flag!("test_flag"=>),
 		flag!(test_flag),
 		flag!(->_f),
 	);
@@ -195,7 +196,19 @@ fn main() {
 		flag!(test_flag=>[
 			bool,
 			_t,
+			-[-s, -f],
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+		flag!(test_flag=>[
+			bool,
+			_t,
 			[s, f],
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+		flag!(test_flag=>[
+			bool,
+			_t,
+			['s', 'f'],
 			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 			?false]),
 		flag!(test_flag=>[
@@ -203,7 +216,19 @@ fn main() {
 			_t,
 			[s f],
 			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
-			?false])
+			?false]),
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s f,
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s -f,
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
 	);
 	// let mut s = full.clone();
 	// s.long_alias.take();

@@ -214,8 +214,8 @@ fn main() {
 		flag!(test_flag=>[
 			bool,
 			_t,
-			[s f],
-			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			-[s f],
+			--["long".to_owned(), "long2".to_owned()],
 			?false]),
 		flag!(test_flag=>[
 			>bool,
@@ -227,8 +227,61 @@ fn main() {
 			>bool,
 			=_t,
 			-s -f,
-			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			[long long2],
 			?false]),
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s f,
+			--long long2,
+			?false]),
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s f,
+			--long long2]),
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s,f,
+			--long long2]),
+	);
+	assert_eqs!(
+		full.clone().short_alias('a'),
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s f a,
+			--long long2]),
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s,f -a,
+			--long,long2]),
+	);
+	assert_eqs!(
+		{
+			let mut f = full.clone().short_alias('a');
+			f.long_alias.take();
+			f
+		},
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s f a,
+			?false
+		]),
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			Vector(Some(vec!['s', 'f','a']))
+		]),
+		flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s,f,a,
+			?false
+		])
 	);
 	// let mut s = full.clone();
 	// s.long_alias.take();

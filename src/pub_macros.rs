@@ -16,13 +16,13 @@ macro_rules! vector {
 	($elem:expr; $n:expr$(;$(:)?$type:ty)?)=>{
 		$crate::Vector$(::<$type>)?(Some(vec![$elem,$n]))
 	};
-	($elem:expr; $n:expr;=>$type:ty)=>{
+	($elem:expr; $n:expr;$(=>$type:ty)?)=>{
 		$crate::Vector$(::<$type>)?(Some(vec![$elem.into(),$n]))
 	};
 	($($x:expr),+ $(,)?$(;$(:)?$type:ty)?)=>{
 		$crate::Vector$(::<$type>)?(Some(vec![$($x),+]))
 	};
-	($($x:expr),+ $(,)?;=>$type:ty)=>{
+	($($x:expr),+ $(,)?;$(=>$type:ty)?)=>{
 		$crate::Vector$(::<$type>)?(Some(vec![$($x.into()),+]))
 	};
 }
@@ -666,6 +666,16 @@ macro_rules! _flag_basic_constructor {
 			$default,
 		)
 	};
+	($name:expr,$description:expr,$short_alias:expr,$long_alias:expr,$type:expr,$default:expr) => {
+		$crate::Flag::with_all_field(
+			$name,
+			$description,
+			$short_alias,
+			$long_alias,
+			$type,
+			$default,
+		)
+	};
 }
 
 #[macro_export]
@@ -769,54 +779,61 @@ macro_rules! _ftp {
 		$crate::_ftp![$($t)*]
 	};
 	(->$name:expr=>[]) => {
-		$crate::_ftp!(
-			->$name=>[
-				String::default(),
-				Vector::default(),
-				Vector::default(),
-				FlagType::default(),
-				FlagValue::String(String::default())
-			]
-		)
+		$crate::_ftp!(->$name=>[String::default(),Vector::default(),Vector::default(),FlagType::default(),FlagValue::String(String::default())])
 	};
-	(->$name:expr=>[
-		$(>)?$type:ident,
-		$(=)?$description:expr,
-		$($(-)?$s:ident)*,
-		$($t:tt)+
-	])=>{
-		$crate::_ftp!(->$name=>[
-			$type,
-			$description,
-			[$($s)*],
-			$($t)+
-		])
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?--$($t:tt)+])=>{
+		$crate::_ftp!(->$name=>[$type,$description,[$sf$($st)+],--$($t)+])
 	};
-	(->$name:expr=>[
-		$(>)?$type:ident,
-		$(=)?$description:expr,
-		$(s#)?$(-)?[$($st:tt)*]
-		$($t:tt)*])=>{
-		$crate::_ftp!(->$name=>[
-			$type,
-			$description,
-			$crate::short_alias![$($st)*]
-			$($t)*
-			])
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?[$($t:tt)*]$($t2:tt)*])=>{
+		$crate::_ftp!(->$name=>[$type,$description,[$sf$($st)+],[$($t)*]$($t2)*])
 	};
-	(->$name:expr=>[
-		$(>)?$type:ident,
-		$(=)?$description:expr,
-		$(s#)?$short_alias:expr,
-		$(l#)?$long_alias:expr,
-		$(?)?$default:expr])=>{
-		$crate::_ftp!(->$name=>[
-			$crate::string_from!($description),
-			$short_alias,
-			$long_alias,
-			>$crate::flag_type!($type),
-			?$crate::flag_value!($type,$default)
-			])
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?l#$($t:tt)+])=>{
+		$crate::_ftp!(->$name=>[$type,$description,[$sf$($st)+],l#$($t)+])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)??$default:expr])=>{
+		$crate::_ftp!(->$name=>[$type,$description,[$sf$($st)+],[],?$default])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$($(-)?$s:ident)*$(,$($t:tt)*)?])=>{
+		$crate::_ftp!(->$name=>[$type,$description,[$($s)*]$(,$($t)*)?])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$($(-)?$s:ident)*?$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[$type,$description,[$($s)*]?$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$($(-)?$s:ident)*--$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[$type,$description,[$($s)*],--$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$(-)?[$($st:tt)*]$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[$type,$description,$crate::short_alias![$($st)*]$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr$(,)?])=>{
+		$crate::_ftp!(->$name=>[$crate::string_from!($description),$short_alias,$crate::long_alias![],>$crate::flag_type!($type),?$crate::flag_value!($type)])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$short_alias:expr,--$l:ident$($(,)?$(--)?$lt:ident)*])=>{
+		$crate::_ftp!(->$name=>[$type,$description,$short_alias,$crate::long_alias![$l$($lt)*]])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$short_alias:expr,--$l:ident$($(,)?$(--)?$lt:ident)*$(,)??$default:expr])=>{
+		$crate::_ftp!(->$name=>[$type,$description,$short_alias,$crate::long_alias![$l$($lt)*],?$default])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$short_alias:expr,$($(--)?$l:ident)*$(,$($t:tt)*)?])=>{
+		$crate::_ftp!(->$name=>[$type,$description,$short_alias,$crate::long_alias![$($l)*]$(,$($t)*)?])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$short_alias:expr,$($(--)?$l:ident)*,$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[$type,$description,$short_alias,$crate::long_alias![$($l)*],$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$(--)?[$($lt:tt)*]$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[$type,$description,$short_alias,$crate::long_alias![$($lt)*]$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr,?$default:expr])=>{
+		$crate::_ftp!(->$name=>[$type,$description,$short_alias,[],?$default])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr,$($(?)?$default:expr)?])=>{
+		$crate::_ftp!(->$name=>[$crate::string_from!($description),$short_alias,$long_alias,>$crate::flag_type!($type),?$crate::flag_value!($type,$($default)?)])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr])=>{
+		$crate::_ftp!(->$name=>[$crate::string_from!($description),$short_alias,$long_alias,>$crate::flag_type!($type),$crate::flag_value!($type)])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr$(,$(?)?$default:expr)?])=>{
+		$crate::_ftp!(->$name=>[$crate::string_from!($description),$short_alias,$crate::long_alias[],>$crate::flag_type!($type),?$crate::flag_value!($type,$($default)?)])
 	};
 	(->$name:expr=>[$(=)?$description:expr,
 		$(s#)?$short_alias:expr,
@@ -864,7 +881,7 @@ macro_rules! short_alias {
 /// long_alias_expander
 macro_rules! long_alias {
 	()=>{
-		long_alias!(None)
+		$crate::long_alias!(None)
 	};
 	(None) => {
 		$crate::vector!(None;String)

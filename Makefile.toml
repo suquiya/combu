@@ -1,0 +1,11 @@
+# Makefile.toml for cargo-make
+
+[tasks.watch]
+description="watch test task, alias: cargo wt"
+command="cargo"
+args=["watch","-x","test"]
+
+[tasks.et]
+description="watch example test, alias: cargo et or cargo dev"
+command="cargo"
+args=["watch","-x","run --example test"]

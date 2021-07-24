@@ -1,0 +1,18 @@
+[package]
+name = "combu"
+version = "0.5.4-alpha.0"
+authors = ["suquiya"]
+description = "Combu is a yet another mini cli framework."
+edition = "2018"
+license="MIT"
+# license-file="LICENSE"
+documentation="https://docs.rs/combu/"
+homepage="https://github.com/suquiya/combu"
+repository="https://github.com/suquiya/combu"
+readme="README.md"
+categories=["command-line-interface"]
+keywords=["argument","arg","cli","command-line","parser"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]

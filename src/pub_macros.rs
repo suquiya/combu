@@ -795,21 +795,24 @@ macro_rules! _ftp {
 	(->$name:expr=>[]) => {
 		$crate::_ftp!(->$name=>[String::default(),Vector::default(),Vector::default(),FlagType::default(),FlagValue::String(String::default())])
 	};
+	(->$name:expr=>[$(>)?$type:ident])=>{
+		$crate::_ftp!(->$name=>[$type,])
+	};
 	// type, descriptionの指定が先立つパターンのハンドリング
 	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?$(,)?])=>{
 		$crate::_ftp!(->$name=>[$type,$($description)?,[],[],?$crate::default_value!($type)])
 	};
-	(->$name:expr=>[$(>)?bool,$(=)?$($description:expr)?,false])=>{
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,false])=>{
 		$crate::_ftp!(->$name=>[bool,$($description)?,[],[],?false])
 	};
-	(->$name:expr=>[$(>)?bool,$(=)?$($description:expr)?, true])=>{
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,true])=>{
 		$crate::_ftp!(->$name=>[bool,$($description)?,[],[],?false])
 	};
 	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,@$($default:expr)?])=>{
 		$crate::_ftp!(->$name=>[$type,$description,?$($default)?])
 	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,?$($default:expr)?])=>{
-		$crate::_ftp!(->$name=>[$type,$description,[],[],?$($default)?])
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,?$($default:expr)?])=>{
+		$crate::_ftp!(->$name=>[$type,$($description)?,[],[],?$($default)?])
 	};
 	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?--$($t:tt)+])=>{
 		$crate::_ftp!(->$name=>[$type,=$($description)?,[$sf $($st)+],--$($t)+])
@@ -1555,7 +1558,7 @@ mod tests {
 			},
 			flag!(test_flag=>[bool,,-s,-f,?false])
 		);
-		assert_eq!(
+		assert_eqs!(
 			Flag::with_all_field(
 				"test_flag".into(),
 				"aaa".into(),
@@ -1564,19 +1567,19 @@ mod tests {
 				FlagType::Bool,
 				FlagValue::Bool(false)
 			),
-			flag!(test_flag=>[bool,"aaa",?false])
+			flag!(test_flag=>[bool,"aaa",?false]),
+			flag!(test_flag=>[bool,"aaa",@false]),
+			flag!(test_flag=>[Bool,"aaa",false]),
+			flag!(test_flag=>[Bool,"aaa"])
 		);
-		// println!("{:?}", flag!(test_flag=>[bool,"aaa",@false]));
-		// println!("{:?}", flag!(test_flag=>[Bool,"aaa",false]));
-		// println!("{:?}", flag!(test_flag=>[Bool,"aaa"]));
-		// assert_eqs!(
-		// 	Flag::new_bool("test_flag"),
-		// 	flag!(test_flag=>[>bool,]),
-		// 	flag!(test_flag=>[>bool]),
-		// 	flag!(test_flag=>[>Bool]),
-		// 	flag!(test_flag=>[bool,,?false]),
-		// 	flag!(test_flag=>[bool,,false])
-		// );
+		assert_eqs!(
+			Flag::new_bool("test_flag"),
+			flag!(test_flag=>[>bool,]),
+			flag!(test_flag=>[>bool]),
+			flag!(test_flag=>[>Bool]),
+			flag!(test_flag=>[bool,,?false]),
+			flag!(test_flag=>[bool,,false])
+		);
 		// println!("{:?}", flag!(test_flag=>[="desc",?false]));
 		// println!("{:?}", flag!(test_flag=>[="desc",bool?false]));
 		// let _i = "donly";

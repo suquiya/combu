@@ -1,5 +1,5 @@
 [alias]
 wt="make watch"
-dev="et"
+dev="wt"
 et="make et"
 

@@ -2,20 +2,6 @@
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
 pub struct Vector<T>(pub Option<Vec<T>>);
 
-#[macro_export]
-/// Creates new Vector.
-macro_rules! v {
-	() => {
-		Vector(None)
-	};
-	($elem:expr; $n:expr)=>{
-		Vector(Some(vec![$elem,$n]))
-	};
-	($($x:expr),+ $(,)?)=>{
-		Vector(Some(vec![$($x),+]))
-	}
-}
-
 impl<T> Default for Vector<T> {
 	fn default() -> Self {
 		Vector(None)

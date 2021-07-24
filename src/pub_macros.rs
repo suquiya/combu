@@ -1,5 +1,13 @@
 #[macro_export]
 /// Creates new Vector.
+macro_rules! v {
+	($($t:tt)*) => {
+		$crate::vector!($($t)*)
+	};
+}
+
+#[macro_export]
+/// Creates new Vector.
 macro_rules! vector {
 	(:$ptype:ty,$($t:tt)*)=>{
 		vector!($($t)*;:$ptype)
@@ -781,6 +789,12 @@ macro_rules! _ftp {
 	(->$name:expr=>[]) => {
 		$crate::_ftp!(->$name=>[String::default(),Vector::default(),Vector::default(),FlagType::default(),FlagValue::String(String::default())])
 	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr$(,)?])=>{
+		$crate::_ftp!(->$name=>[$type,$description,[],[],?$crate::default_value!($type)])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,?$($default:expr)?])=>{
+		$crate::_ftp!(->$name=>[$type,$description,[],[],?$($default)?])
+	};
 	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?--$($t:tt)+])=>{
 		$crate::_ftp!(->$name=>[$type,$description,[$sf$($st)+],--$($t)+])
 	};
@@ -817,6 +831,9 @@ macro_rules! _ftp {
 	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$short_alias:expr,$($(--)?$l:ident)*$(,$($t:tt)*)?])=>{
 		$crate::_ftp!(->$name=>[$type,$description,$short_alias,$crate::long_alias![$($l)*]$(,$($t)*)?])
 	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$short_alias:expr,$($(--)?$l:ident)*?$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[$type,$description,$short_alias,$crate::long_alias![$($l)*],?$($t)*])
+	};
 	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$short_alias:expr,$($(--)?$l:ident)*,$($t:tt)*])=>{
 		$crate::_ftp!(->$name=>[$type,$description,$short_alias,$crate::long_alias![$($l)*],$($t)*])
 	};
@@ -826,7 +843,7 @@ macro_rules! _ftp {
 	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr,?$default:expr])=>{
 		$crate::_ftp!(->$name=>[$type,$description,$short_alias,[],?$default])
 	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr,$($(?)?$default:expr)?])=>{
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr,$(?)?$($default:expr)?])=>{
 		$crate::_ftp!(->$name=>[$crate::string_from!($description),$short_alias,$long_alias,>$crate::flag_type!($type),?$crate::flag_value!($type,$($default)?)])
 	};
 	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr])=>{
@@ -848,7 +865,7 @@ macro_rules! _ftp {
 /// short_alias_expander
 macro_rules! short_alias {
 	() => {
-		short_alias!(None)
+		$crate::short_alias!(None)
 	};
 	(None) => {
 		$crate::vector!(None;char)
@@ -1217,5 +1234,283 @@ macro_rules! license {
 	};
 	(expr=>$expr:expr, $i:ident=>$c:expr$(,)?)=>{
 		license!($expr,$i=>$c)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::{Flag, FlagType, FlagValue, Vector};
+
+	macro_rules! assert_eqs {
+		($left:expr,$($right:expr),+$(,)?) => {
+			$(assert_eq!($left,$right);)+
+			//println!("OK: {:?}",$left);
+		};
+	}
+	#[test]
+	fn flag_test() {
+		// flag![(test_flag=>[bool,-s,-f,--long,@"test",@def false]),];
+		let _t = "test";
+		let _t_string = String::from(_t);
+		let full = Flag {
+			name: "test_flag".into(),
+			description: _t.into(),
+			short_alias: Vector(Some(vec!['s', 'f'])),
+			long_alias: Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			default_value: FlagValue::Bool(false),
+			flag_type: FlagType::Bool,
+		};
+		let _flag_name = String::from("test_flag");
+		let _flag_name2 = _flag_name.clone();
+		let _flag_name3 = _flag_name.clone();
+		assert_eqs!(
+			full.clone(),
+			flag!(->String::from("test_flag")=>[
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!(@->String::from("test_flag")=>[
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!(->[String::from("test_flag")]=>[
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!([->String::from("test_flag")]=>[
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!([->String::from("test_flag")][
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!(&String::from("test_flag")=>[
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!("test_flag"=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]),
+			flag!(&_flag_name=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]),
+			flag!(
+				&_flag_name2 = [
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!(
+				&_flag_name3[
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!(test_flag=>[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]),
+			flag!(test_flag[
+				String::from(_t),
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				FlagType::Bool,
+				FlagValue::Bool(false)
+			]),
+			flag!(
+				[test_flag][
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!(
+				[test_flag]=>[
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			),
+			flag!(
+				[test_flag] = [
+					String::from(_t),
+					Vector(Some(vec!['s', 'f'])),
+					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+					FlagType::Bool,
+					FlagValue::Bool(false)
+				]
+			)
+		);
+		let _f = String::from("test_flag");
+		assert_eqs!(
+			Flag::with_name("test_flag"),
+			flag!(->String::from("test_flag")),
+			flag!([->String::from("test_flag")]),
+			flag!(->[String::from("test_flag")]),
+			flag!("test_flag"),
+			flag!("test_flag"=>),
+			flag!(test_flag),
+			flag!(->_f),
+		);
+		assert_eqs!(
+			full,
+			flag!(test_flag=>[
+			bool,
+			_t,
+			Vector(Some(vec!['s', 'f'])),
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+			flag!(test_flag=>[
+			bool,
+			_t,
+			-[-s, -f],
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+			flag!(test_flag=>[
+			bool,
+			_t,
+			[s, f],
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+			flag!(test_flag=>[
+			bool,
+			_t,
+			['s', 'f'],
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+			flag!(test_flag=>[
+			bool,
+			_t,
+			-[s f],
+			--["long".to_owned(), "long2".to_owned()],
+			?false]),
+			flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s f,
+			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+			?false]),
+			flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s -f,
+			[long long2],
+			?false]),
+			flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s f,
+			--long long2,
+			?false]),
+			flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s f,
+			--long long2]),
+			flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s,f,
+			--long long2]),
+		);
+		assert_eqs!(
+			full.clone().short_alias('a'),
+			flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s f a,
+			--long long2]),
+			flag!(test_flag=>[
+			>bool,
+			=_t,
+			-s,f -a,
+			--long,long2 ?false]),
+			flag!(test_flag=>[
+			>bool,
+			_t,
+			-s,f -a,
+			--long,long2 ?false]),
+		);
+		assert_eqs!(
+			{
+				let mut f = full.clone().short_alias('a');
+				f.long_alias.take();
+				f
+			},
+			flag!(test_flag=>[
+				>bool,
+				=_t,
+				-s f a,
+				?false
+			]),
+			flag!(test_flag=>[
+				>bool,
+				=_t,
+				Vector(Some(vec!['s', 'f','a']))
+			]),
+			flag!(test_flag=>[
+				>bool,
+				=_t,
+				-s,f,a,
+				?false
+			])
+		);
+		let mut s = full.clone();
+		s.long_alias.take();
+		assert_eq!(s, flag!(test_flag=>[bool,_t,-s,-f,?false]));
+		s.short_alias.take();
+		assert_eqs!(
+			s,
+			flag!(test_flag=>[bool,_t]),
+			//flag!(test_flag=>[bool,_t,false]),
+			flag!(test_flag=>[bool,_t,?]),
+			flag!(test_flag=>[>bool,_t,?false])
+		);
 	}
 }

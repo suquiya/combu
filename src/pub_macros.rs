@@ -795,94 +795,22 @@ macro_rules! _ftp {
 	(->$name:expr=>[]) => {
 		$crate::_ftp!(->$name=>[String::default(),Vector::default(),Vector::default(),FlagType::default(),FlagValue::String(String::default())])
 	};
-	(->$name:expr=>[$(>)?$type:ident])=>{
-		$crate::_ftp!(->$name=>[$type,])
+	// []内引数の1番目がidentの時
+	(->$name:expr=>[$i:ident])=>{
+		$crate::_ftp_indent_assigner!(->$name=>[$i])
 	};
-	// type, descriptionの指定が先立つパターンのハンドリング
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?$(,)?])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[],[],?$crate::default_value!($type)])
+	(->$name:expr=>[$i:ident,$($t:tt)*])=>{
+		$crate::_ftp_indent_assigner!(->$name=>[$i,$($t)*])
 	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,false])=>{
-		$crate::_ftp!(->$name=>[bool,$($description)?,[],[],?false])
+	// []内引数の一番目がtypeのとき
+	(->$name:expr=>[>$type:ident$(?$default:expr)?])=>{
+		$crate::_ftp!(->$name=>[>$type,$(,$default)?])
 	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,true])=>{
-		$crate::_ftp!(->$name=>[bool,$($description)?,[],[],?false])
+	(->$name:expr=>[>$type:ident$(?$default:expr)?,$(=)?$($description:expr)?$(,$($t:tt)*)?])=>{
+		$crate::_ftp_n_td!(->$name=>[>$type,=$($description)?$(,$($t)*)?$(,?$default)?])
 	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr,@$($default:expr)?])=>{
-		$crate::_ftp!(->$name=>[$type,$description,?$($default)?])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,?$($default:expr)?])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[],[],?$($default)?])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?--$($t:tt)+])=>{
-		$crate::_ftp!(->$name=>[$type,=$($description)?,[$sf $($st)+],--$($t)+])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?[$($t:tt)*]$($t2:tt)*])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[$sf$($st)+],[$($t)*]$($t2)*])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?l#$($t:tt)+])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[$sf$($st)+],l#$($t)+])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?@$default:expr])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[$sf$($st)+],[],?$default])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)??$default:expr])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[$sf$($st)+],[],?$default])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$($(-)?$s:ident)*$(,$($t:tt)*)?])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[$($s)*]$(,$($t)*)?])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$($(-)?$s:ident)*?$($t:tt)*])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[$($s)*]?$($t)*])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$($(-)?$s:ident)*--$($t:tt)*])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[$($s)*],--$($t)*])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$(-)?[$($st:tt)*]$($t:tt)*])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$crate::short_alias![$($st)*]$($t)*])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr$(,)?])=>{
-		$crate::_ftp!(->$name=>[$crate::string_from!($($description)?),$short_alias,$crate::long_alias![],>$crate::flag_type!($type),?$crate::flag_value!($type)])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$default:literal])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,[],[],?$($default)?])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,--$l:ident$($(,)?$(--)?$lt:ident)*])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$l$($lt)*]])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,--$l:ident$($(,)?$(--)?$lt:ident)*$(,)?@$default:expr])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$l$($lt)*],?$default])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,--$l:ident$($(,)?$(--)?$lt:ident)*$(,)??$default:expr])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$l$($lt)*],?$default])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,$($(--)?$l:ident)*$(,$($t:tt)*)?])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$($l)*]$(,$($t)*)?])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,$($(--)?$l:ident)*?$($t:tt)*])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$($l)*],?$($t)*])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,$($(--)?$l:ident)*,$($t:tt)*])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$($l)*],$($t)*])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr,$(l#)?$(--)?[$($lt:tt)*]$($t:tt)*])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$($lt)*]$($t)*])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr,@$default:expr])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$short_alias,[],?$default])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr,?$default:expr])=>{
-		$crate::_ftp!(->$name=>[$type,$($description)?,$short_alias,[],?$default])
-	};
-	//たどり着く先
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr,$(@)?$(?)?$($default:expr)?])=>{
-		$crate::_ftp!(->$name=>[$crate::string_from!($($description)?),$short_alias,$long_alias,>$crate::flag_type!($type),?$crate::flag_value!($type,$($default)?)])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr])=>{
-		$crate::_ftp!(->$name=>[$crate::string_from!($($description)?),$short_alias,$long_alias,>$crate::flag_type!($type),$crate::flag_value!($type)])
-	};
-	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr$(,$(@)?$(?)?$default:expr)?])=>{
-		$crate::_ftp!(->$name=>[$crate::string_from!($($description)?),$short_alias,$crate::long_alias[],>$crate::flag_type!($type),?$crate::flag_value!($type,$($default)?)])
+	(->$name:expr=>[=$description:expr$(,$($t:tt)*)?])=>{
+		$crate::_ftp_n_d!(->$name=>[=$description$(,$($t)*)?])
 	};
 	(->$name:expr=>[$(=)?$description:expr,
 		$(s#)?$short_alias:expr,
@@ -891,6 +819,127 @@ macro_rules! _ftp {
 		$(?)?$default:expr$(,)?])=>{
 			$crate::_flag_basic_constructor!(->$name=>[$description,$short_alias,$long_alias,$type,$default])
 		};
+}
+
+#[macro_export]
+/// inner macro in _ftp
+macro_rules! _ftp_n_td {
+	// type, descriptionの指定が先立つパターンのハンドリング
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?$(,)?])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[],[],?$crate::default_value!($type)])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,false])=>{
+		$crate::_ftp_n_td!(->$name=>[bool,$($description)?,[],[],?false])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,true])=>{
+		$crate::_ftp_n_td!(->$name=>[bool,$($description)?,[],[],?true])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$description:expr$(,)+@$($default:expr)?])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$description,?$($default)?])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?$(,)+?$($default:expr)?])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[],[],?$($default)?])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?--$($t:tt)+])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,=$($description)?,[$sf $($st)+],--$($t)+])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?[$($t:tt)*]$($t2:tt)*])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[$sf$($st)+],[$($t)*]$($t2)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?l#$($t:tt)+])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[$sf$($st)+],l#$($t)+])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)?@$default:expr])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[$sf$($st)+],[],?$default])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,-$sf:ident$($(,)?$(-)?$st:ident)+$(,)*?$default:expr])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[$sf$($st)+],[],?$default])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$($(-)?$s:ident)*$(,$($t:tt)*)?])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[$($s)*]$(,$($t)*)?])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$($(-)?$s:ident)*?$($t:tt)*])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[$($s)*]?$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$($(-)?$s:ident)*--$($t:tt)*])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[$($s)*],--$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$(-)?[$($st:tt)*]$($t:tt)*])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$crate::short_alias![$($st)*]$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr$(,)?])=>{
+		$crate::_ftp_n_td!(->$name=>[>$type,=$($description)?,$short_alias,[],?$crate::default_value!($type)])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$default:literal])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,[],[],?$($default)?])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,--$l:ident$($(,)?$(--)?$lt:ident)*])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$l$($lt)*]])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,--$l:ident$($(,)?$(--)?$lt:ident)*$(,)*@$default:expr])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$l$($lt)*],?$default])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,--$l:ident$($(,)?$(--)?$lt:ident)*$(,)*?$default:expr])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$l$($lt)*],?$default])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,$($(--)?$l:ident)*$(,$($t:tt)*)?])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$($l)*]$(,$($t)*)?])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,$($(--)?$l:ident)*?$($t:tt)*])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$($l)*],?$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$short_alias:expr,$($(--)?$l:ident)*,$($t:tt)*])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$($l)*],$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr,$(l#)?$(--)?[$($lt:tt)*]$($t:tt)*])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$short_alias,$crate::long_alias![$($lt)*]$($t)*])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr$(,)+@$default:expr])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$short_alias,[],?$default])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr$(,)+?$default:expr])=>{
+		$crate::_ftp_n_td!(->$name=>[$type,$($description)?,$short_alias,[],?$default])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr])=>{
+		$crate::_ftp_n_td!(->$name=>[>$type,=$($description)?,$short_alias,$long_alias,?$crate::default_value!($type)])
+	};
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr$($(,)+$(@)?$(?)?$default:expr)?])=>{
+		$crate::_ftp_n_td!(->$name=>[>$type,=$description,$short_alias,[],$(?$default)?])
+	};
+	//name=>[type指定、description指定パターンが]たどり着く先
+	(->$name:expr=>[$(>)?$type:ident,$(=)?$($description:expr)?,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr$(,)+$(@)?$(?)?$($default:expr)?])=>{
+		$crate::_ftp!(->$name=>[$crate::string_from!($($description)?),$short_alias,$long_alias,>$crate::flag_type!($type),?$crate::flag_value!($type,$($default)?)])
+	};
+}
+
+#[macro_export]
+/// inner macro in _ftp
+macro_rules! _ftp_n_d{
+	// []内1つ目の引数がdescriptionのとき
+	(->$name:expr=>[=$description:expr])=>{
+		$crate::_ftp_n_d!(->$name=>[=$description,[],[],str?])
+	};
+	(->$name:expr=>[$(=)?$description:expr,-$sf:ident$($(,)?$(-)?$st:ident)+$($t:tt)*])=>{
+		$crate::_ftp_n_d!(->$name=>[=$description,[$sf$($st)+]$($t)*])
+	};
+	(->$name:expr=>[$(=)?$description:expr,$(s#)?$(-)?[$($s:tt)*],$($t:tt)+])=>{
+		$crate::_ftp_n_d!(->$name=>[=$description,$crate::short_alias![$($s)*],$($t)+])
+	};
+	(->$name:expr=>[$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$(--)?[$($lt:tt)*],$($t:tt)+])=>{
+		$crate::_ftp_n_d!(->$name=>[=$description,$short_alias,$crate::long_alias![$($lt)*],$($t)+])
+	};
+	(->$name:expr=>[$(=)?$description:expr,$(s#)?$short_alias:expr,$(l#)?$long_alias:expr$(,)+$(>)?$type:ident?$($default:expr)?])=>{
+		$crate::_ftp!(->$name=>[$crate::string_from!($description),$short_alias,$long_alias,>$crate::flag_type!($type),?$crate::flag_value!($type,$($default)?)])
+	};
+	(->$name:expr=>[$(=)?$description:expr,?false])=>{
+		$crate::_ftp_n_d!(->$name=>[=$description,[],[],>bool?false])
+	};
+	(->$name:expr=>[$(=)?$description:expr,?true])=>{
+		$crate::_ftp_n_d!(->$name=>[=$description,[],[],>bool?true])
+	};
+	(->$name:expr=>[$(=)?$description:expr,$type:ident$(?$default:expr)?])=>{
+		$crate::_ftp_n_d!(->$name=>[=$description,[],[],>$type?$($default)?])
+	};
 }
 
 #[macro_export]
@@ -972,63 +1021,69 @@ macro_rules! long_alias {
 
 #[macro_export]
 /// sub macro for flag
-macro_rules! _flag_one_ident {
-	(->$name:expr=>[bool])=>{
-		$crate::flag!($name=>[>bool])
+macro_rules! _ftp_indent_assigner {
+	(->$name:expr=>[bool$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>bool$($t)*])
 	};
-	(->$name:expr=>[b])=>{
-		$crate::flag!($name=>[>b])
+	(->$name:expr=>[b$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>b$($t)*])
 	};
-	(->$name:expr=>[B])=>{
-		$crate::flag!($name=>[>B])
+	(->$name:expr=>[B$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>B$($t)*])
 	};
-	(->$name:expr=>[Bool])=>{
-		$crate::flag!($name=>[>Bool])
+	(->$name:expr=>[Bool$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>Bool$($t)*])
 	};
-	(->$name:expr=>[int])=>{
-		$crate::flag!($name=>[>int])
+	(->$name:expr=>[int$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>int$($t)*])
 	};
-	(->$name:expr=>[i])=>{
-		$crate::flag!($name=>[>i])
+	(->$name:expr=>[i$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>i$($t)*])
 	};
-	(->$name:expr=>[Integer])=>{
-		$crate::flag!($name=>[>Integer])
+	(->$name:expr=>[Integer$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>Integer$($t)*])
 	};
-	(->$name:expr=>[I])=>{
-		$crate::flag!($name=>[>I])
+	(->$name:expr=>[I$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>I$($t)*])
 	};
-	(->$name:expr=>[integer])=>{
-		$crate::flag!($name=>[>integer])
+	(->$name:expr=>[integer$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>integer$($t)*])
 	};
-	(->$name:expr=>[Int])=>{
-		$crate::flag!($name=>[>Int])
+	(->$name:expr=>[Int$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>Int$($t)*])
 	};
-	(->$name:expr=>[>$type:ident])=>{
-		$crate::flag!($name=>[$type,""])
+	(->$name:expr=>[float$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>float$($t)*])
 	};
-	(->$name:expr=>[float])=>{
-		$crate::flag!($name=>[>float])
+	(->$name:expr=>[f$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>f$($t)*])
 	};
-	(->$name:expr=>[f])=>{
-		$crate::flag!($name=>[>f])
+	(->$name:expr=>[F$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>F$($t)*])
 	};
-	(->$name:expr=>[F])=>{
-		$crate::flag!($name=>[>F])
+	(->$name:expr=>[Float$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>Float$($t)*])
 	};
-	(->$name:expr=>[Float])=>{
-		$crate::flag!($name=>[>Float])
+	(->$name:expr=>[Str$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>Str$($t)*])
 	};
-	(->$name:expr=>[Str])=>{
-		$crate::flag!($name=>[>Str])
+	(->$name:expr=>[str$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>str$($t)*])
 	};
-	(->$name:expr=>[string])=>{
-		$crate::flag!($name=>[>string])
+	(->$name:expr=>[s$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>s$($t)*])
 	};
-	(->$name:expr=>[String])=>{
-		$crate::flag!($name=>[>String])
+	(->$name:expr=>[string]$($t:tt)*)=>{
+		$crate::_ftp!(->$name=>[>string$($t)*])
 	};
-	(->$name:expr=>[$description:ident])=>{
-		$crate::flag!($name=>[str,$description])
+	(->$name:expr=>[S$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>String$($t)*])
+	};
+	(->$name:expr=>[String$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[>String$($t)*])
+	};
+	(->$name:expr=>[$description:ident$($t:tt)*])=>{
+		$crate::_ftp!(->$name=>[=$description$($t)*])
 	}
 }
 
@@ -1130,6 +1185,9 @@ macro_rules! flag_value {
 	(Float, $val:expr) => {
 		flag_value!(float, $val)
 	};
+	(F, $val:expr) => {
+		flag_value!(float, $val)
+	};
 	(str,$val:literal) => {
 		$crate::flag_value!(str, $val.into())
 	};
@@ -1137,6 +1195,9 @@ macro_rules! flag_value {
 		$crate::FlagValue::String($val)
 	};
 	(s,$val:expr) => {
+		flag_value!(str, $val)
+	};
+	(S,$val:expr) => {
 		flag_value!(str, $val)
 	};
 	(Str, $val:expr) => {
@@ -1182,6 +1243,9 @@ macro_rules! default_value {
 	(i) => {
 		default_value!(int)
 	};
+	(I) => {
+		default_value!(int)
+	};
 	(Int) => {
 		default_value!(int)
 	};
@@ -1197,6 +1261,9 @@ macro_rules! default_value {
 	(f) => {
 		default_value!(float)
 	};
+	(F) => {
+		default_value!(float)
+	};
 	(Float) => {
 		default_value!(float)
 	};
@@ -1204,6 +1271,9 @@ macro_rules! default_value {
 		f64::default()
 	};
 	(s) => {
+		default_value!(str)
+	};
+	(S) => {
 		default_value!(str)
 	};
 	(Str) => {
@@ -1286,7 +1356,7 @@ mod tests {
 		let _t_string = String::from(_t);
 		let full = Flag {
 			name: "test_flag".into(),
-			description: _t.into(),
+			description: "test".into(),
 			short_alias: Vector(Some(vec!['s', 'f'])),
 			long_alias: Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 			default_value: FlagValue::Bool(false),
@@ -1298,7 +1368,7 @@ mod tests {
 		assert_eqs!(
 			full.clone(),
 			flag!(->String::from("test_flag")=>[
-					String::from(_t),
+					String::from("test"),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1306,7 +1376,7 @@ mod tests {
 				]
 			),
 			flag!(@->String::from("test_flag")=>[
-					String::from(_t),
+					String::from("test"),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1490,6 +1560,18 @@ mod tests {
 			=_t,
 			-s,f,
 			--long long2]),
+			flag!(test_flag=>[
+				=_t,
+				Vector(Some(vec!['s', 'f'])),
+				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				bool?false
+			]),
+			flag!(test_flag[
+				=_t,
+				[s f],
+				[long long2],
+				bool?false
+			]),
 		);
 		assert_eqs!(
 			full.clone().short_alias('a'),
@@ -1522,7 +1604,7 @@ mod tests {
 				?false
 			]),
 			flag!(test_flag=>[
-				>bool,
+				>bool?false,
 				=_t,
 				Vector(Some(vec!['s', 'f','a']))
 			]),
@@ -1531,6 +1613,11 @@ mod tests {
 				=_t,
 				-s,f,a,
 				?false
+			]),
+			flag!(test_flag=>[
+				>bool?false,
+				=_t,
+				-s,f,a
 			])
 		);
 		let mut s = full.clone();
@@ -1580,13 +1667,27 @@ mod tests {
 			flag!(test_flag=>[bool,,?false]),
 			flag!(test_flag=>[bool,,false])
 		);
-		// println!("{:?}", flag!(test_flag=>[="desc",?false]));
-		// println!("{:?}", flag!(test_flag=>[="desc",bool?false]));
-		// let _i = "donly";
-		// println!("{:?}", flag!(test_flag=>[_i]));
-		// println!("{:?}", flag!(test_flag=>[="desc bool after",bool]));
-		// println!("{:?}", flag!(test_flag=>[="desc",-s,-f, bool?false]));
-		// println!("{:?}", flag!(test_flag=>["desc",-s,-f, bool?false]));
+		assert_eqs!(
+			Flag::new_bool("test_flag").description("desc"),
+			flag!(test_flag=>[bool,="desc",?false]),
+			flag!(test_flag=>[="desc",?false]),
+			flag!(test_flag=>[="desc",bool?false]),
+			flag!(test_flag=>[="desc",bool]),
+		);
+		let _i = "desc_only";
+		assert_eqs!(
+			Flag::new_string("test_flag").description(_i),
+			flag!(test_flag=>[_i])
+		);
+		assert_eqs!(
+			Flag::new_bool("test_flag")
+				.description("test")
+				.short_alias('s')
+				.short_alias('f'),
+			flag!(test_flag[bool,"test",-s f])
+		);
+		// println!("{:?}", flag!(test_flag=>[="test",-s,-f, bool?false]));
+		// println!("{:?}", flag!(test_flag=>["test",-s,-f, bool?false]));
 		// assert_eqs!(
 		// 	{ full.clone().description("desc") },
 		// 	flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool?false]),

@@ -657,6 +657,9 @@ macro_rules! flag {
 	(&$($t:tt)+) => {
 		$crate::_fsp!(&$($t)+)
 	};
+	(*$($t:tt)+) => {
+		$crate::_fsp!(*$($t)+)
+	};
 	($($t:tt)*)=>{
 		$crate::_ffp!($($t)*)
 	};
@@ -717,7 +720,7 @@ macro_rules! _ffp {
 		$crate::_fsp!([$($t)+]=>$($ta)+)
 	};
 	($name:ident$t:tt)=>{
-		$crate::_ffp!($name=>$t)
+		$crate::_fsp!($name=>$t)
 	};
 	($name:ident$sep:tt$t:tt)=>{
 		$crate::_fsp!($name=>$t)
@@ -743,8 +746,11 @@ macro_rules! _ffp {
 }
 
 #[macro_export]
-/// macro for innser flag
+/// macro for inner flag
 macro_rules! _fsp {
+	(*$($t:tt)*)=>{
+		$crate::flag!($($t)*)
+	};
 	(@$($t:tt)*)=>{
 		$crate::flag!($($t)*)
 	};
@@ -790,19 +796,22 @@ macro_rules! _ftp{
 		$crate::_ftp!(->$name=>[])
 	};
 	(->$name:expr=>{$($t:tt)*})=>{
-		$crate::_ftp![$($t)*]
+		$crate::_ftp![->$name=>[$($t)*]]
 	};
 	(->$name:expr=>($($t:tt)*))=>{
-		$crate::_ftp![$($t)*]
+		$crate::_ftp![->$name=>[$($t)*]]
 	};
 	(->$name:expr=>[]) => {
 		$crate::_ftp!(->$name=>[=String::default(),s#Vector::default(),l#Vector::default(),>FlagType::default(),?FlagValue::String(String::default())])
 	};
 	(->$name:expr=>[$i:ident])=>{
-		$crate::_fp_ident_assigner!(->$name=>[$i],_ftp);
+		$crate::_fp_ident_ft_assigner!(->$name=>[$i],_ftp,=);
 	};
 	(->$name:expr=>[$i:ident,$($t:tt)*])=>{
-		$crate::_fp_ident_assigner!(->$name=>[$i,$($t)*],_ftp);
+		$crate::_fp_ident_ft_assigner!(->$name=>[$i,$($t)*],_ftp,=);
+	};
+	(->$name:expr=>[-$($t:tt)*])=>{
+		$crate::_ftp_s!(->$name=>[-$($t)+])
 	};
 	(->$name:expr=>[$(=)?$description:literal,$($t:tt)*])=>{
 		$crate::_ftp_s!(->$name=>[=$description,$($t)*])
@@ -849,6 +858,9 @@ macro_rules! _ftp{
 #[macro_export]
 /// macro for innser flag
 macro_rules! _ftp_s {
+	(->$name:expr=>{$($at:tt)*}[$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{$($at)*}[$($t)*])
+	};
 	(->$name:expr=>[$($t:tt)+])=>{
 		$crate::_ftp_t!(->$name=>{=,s#,l#,>,?}[$($t)+])
 	};
@@ -877,34 +889,34 @@ macro_rules! _ftp_t {
 		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?-$s:ident,$($sa:ident $($(-)?$sb:ident)*),+$(,)? $(?$($t:tt)*)?])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s$($sa $($sb)*)+],l#$([$($lt)*])?,>$($type)?,?}[$(?$($t)*)?])
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		[>$type:ident$($t:tt)+])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)+])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?-$s:ident,$($sa:ident $($(-)?$sb:ident)*),+$(,)? ?$($t:tt)*])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s$($sa $($sb)*)+],l#$([$($lt)*])?,>$($type)?,?}[?$($t)*])
+		[$(l#)?$(--$l:ident)+$(,)?$la:ident$($t:tt)*])=>{
+		$crate::_fp_ident_ft_assigner!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $($l)+ ],>$($type)?,?$($default)?}[$la$($t)*],_ftp_t,--)
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?-$s:ident,$($sa:ident $($(-)?$sb:ident)*),+$(,)? $(l#)?--$($t:tt)*])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s$($sa $($sb)*)+],l#$([$($lt)*])?,>$($type)?,?}[--$($t)*])
+		[$(l#)?$(--$l:ident)+$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $($l)+],>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?-$s:ident,$($sa:ident $($(-)?$sb:ident)*),+$(,)? [$($tt:tt)*]$($t:tt)*])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s$($sa $($sb)*)+],l#$([$($lt)*])?,>$($type)?,?}[[$($tt)*]$($t)*])
+		[$(s#)?$(-$s:ident)+$(,)?$sa:ident$($t:tt)*])=>{
+			$crate::_fp_ident_s_assigner!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$($s)+],l#$([$($lt)*])?,>$($type)?,?}[$sa$($t)*],_ftp_t)
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?-$s:ident,$($sa:ident $($(-)?$sb:ident)*),+$(,$expr:expr$(,$($t:tt)*)?)?])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s$($sa $($sb)*)+],l#$([$($lt)*])?,>$($type)?,?}[$expr$($($($t)*)?)?])
+		[$(s#)?$(-$s:ident)+$(,$($t:tt)*)?])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$($s)+],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?-$s:ident$($(-)?$sa:ident)*$(,$($t:tt)*)?])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s$($sa)*],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+		[$(s#)?$(-$s:ident)+$($t:tt)*])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$($s)+],l#$([$($lt)*])?,>$($type)?,?}[$($t)*])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
@@ -921,26 +933,7 @@ macro_rules! _ftp_t {
 		[$(s#)?$(-)?[$($s:tt)*]$(,$($t:tt)*)?])=>{
 			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($s)*],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
 	};
-	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?--$l:ident,$($la:ident $($(--)?$lb:ident)*),+$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $l $($la $($lb)*)+],>$($type)?,?$($default)?}[$($($t)*)?])
-	};
-	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?--$l:ident,$($la:ident $($(--)?$lb:ident)*),+?$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $l $($la $($lb)*)+],>$($type)?,?$($default)?}[?$($t)*])
-	};
-	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?--$l:ident$($(--)?$la:ident)*$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $l $($la)*],>$($type)?,?$($default)?}[$($($t)*)?])
-	};
-	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?--$l:ident$($(--)?$la:ident)*?$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $l $($la)*],>$($type)?,?$($default)?}[?$($t)*])
-	};
+
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
 		[$(l#)?$(--)?[$($lt:tt)*]$(,$($t:tt)*)?])=>{
@@ -1027,19 +1020,24 @@ macro_rules! _ftp_t {
 		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>,?$default}[$($($t)*)?])
 	};
 	(->$name:expr=>
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?}
+		[])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>String,?}[])
+	};
+	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?true}
 		[])=>{
-		$crate::_ftp!(->$name=>[=$crate::string_from!($($($dt)*)?),s#$crate::short_alias![$($($st)*)?],l#$crate::long_alias![$($($lt)*)?],>$crate::flag_type!(bool),?$crate::default_flag_value!($type,true)])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>bool,?true}[])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?false}
 		[])=>{
-		$crate::_ftp!(->$name=>[=$crate::string_from!($($($dt)*)?),s#$crate::short_alias![$($($st)*)?],l#$crate::long_alias![$($($lt)*)?],>$crate::flag_type!(bool),?$crate::flag_value!(bool,false)])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>bool,?false}[])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
 		[])=>{
-		$crate::_ftp!(->$name=>[=$crate::string_from!($($($dt)*)?),s#$crate::short_alias![$($($st)*)?],l#$crate::long_alias![$($($lt)*)?],>$crate::flag_type!(bool),?$crate::flag_value!(bool,false)])
+		$crate::_ftp!(->$name=>[=$crate::string_from!($($($dt)*)?),s#$crate::short_alias![$($($st)*)?],l#$crate::long_alias![$($($lt)*)?],>$crate::flag_type!($type),?$crate::flag_value!($type)])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?$($default:expr)?}
@@ -1143,70 +1141,237 @@ macro_rules! long_alias {
 }
 
 #[macro_export]
+/// inner macro in flag! macro
+macro_rules! _fp_ident_s_assigner {
+	(->$name:expr=>$({$($ta:tt)*})?[a$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-a$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[b$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-b$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[c$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-c$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[d$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-d$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[e$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-e$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[f$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-f$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[g$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-g$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[h$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-h$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[i$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-i$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[j$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-j$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[k$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-k$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[l$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-l$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[m$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-m$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[n$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-n$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[o$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-o$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[p$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-p$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[q$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-q$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[r$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-r$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[s$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-s$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[t$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-t$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[u$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-u$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[v$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-v$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[w$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-w$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[x$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-x$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[y$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-y$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[z$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-z$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[A$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-A$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[B$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-B$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[C$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-C$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[D$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-D$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[E$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-E$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[F$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-F$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[G$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-G$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[H$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-H$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[I$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-I$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[J$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-J$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[K$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-K$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[L$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-L$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[M$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-M$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[N$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-N$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[O$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-O$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[P$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-P$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[Q$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-Q$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[R$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-R$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[S$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-S$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[T$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-T$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[U$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-U$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[V$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-V$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[W$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-W$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[X$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-X$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[Y$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-Y$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[Z$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[-Z$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[$i:ident$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
+		$crate::$macro!(->$name=>$({$($ta)*})?[$($($p)*)?$i$($t)*])
+	};
+}
+
+#[macro_export]
 /// sub macro for flag
-macro_rules! _fp_ident_assigner {
-	(->$name:expr=>[bool$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>bool$($t)*])
+macro_rules! _fp_ident_ft_assigner {
+	(->$name:expr=>$({$($ta:tt)*})?[bool$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>bool$($t)*])
 	};
-	(->$name:expr=>[b$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>b$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[b$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>b$($t)*])
 	};
-	(->$name:expr=>[B$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>B$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[B$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>B$($t)*])
 	};
-	(->$name:expr=>[Bool$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>Bool$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[Bool$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>Bool$($t)*])
 	};
-	(->$name:expr=>[int$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>int$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[int$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>int$($t)*])
 	};
-	(->$name:expr=>[i$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>i$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[i$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>i$($t)*])
 	};
-	(->$name:expr=>[Integer$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>Integer$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[Integer$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>Integer$($t)*])
 	};
-	(->$name:expr=>[I$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>I$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[I$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>I$($t)*])
 	};
-	(->$name:expr=>[integer$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>integer$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[integer$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>integer$($t)*])
 	};
-	(->$name:expr=>[Int$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>Int$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[Int$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>Int$($t)*])
 	};
-	(->$name:expr=>[float$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>float$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[float$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>float$($t)*])
 	};
-	(->$name:expr=>[f$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>f$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[f$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>f$($t)*])
 	};
-	(->$name:expr=>[F$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>F$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[F$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>F$($t)*])
 	};
-	(->$name:expr=>[Float$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>Float$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[Float$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>Float$($t)*])
 	};
-	(->$name:expr=>[Str$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>Str$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[Str$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>Str$($t)*])
 	};
-	(->$name:expr=>[str$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>str$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[str$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>str$($t)*])
 	};
-	(->$name:expr=>[s$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>s$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[s$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>s$($t)*])
 	};
-	(->$name:expr=>[string]$($t:tt)*)=>{
-		$crate::$macro!(->$name=>[>string$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[string]$($t:tt)*)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>string$($t)*])
 	};
-	(->$name:expr=>[S$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>String$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[S$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>String$($t)*])
 	};
-	(->$name:expr=>[String$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[>String$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[String$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[>String$($t)*])
 	};
-	(->$name:expr=>[$description:ident$($t:tt)*],$macro:ident)=>{
-		$crate::$macro!(->$name=>[=$description$($t)*])
+	(->$name:expr=>$({$($ta:tt)*})?[$description:ident$($t:tt)*],$macro:ident)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[=$description$($t)*])
+	};
+	(->$name:expr=>$({$($ta:tt)*})?[$description:ident$($t:tt)*],$macro:ident,$($p:tt)*)=>{
+		$crate::$macro!(->$name=>$({$($ta)*})?[$($p)*$description$($t)*])
 	}
 }
 
@@ -1701,27 +1866,27 @@ mod tests {
 			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 			?false]),
 			flag!(test_flag=>[
-		 	>bool,
-		 	=_t,
-		 	-s f,
-		 	[long long2],
-		 	?false]),
+				>bool,
+				=_t,
+				-s f,
+				[long long2],
+				?false]),
 			flag!(test_flag=>[
-			bool,
-			=_t,
-			-s -f,
-			--long long2,
-			?false]),
+				bool,
+				=_t,
+				-s -f,
+				--long long2,
+				?false]),
 			flag!(test_flag=>[
-			bool,
-			=_t,
-			-s -f,
-			--long long2,]),
+				>bool,
+				=_t,
+				-s,f,
+				--long long2]),
 			flag!(test_flag=>[
-			>bool,
-			=_t,
-			-s,f,
-			--long long2]),
+				bool,
+				=_t,
+				-s -f,
+				--long long2,]),
 			flag!(test_flag=>[
 				=_t,
 				Vector(Some(vec!['s', 'f'])),
@@ -1738,7 +1903,7 @@ mod tests {
 				=_t,
 				s#[s f],
 				[long long2],
-				bool?false
+				>bool?false
 			]),
 			flag!(test_flag[
 				=_t,
@@ -1747,6 +1912,7 @@ mod tests {
 				bool?false
 			]),
 		);
+
 		assert_eqs!(
 			full.clone().short_alias('a'),
 			flag!(test_flag=>[
@@ -1766,11 +1932,11 @@ mod tests {
 			--long, long2
 			]),
 			flag!(test_flag=>[
-			>bool,
-			_t,
-			-s,f,a,
-			--[long, long2],
-			?false]),
+				>bool,
+				_t,
+				-s,f,a,
+				--[long, long2],
+				?false]),
 		);
 		assert_eqs!(
 			{
@@ -1860,71 +2026,78 @@ mod tests {
 			flag!(test_flag=>[="desc",bool?false]),
 			flag!(test_flag=>[="desc",bool]),
 		);
-		// let _i = "desc_only";
-		// assert_eqs!(
-		// 	Flag::new_string("test_flag").description(_i),
-		// 	flag!(test_flag=>[_i])
-		// );
-		// assert_eqs!(
-		// 	Flag::new_bool("test_flag")
-		// 		.description("test")
-		// 		.short_alias('s')
-		// 		.short_alias('f'),
-		// 	flag!(test_flag[bool,"test",-s f]),
-		// 	flag!(test_flag=>[="test",-s,-f, >bool?false]),
-		// 	flag!(test_flag=>[="test",-s,-f, ?false])
-		// );
-		// assert_eqs!(
-		// 	{ full.clone().description("desc") },
-		// 	flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool?false]),
-		// 	flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool?false]),
-		// 	flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool]),
-		// 	flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool]),
-		// 	flag!(test_flag:[="desc",-s,-f,--long,--long2,?false]),
-		// 	flag!(test_flag=[="desc",-s,-f,--long,--long2 ?false]),
-		// 	flag!(test_flag[-s,-f,--long,--long2,="desc",bool?false]),
-		// 	flag!(test_flag=>[-s,-f,--long,--long2,="desc",bool])
-		// );
-		// assert_eqs!(
-		// 	Flag::new("test_flag", FlagType::Bool, "desc")
-		// 		.short_alias('s')
-		// 		.short_alias('f'),
-		// 	flag!(test_flag=>[="desc",-s,-f, bool]),
-		// 	flag!(test_flag=>["desc",-s,-f, bool]),
-		// 	flag!(test_flag=>[="desc",-s,-f,?false])
-		// );
-		// println!("{:?}", flag!(test_flag=>["desc",?false]));
-		// println!("{:?}", flag!(test_flag["desc"]));
-		// println!("{:?}", flag!(test_flag["desc",b]));
-		// println!("{:?}", flag!(test_flag[_t]));
-		// println!("{:?}", flag!(test_flag=>[str,"aaa","aaa"]));
-		// println!("{:?}", flag!(test_flag=>[bool,_t,--long,--long2,?false]));
-		// println!(
-		// 	"{:?}",
-		// 	flag!(test_flag=>[bool,"desc",-s,-f,--long,--long2,?false])
-		// );
-		// println!(
-		// 	"{:?}",
-		// 	flag!(test_flag[bool,-s,-f,--long,--long2,=_t,?false])
-		// );
-		// println!(
-		// 	"{:?}",
-		// 	flag!(test_flag=>[bool,-s,-f,--long,--long2,="desc",?false])
-		// );
-		// println!("{:?}", flag!(test_flag=>[bool,-s,-f,="desc",?false]));
-		// println!("{:?}", flag!(test_flag=>[bool,,="desc",?false]));
-		// println!("{:?}", flag!(test_flag=>[bool,,="desc",false]));
-		// println!(
-		// 	"{:?}",
-		// 	flag!(test_flag[bool,-s,-f,--long,--long2,_t,?false])
-		// );
-		// println!(
-		// 	"{:?}",
-		// 	flags!(
-		//			*test_flag{bool, -s,-f,--long,--long2,="test",false},
-		//			@[String::from("test_flag")]=>{bool, -s,-f,--long,--long2,="test",false},
-		//			[test_flag2]=>{bool, -a,-b,--long3,="test2",false},)
-		// 	);
-		// println!("{:?}", default_flag_value!(bool));
+		let _i = "desc_only";
+		assert_eqs!(
+			Flag::new_string("test_flag").description(_i),
+			flag!(test_flag=>[_i])
+		);
+		assert_eqs!(
+			Flag::new_bool("test_flag")
+				.description("test")
+				.short_alias('s')
+				.short_alias('f'),
+			flag!(test_flag[bool,"test",-s f]),
+			flag!(test_flag=>[="test",-s,-f, >bool?false]),
+			flag!(test_flag=>[="test",-s,-f, ?false])
+		);
+		let _t = "desc";
+		assert_eqs!(
+			{ full.clone().description("desc") },
+			flag!(test_flag=>[="desc",-s,-f,--long,--long2,>bool?false]),
+			flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool?false]),
+			flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool?false]),
+			flag!(test_flag=>[="desc",-s,-f,--long,--long2 bool]),
+			flag!(test_flag=>[="desc",-s,-f,--long,--long2,bool]),
+			flag!(test_flag:[="desc",-s,-f,--long,--long2,?false]),
+			flag!(test_flag=[="desc",-s,-f,--long,--long2 ?false]),
+			flag!(test_flag[-s,f,--long,--long2,="desc",bool?false]),
+			flag!(test_flag[-s,f,--long,--long2,="desc",bool?false]),
+			flag!(test_flag=>[-s,-f,--long,--long2,="desc",bool]),
+			flag!(test_flag=>[bool,"desc",-s,-f,--long,--long2,?false]),
+			flag!(test_flag[bool,-s,-f,--long,--long2,=_t,?false]),
+			flag!(test_flag=>[bool,-s,-f,--long,--long2,="desc",?false])
+		);
+		assert_eqs!(
+			Flag::new("test_flag", FlagType::Bool, "desc")
+				.short_alias('s')
+				.short_alias('f'),
+			flag!(test_flag=>[="desc",-s,-f, bool]),
+			flag!(test_flag=>["desc",-s,-f, bool]),
+			flag!(test_flag=>[="desc",-s,-f,?false]),
+			flag!(test_flag=>[bool,-s,-f,="desc",?false])
+		);
+		assert_eqs!(
+			Flag::new("test_flag", FlagType::Bool, "desc"),
+			flag!(test_flag=>["desc",?false]),
+			flag!(test_flag["desc",b])
+		);
+		assert_eqs!(
+			Flag::new_string("test_flag").description("desc"),
+			flag!(test_flag["desc"]),
+			flag!(test_flag[_t]),
+		);
+		assert_eqs!(
+			Flag::new_string("test_flag")
+				.description("aaa")
+				.default_value("aaa".to_owned().into()),
+			flag!(test_flag=>[str,"aaa","aaa"])
+		);
+		assert_eqs!(
+			{
+				let mut f = full.clone().description("desc");
+				f.short_alias.take();
+				f
+			},
+			flag!(test_flag=>[bool,_t,--long,--long2,?false])
+		);
+		assert_eqs!(
+			full,
+			flag!(test_flag[bool, -s,-f,--long,--long2,="test",false]),
+			flag!(*test_flag[bool, -s,-f,--long,--long2,="test",false]),
+			flag!(test_flag{bool, -s,-f,--long,--long2,="test",false}),
+			flag!(*test_flag{bool, -s,-f,--long,--long2,="test",false}),
+			flag!(@[String::from("test_flag")]=>{bool, -s,-f,--long,--long2,="test",false}),
+			flag!([test_flag]=>{bool, -s,-f,--long long2 ="test",false}),
+		);
 	}
 }

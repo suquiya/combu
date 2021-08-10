@@ -130,6 +130,12 @@ impl From<String> for FlagValue {
 	}
 }
 
+impl From<&str> for FlagValue {
+	fn from(val: &str) -> Self {
+		FlagValue::String(val.into())
+	}
+}
+
 impl FlagValue {
 	/// Get &self's corresponding type of FlagType. Returns None if  &self is a invalid flag value.
 	/// FlagValueに対応するFlagTypeを取得する

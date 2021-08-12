@@ -707,6 +707,9 @@ macro_rules! _ffp {
 	(->[$name:expr]$sep:tt$($t:tt)+)=>{
 	 	$crate::_fsp!(->[$name]=>$($t)+)
 	};
+	(->$name:ident=$t:tt)=>{
+		$crate::_fsp!(->$name=>$t)
+	};
 	(->$name:expr=>$($t:tt)*)=>{
 		$crate::_fsp!(->$name=>$($t)*)
 	};
@@ -715,6 +718,12 @@ macro_rules! _ffp {
 	};
 	([$($t:tt)+]$($ta:tt)?)=>{
 		$crate::_fsp!([$($t)+]$(=>$ta)?)
+	};
+	([$($t:tt)+][#$(sep:tt)*]$($ta:tt)+)=>{
+		$crate::_fsp!([$($t)+]=>$($ta:tt)+)
+	};
+	([$($t:tt)+][$($ta:tt)*]$($tas:tt)+)=>{
+		$crate::_fsp!([$($t)+]=>[$($ta)*]$($tas)+)
 	};
 	([$($t:tt)+]$sep:tt$($ta:tt)+)=>{
 		$crate::_fsp!([$($t)+]=>$($ta)+)
@@ -790,7 +799,10 @@ macro_rules! _fsp {
 /// macro for innser flag
 macro_rules! _ftp{
 	(->$name:expr=>$t:tt$($t2:tt)+)=>{
-		$crate::_ftp!(->$name=>[$t$($t2)+])
+		{
+			println!("_ftp: {:?}",stringify!($t));
+			$crate::_ftp_s!(->$name=>{=,s#,l#,>,?}[$t$($t2)+])
+		}
 	};
 	(->$name:expr=>)=>{
 		$crate::_ftp!(->$name=>[])
@@ -874,49 +886,59 @@ macro_rules! _ftp_t {
 			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
 		};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?}
-		[$(>)?$type:ident?$default:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$default}[$($($t)*)?])
-	};
-	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?}
-		[$(>)?$type:ident@$default:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$default}[$($($t)*)?])
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?}
+		[$type:ident?$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?}[?$($t)*])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
-		[$(>)?$type:ident$(,$($t:tt)*)?])=>{
+		[[>$type:ident]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[[=$($dt:tt)*]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[$($dt)*],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		[>$type:ident$(,$($t:tt)*)?])=>{
 		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
-		[>$type:ident$($t:tt)+])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)+])
+		[>$type:ident$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		[[$i:ident]$($t:tt)*])=>{
+		$crate::_fp_ident_ft_assigner!(->$name=>{=,s#$([$($st)*])?,l#$([$($lt)*])?,>,?$($default)?}[$i,$($t)*],_ftp_t,=)
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?$(--$l:ident)+$(,)?$la:ident$($t:tt)*])=>{
-		$crate::_fp_ident_ft_assigner!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $($l)+ ],>$($type)?,?$($default)?}[$la$($t)*],_ftp_t,--)
+		[$(l#)?--$l:ident$(,)?$la:ident$($t:tt)*])=>{
+		$crate::_fp_ident_ft_assigner!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $l ],>$($type)?,?$($default)?}[$la$($t)*],_ftp_t,--)
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?$(--$l:ident)+$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $($l)+],>$($type)?,?$($default)?}[$($t)*])
+		[$(l#)?--$l:ident $($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $l],>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?$(-$s:ident)+$(,)?$sa:ident$($t:tt)*])=>{
-			$crate::_fp_ident_s_assigner!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$($s)+],l#$([$($lt)*])?,>$($type)?,?}[$sa$($t)*],_ftp_t)
+		[$(s#)?-$s:ident$(,)?$sa:ident$($t:tt)*])=>{
+			$crate::_fp_ident_s_assigner!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s],l#$([$($lt)*])?,>$($type)?,?}[$sa$($t)*],_ftp_t)
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?$(-$s:ident)+$(,$($t:tt)*)?])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$($s)+],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+		[$(s#)?-$s:ident$(,$($t:tt)*)?])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?$(-$s:ident)+$($t:tt)*])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$($s)+],l#$([$($lt)*])?,>$($type)?,?}[$($t)*])
+		[$(s#)?-$s:ident$($t:tt)*])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s],l#$([$($lt)*])?,>$($type)?,?}[$($t)*])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
@@ -930,14 +952,53 @@ macro_rules! _ftp_t {
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?$(-)?[$($s:tt)*]$(,$($t:tt)*)?])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($s)*],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+		[$(s#)?$(-)?[$($s:tt)*]$($t:tt)*])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($s)*],l#$([$($lt)*])?,>$($type)?,?}[$($t)*])
 	};
-
+	(->$name:expr=>
+		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[s#$short_alias:ident$(,$($t:tt)*)?])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[->$short_alias],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+	};
+	(->$name:expr=>
+		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[s#$short_alias:expr$(,$($t:tt)*)?])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[->$short_alias],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?$(--)?[$($lt:tt)*]$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($lt)*],>$($type)?,?$($default)?}[$($($t)*)?])
+		[l#$long_alias:expr$(,$($t:tt)*)?])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[->$long_alias],>$($type)?,?$($default)?}[$($($t)*)?])
+	};
+	(->$name:expr=>
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
+		[$(l#)?$(--)?[$($(--)?$l:ident$(,)?)*]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($l)*],>$($type)?,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
+		[$(l#)?$(--)?[$($lt:tt)*],$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($lt)*],>$($type)?,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
+		[$(l#)?$(--)?[$($lt:tt)*]])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($lt)*],>$($type)?,?$($default)?}[])
+	};
+	(->$name:expr=>
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[= -$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[-$($t)*])
+	};
+	(->$name:expr=>
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[= ?$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[?$($t)*])
+	};
+	(->$name:expr=>
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[= >$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[>$($t)*])
 	};
 	(->$name:expr=>
 		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
@@ -945,14 +1006,29 @@ macro_rules! _ftp_t {
 		$crate::_ftp_t!(->$name=>{=[],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>bool,?}
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$(bool)?,?}
 		[$(?)?$(@)?false])=>{
 		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>bool,?false}[])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>bool,?}
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$(bool)?,?}
 		[$(?)?$(@)?true])=>{
 		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>bool,?true}[])
+	};
+	(->$name:expr=>
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[=$description:ident$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[$description],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[$(=)?$description:literal$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[$description],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[[=$description:expr]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[$description],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
 		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
@@ -962,6 +1038,11 @@ macro_rules! _ftp_t {
 	(->$name:expr=>
 		{=[$($dt:tt)*],s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
 		[$(?)?$(@)?$default:literal])=>{
+		$crate::_ftp_t!(->$name=>{=[$($dt)*],s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$default}[])
+	};
+	(->$name:expr=>
+		{=[$($dt:tt)*],s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		[[$(?)?$(@)?$default:expr]])=>{
 		$crate::_ftp_t!(->$name=>{=[$($dt)*],s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$default}[])
 	};
 	(->$name:expr=>
@@ -980,19 +1061,19 @@ macro_rules! _ftp_t {
 		$crate::_ftp_t!(->$name=>{={$($dt)*},s#[$($st)*],l#[$($lt)*],>$type,?$default}[])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[s#$short_alias:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[->$short_alias],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+		{=[$($dt:tt)*],s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		[$i:ident$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[$($dt)*],s#$([$($st)*])?,l#$([$($lt)*])?,>,?$($default)?}[>$i$($t)*])
+	};
+	(->$name:expr=>
+		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		[$i:ident$($t:tt)*])=>{
+		$crate::_fp_ident_ft_assigner!(->$name=>{=,s#$([$($st)*])?,l#$([$($lt)*])?,>,?$($default)?}[$i$($t)*],_ftp_t,=)
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[$short_alias:expr$(,$($t:tt)*)?])=>{
 		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[->$short_alias],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
-	};
-	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
-		[l#$long_alias:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[->$long_alias],>$($type)?,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
@@ -1003,6 +1084,16 @@ macro_rules! _ftp_t {
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?}
 		[@$($default:expr)?$(,$($t:tt)*)?])=>{
 		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($($t)*)?])
+	};
+	(->$name:expr=>
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		[[@$($default:expr)?]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		[[?$($default:expr)?]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
@@ -1656,14 +1747,14 @@ mod tests {
 		assert_eqs!(
 			full.clone(),
 			flag!(->String::from("test_flag")=>[
-				String::from("test"),
+				=String::from("test"),
 				Vector(Some(vec!['s', 'f'])),
 				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 				FlagType::Bool,
 				FlagValue::Bool(false)
 			]),
 			flag!(@->String::from("test_flag")=>[
-					String::from("test"),
+					=String::from("test"),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1671,7 +1762,7 @@ mod tests {
 				]
 			),
 			flag!(->[String::from("test_flag")]=>[
-					String::from(_t),
+					=String::from(_t),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1679,7 +1770,7 @@ mod tests {
 				]
 			),
 			flag!([->String::from("test_flag")]=>[
-					String::from(_t),
+					=String::from(_t),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1687,7 +1778,7 @@ mod tests {
 				]
 			),
 			flag!([->String::from("test_flag")][
-					String::from(_t),
+					=String::from(_t),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1695,7 +1786,7 @@ mod tests {
 				]
 			),
 			flag!(&String::from("test_flag")=>[
-					String::from(_t),
+					=String::from(_t),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1703,14 +1794,14 @@ mod tests {
 				]
 			),
 			flag!("test_flag"=>[
-				String::from(_t),
+				=String::from(_t),
 				Vector(Some(vec!['s', 'f'])),
 				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 				FlagType::Bool,
 				FlagValue::Bool(false)
 			]),
 			flag!(&_flag_name=>[
-				String::from(_t),
+				=String::from(_t),
 				Vector(Some(vec!['s', 'f'])),
 				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 				FlagType::Bool,
@@ -1718,7 +1809,7 @@ mod tests {
 			]),
 			flag!(
 				&_flag_name2 = [
-					String::from(_t),
+					=String::from(_t),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1727,7 +1818,7 @@ mod tests {
 			),
 			flag!(
 				&_flag_name3[
-					String::from(_t),
+					=String::from(_t),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1735,14 +1826,14 @@ mod tests {
 				]
 			),
 			flag!(test_flag=>[
-				String::from(_t),
+				=String::from(_t),
 				Vector(Some(vec!['s', 'f'])),
 				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 				FlagType::Bool,
 				FlagValue::Bool(false)
 			]),
 			flag!(test_flag[
-				String::from(_t),
+				=String::from(_t),
 				Vector(Some(vec!['s', 'f'])),
 				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 				FlagType::Bool,
@@ -1750,7 +1841,7 @@ mod tests {
 			]),
 			flag!(
 				[test_flag][
-					String::from(_t),
+					=String::from(_t),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1759,7 +1850,7 @@ mod tests {
 			),
 			flag!(
 				[test_flag]=>[
-					String::from(_t),
+					=String::from(_t),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1768,7 +1859,7 @@ mod tests {
 			),
 			flag!(
 				[test_flag] = [
-					String::from(_t),
+					=String::from(_t),
 					Vector(Some(vec!['s', 'f'])),
 					Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 					FlagType::Bool,
@@ -1834,7 +1925,7 @@ mod tests {
 			),
 		);
 		assert_eqs!(
-			full,
+			full.clone(),
 			flag!(test_flag=>[
 			bool,
 			_t,
@@ -1854,11 +1945,11 @@ mod tests {
 			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 			?false]),
 			flag!(test_flag=>[
-		 	bool,
-		 	_t,
-		 	-[s f],
-		 	--["long", "long2"],
-		 	?false]),
+			bool,
+			_t,
+			-[s f],
+			--["long", "long2"],
+			?false]),
 			flag!(test_flag=>[
 			>bool,
 			=_t,
@@ -1887,17 +1978,20 @@ mod tests {
 				=_t,
 				-s -f,
 				--long long2,]),
+		);
+		assert_eqs!(
+			full.clone(),
 			flag!(test_flag=>[
 				=_t,
-				Vector(Some(vec!['s', 'f'])),
-				Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				-s,-f,
+				--[long,long2],
 				bool?false
 			]),
 			flag!(test_flag=>[
 				=_t,
-				Vector(Some(vec!['s', 'f'])),
-				[long, long2],
-				bool?false
+				s#Vector(Some(vec!['s', 'f'])),
+				--[long, long2],
+				>bool?false
 			]),
 			flag!(test_flag[
 				=_t,
@@ -1985,9 +2079,10 @@ mod tests {
 			flag!(test_flag=>[bool,_t,?]),
 			flag!(test_flag=>[>bool,_t,?false])
 		);
-		assert_eq!(
+		assert_eqs!(
 			full.clone().description(""),
-			flag!(test_flag=>[bool,=,-s,-f,--long,--long2,?false])
+			flag!(test_flag=>[bool,=,-s,-f,--long,--long2,?false]),
+			flag!(test_flag=>[bool,= -s -f --long --long2 ?false])
 		);
 		assert_eq!(
 			{
@@ -2058,6 +2153,15 @@ mod tests {
 			flag!(test_flag=>[bool,-s,-f,--long,--long2,="desc",?false])
 		);
 		assert_eqs!(
+			{ full.clone().description("desc") },
+			flag!(test_flag=>[="desc",-s,-f,--long,--long2,>bool?false]),
+			flag!(test_flag=>[="desc" -s -f --long --long2 >bool?false]),
+			flag!(test_flag=>[="desc" -s -f --long --long2 >bool?false]),
+			flag!(test_flag=>[_t -s -f --long --long2 bool?false]),
+			flag!(test_flag=>[>bool =_t -s -f --long --long2 ?false]),
+			flag!(test_flag=>[bool =_t -s -f --long --long2 ?false]),
+		);
+		assert_eqs!(
 			Flag::new("test_flag", FlagType::Bool, "desc")
 				.short_alias('s')
 				.short_alias('f'),
@@ -2091,13 +2195,30 @@ mod tests {
 			flag!(test_flag=>[bool,_t,--long,--long2,?false])
 		);
 		assert_eqs!(
-			full,
-			flag!(test_flag[bool, -s,-f,--long,--long2,="test",false]),
+			full.clone(),
+			flag!([test_flag][bool, -s,-f,--long,--long2,="test",false]),
 			flag!(*test_flag[bool, -s,-f,--long,--long2,="test",false]),
 			flag!(test_flag{bool, -s,-f,--long,--long2,="test",false}),
 			flag!(*test_flag{bool, -s,-f,--long,--long2,="test",false}),
 			flag!(@[String::from("test_flag")]=>{bool, -s,-f,--long,--long2,="test",false}),
 			flag!([test_flag]=>{bool, -s,-f,--long long2 ="test",false}),
+		);
+		assert_eqs!(
+			full,
+			flag!([test_flag]
+			[>bool]
+			[-s -f]
+			[--long --long2]
+			[="test"]
+			[?false]
+			),
+			flag!([test_flag]
+			[bool]
+			[="test"]
+			[-s -f]
+			[--long --long2]
+			[false]
+			),
 		);
 	}
 }

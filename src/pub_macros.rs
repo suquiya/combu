@@ -1161,23 +1161,38 @@ macro_rules! short_alias {
 	($($(-)?$s:ident),+$(,)?)=>{
 		$crate::short_alias![$($s)+]
 	};
-	($($s:literal)+)=>{
-		$crate::vector![$($s),+;:char]
-	};
-	($($s:literal),+)=>{
-		$crate::vector![$($s),+;:char]
+	($(-)?$s:ident,$($t:tt)*)=>{
+		$crate::short_alias!(=[$crate::char![$s],],$($t)*)
 	};
 	($(-)?$s:ident$($t:tt)*)=>{
 		$crate::short_alias!(=[$crate::char![$s],],$($t)*)
 	};
-	(=[$($t:tt)*],$s:ident$($t2:tt)*)=>{
-		$crate::short_alias!(=[$($t)*$crate::char![$s],],$(t2)*)
+	($($s:literal),+)=>{
+		$crate::vector![$($s),+;:char]
 	};
-	($(-)?$s:literal$($t:tt)*)=>{
-		$cratte::short_alias!(=[$s,],$($t:tt)*)
+	($($s:literal)+)=>{
+		$crate::vector![$($s),+;:char]
 	};
-	(=[$($t:tt)*],$s:literal$($t2:tt)*)=>{
-		$crate::short_alias!(=[$($t)*$s,],$(t2)*)
+	(=[$($t:tt)*],$(-)?$s:ident,$($t2:tt)*)=>{
+		$crate::short_alias!(=[$($t)*$crate::char![$s],],$($t2)*)
+	};
+	(=[$($t:tt)*],$(-)?$s:ident$($t2:tt)*)=>{
+		$crate::short_alias!(=[$($t)*$crate::char![$s],],$($t2)*)
+	};
+	(-$s:literal$($t:tt)*)=>{
+		$crate::short_alias!(=[$s,],$($t)*)
+	};
+	(=[$($t:tt)*],-$s:literal $($t2:tt)*)=>{
+		$crate::short_alias!(=[$($t)*],$s$($t2)*)
+	};
+	($s:literal$($t:tt)*)=>{
+		$crate::short_alias!(=[$s,],$($t)*)
+	};
+	(=[$($t:tt)*],$s:literal,$($t2:tt)*)=>{
+		$crate::short_alias!(=[$($t)*$s,],$($t2)*)
+	};
+	(=[$($t:tt)*],$s:literal $($t2:tt)*)=>{
+		$crate::short_alias!(=[$($t)*$s,],$($t2)*)
 	};
 	(=[$($t:tt)*],)=>{
 		$crate::vector!($($t)*;:char)
@@ -1197,7 +1212,7 @@ macro_rules! long_alias {
 		$crate::vector!(None;String)
 	};
 	(--[$($t:tt)*])=>{
-		long_alias!($($t)*)
+		$crate::long_alias!($($t)*)
 	};
 	($($l:ident)+)=>{
 		$crate::long_alias!($(stringify!($l)),+)
@@ -1222,6 +1237,21 @@ macro_rules! long_alias {
 	};
 	($($(--)?$l:literal),+$(,)?)=>{
 		$crate::long_alias!($($l),+)
+	};
+	($(--)?$l:ident,$($t:tt)*)=>{
+		$crate::long_alias!(=[stringify!($l),],$($t)*)
+	};
+	($(--)?$l:ident$($t:tt)*)=>{
+		$crate::long_alias!(=[stringify!($l)],$($t)*)
+	};
+	(=[$($t:tt)*],$(--)?$l:ident,$($t2:tt)*)=>{
+		$crate::long_alias!(=[$($t)*stringify!($l),],$($t2)*)
+	};
+	(=[$($t:tt)*],$(--)?$l:ident$($t2:tt)*)=>{
+		$crate::long_alias!(=[$($t)*stringify!($l),],$($t2)*)
+	};
+	(=[$($t:tt)*],)=>{
+		$crate::long_alias!($($t)*;=>String)
 	};
 	($long:expr)=>{
 		$crate::long_alias!(->$long)
@@ -1729,6 +1759,29 @@ mod tests {
 		};
 	}
 	#[test]
+	fn short_alias_macro_test() {
+		let _r = v!('a', 'b', 'c');
+		assert_eqs!(
+			_r,
+			short_alias![a, -b, c],
+			short_alias!('a' 'b' 'c'),
+			short_alias!['a' b c],
+			short_alias![-a,-'b' c],
+			short_alias!(a b,'c')
+		);
+		let _r = v!('s', 'f');
+		assert_eqs!(_r, short_alias!('s', 'f'), short_alias!('s' 'f'));
+	}
+
+	#[test]
+	fn long_alias_macro_test() {
+		let _r = v!["aaa","bbb","ccc";=>String];
+		assert_eq!(_r, long_alias!(--aaa, --bbb, --ccc));
+		assert_eq!(_r, long_alias!(aaa, bbb, ccc));
+		assert_eq!(_r, long_alias!(--aaa, bbb, ccc));
+		assert_eq!(_r, long_alias!("aaa", "bbb", "ccc"));
+	}
+	#[test]
 	fn flag_test() {
 		// flag![(test_flag=>[bool,-s,-f,--long,@"test",@def false]),];
 		let _t = "test";
@@ -2202,6 +2255,7 @@ mod tests {
 			flag!(*test_flag{bool, -s,-f,--long,--long2,="test",false}),
 			flag!(@[String::from("test_flag")]=>{bool, -s,-f,--long,--long2,="test",false}),
 			flag!([test_flag]=>{bool, -s,-f,--long long2 ="test",false}),
+			flag!([test_flag]=>{bool, -[s,'f'],--long long2 ="test",false}),
 		);
 		assert_eqs!(
 			full,

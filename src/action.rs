@@ -21,6 +21,16 @@ pub enum ActionResult {
 	Custom(Box<dyn Debug>),
 }
 
+impl ActionResult {
+	/// Returns true if self is done.
+	pub fn is_done(&self) -> bool {
+		match self {
+			ActionResult::Done => true,
+			_ => false,
+		}
+	}
+}
+
 /// ActionError stores error of action.
 #[derive(Debug)]
 pub struct ActionError {

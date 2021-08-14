@@ -179,16 +179,16 @@ impl License {
 		}
 	}
 	/// Returns function which outputs (long) expression (or detail of license) with wrapping Option.
-	pub fn output_fn(self) -> Option<fn(&Context) -> String> {
+	pub fn output_fn(&self) -> Option<fn(&Context) -> String> {
 		match self {
-			License(Some((_, outputter))) => Some(outputter),
+			License(Some((_, outputter))) => Some(*outputter),
 			License(None) => None,
 		}
 	}
 	/// Returns function of (long) expression (or detail of license). If self is License(None), this will panic.
-	pub fn output_fn_wrap(self) -> fn(&Context) -> String {
+	pub fn output_fn_unwrap(&self) -> fn(&Context) -> String {
 		match self {
-			License(Some((_, outputter))) => outputter,
+			License(Some((_, outputter))) => *outputter,
 			_ => panic!("called `License::output_fn_wrap` on a `None` value"),
 		}
 	}

@@ -10,7 +10,7 @@ use std::collections::VecDeque;
 /// This storage raw args, non-flag args, flag values, and etc.
 /// コマンドからrunを通ってactionにたどり着くまでの情報およびパース結果を格納する構造体。
 /// フラグの値、たどってきたルートなどを保管。
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Context {
 	/// raw args
 	pub raw_args: Vec<String>,

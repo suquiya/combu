@@ -9,25 +9,40 @@ macro_rules! v {
 #[macro_export]
 /// Creates new Vector.
 macro_rules! vector {
-	(:$ptype:ty,$($t:tt)*)=>{
+	(::<$ptype:ty>,$($t:tt)*)=>{
 		vector!($($t)*;:$ptype)
 	};
 	(=>$ptype:ty,$($t:tt)*)=>{
 		vector!($($t)*;=>$ptype)
 	};
-	($($(;)?$(:)?$type:ty$(,)?)?) => {
+	(None$($(;)?$(::)?<$type:ty>)?) => {
 		$crate::Vector$(::<$type>)?(None)
 	};
-	(None$($(;)?$(:)?$type:ty)?) => {
+	(None$($(;)?::$type:ty)?) => {
 		$crate::Vector$(::<$type>)?(None)
 	};
-	($elem:expr; $n:expr$(;$(:)?$type:ty)?)=>{
+	(None$($(;)?:$type:ty)?) => {
+		$crate::Vector$(::<$type>)?(None)
+	};
+	($($(;)?$(::)?<$type:ty>$(,)?)?) => {
+		$crate::Vector$(::<$type>)?(None)
+	};
+	($elem:expr; $n:expr$(;:$type:ty)?)=>{
+		$crate::Vector$(::<$type>)?(Some(vec![$elem,$n]))
+	};
+	($elem:expr; $n:expr$(;$(::)?<$type:ty>)?)=>{
 		$crate::Vector$(::<$type>)?(Some(vec![$elem,$n]))
 	};
 	($elem:expr; $n:expr;$(=>$type:ty)?)=>{
 		$crate::Vector$(::<$type>)?(Some(vec![$elem.into(),$n]))
 	};
-	($($x:expr),+ $(,)?$(;$(:)?$type:ty)?)=>{
+	($($x:expr),+ $(,)?$(;:$type:ty)?)=>{
+		$crate::Vector$(::<$type>)?(Some(vec![$($x),+]))
+	};
+	($($x:expr),+ $(,)?$(;::$type:ty)?)=>{
+		$crate::Vector$(::<$type>)?(Some(vec![$($x),+]))
+	};
+	($($x:expr),+ $(,)?$(;$(::)?<$type:ty>)?)=>{
 		$crate::Vector$(::<$type>)?(Some(vec![$($x),+]))
 	};
 	($($x:expr),+ $(,)?;$(=>$type:ty)?)=>{
@@ -1144,7 +1159,7 @@ macro_rules! short_alias {
 		$crate::short_alias!(None)
 	};
 	(None) => {
-		$crate::vector!(None;char)
+		$crate::vector!(None;:char)
 	};
 	($(-)?[$($t:tt)*])=>{
 		$crate::short_alias!($($t)*)
@@ -1161,11 +1176,8 @@ macro_rules! short_alias {
 	($($(-)?$s:ident),+$(,)?)=>{
 		$crate::short_alias![$($s)+]
 	};
-	($(-)?$s:ident,$($t:tt)*)=>{
-		$crate::short_alias!(=[$crate::char![$s],],$($t)*)
-	};
 	($(-)?$s:ident$($t:tt)*)=>{
-		$crate::short_alias!(=[$crate::char![$s],],$($t)*)
+		$crate::short_alias!(=[],$s$($t)*)
 	};
 	($($s:literal),+)=>{
 		$crate::vector![$($s),+;:char]
@@ -1180,13 +1192,13 @@ macro_rules! short_alias {
 		$crate::short_alias!(=[$($t)*$crate::char![$s],],$($t2)*)
 	};
 	(-$s:literal$($t:tt)*)=>{
-		$crate::short_alias!(=[$s,],$($t)*)
+		$crate::short_alias!(=[],$s$($t)*)
 	};
 	(=[$($t:tt)*],-$s:literal $($t2:tt)*)=>{
 		$crate::short_alias!(=[$($t)*],$s$($t2)*)
 	};
 	($s:literal$($t:tt)*)=>{
-		$crate::short_alias!(=[$s,],$($t)*)
+		$crate::short_alias!(=[],$s$($t)*)
 	};
 	(=[$($t:tt)*],$s:literal,$($t2:tt)*)=>{
 		$crate::short_alias!(=[$($t)*$s,],$($t2)*)
@@ -1209,19 +1221,13 @@ macro_rules! long_alias {
 		$crate::long_alias!(None)
 	};
 	(None) => {
-		$crate::vector!(None;String)
+		$crate::vector!(None;:String)
 	};
 	(--[$($t:tt)*])=>{
 		$crate::long_alias!($($t)*)
 	};
 	($($l:ident)+)=>{
-		$crate::long_alias!($(stringify!($l)),+)
-	};
-	($(--$l:ident),+$(,)?)=>{
-		$crate::long_alias!($($l)+)
-	};
-	($(--$l:ident)+$(,)?)=>{
-		$crate::long_alias!($($l)+)
+		$crate::vector!($(stringify!($l)),+;=>String)
 	};
 	($($(--)?$l:ident),+$(,)?)=>{
 		$crate::long_alias!($($l)+)
@@ -1229,20 +1235,23 @@ macro_rules! long_alias {
 	($($(--)?$l:ident)+$(,)?)=>{
 		$crate::long_alias!($($l)+)
 	};
-	($($(--)?$l:literal)+$(,)?)=>{
+	(--$l:ident$($t:tt)*)=>{
+		$crate::long_alias!(=[],$l$($t)*)
+	};
+	($(--$l:literal)+$(,)?)=>{
 		$crate::long_alias!($($l),+)
 	};
-	($($l:expr),+)=>{
+	($(--$l:literal),+$(,)?)=>{
 		$crate::vector!($($l),+;=>String)
 	};
-	($($(--)?$l:literal),+$(,)?)=>{
+	($($l:literal)+$(,)?)=>{
 		$crate::long_alias!($($l),+)
 	};
-	($(--)?$l:ident,$($t:tt)*)=>{
-		$crate::long_alias!(=[stringify!($l),],$($t)*)
+	($($l:literal),+$(,)?)=>{
+		$crate::vector!($($l),+;=>String)
 	};
 	($(--)?$l:ident$($t:tt)*)=>{
-		$crate::long_alias!(=[stringify!($l)],$($t)*)
+		$crate::long_alias!(=[],$l$($t)*)
 	};
 	(=[$($t:tt)*],$(--)?$l:ident,$($t2:tt)*)=>{
 		$crate::long_alias!(=[$($t)*stringify!($l),],$($t2)*)
@@ -1250,8 +1259,32 @@ macro_rules! long_alias {
 	(=[$($t:tt)*],$(--)?$l:ident$($t2:tt)*)=>{
 		$crate::long_alias!(=[$($t)*stringify!($l),],$($t2)*)
 	};
+	(--$l:literal$($t:tt)*)=>{
+		$crate::long_alias!(=[],$l$($t)*)
+	};
+	($l:literal$($t:tt)*)=>{
+		$crate::long_alias!(=[],$l$($t)*)
+	};
+	($($(--)?$l:literal)+$(,)?)=>{
+		$crate::long_alias!($($l),+)
+	};
+	($($(--)?$l:literal),+$(,)?)=>{
+		$crate::vector!($($l),+;=>String)
+	};
+	(=[$($t:tt)*],--$l:literal,$($t2:tt)*)=>{
+		$crate::long_alias!(=[$($t)*$l,],$($t2)*)
+	};
+	(=[$($t:tt)*],--$l:literal$($t2:tt)*)=>{
+		$crate::long_alias!(=[$($t)*$l,],$($t2)*)
+	};
+	(=[$($t:tt)*],$l:literal,$($t2:tt)*)=>{
+		$crate::long_alias!(=[$($t)*$l,],$($t2)*)
+	};
+	(=[$($t:tt)*],$l:literal$($t2:tt)*)=>{
+		$crate::long_alias!(=[$($t)*$l,],$($t2)*)
+	};
 	(=[$($t:tt)*],)=>{
-		$crate::long_alias!($($t)*;=>String)
+		$crate::vector!($($t)*;=>String)
 	};
 	($long:expr)=>{
 		$crate::long_alias!(->$long)
@@ -1709,7 +1742,7 @@ macro_rules! string_fn {
 		|_ctx: &$crate::Context| -> String { $string }
 	};
 	(file_path=>$file_path:expr) => {
-		string_fn!(include_str!($file_path))
+		$crate::string_fn!(include_str!($file_path))
 	};
 }
 
@@ -1719,6 +1752,9 @@ macro_rules! license {
 	(none) => {
 		$crate::command::License(None)
 	};
+	($expr:expr, $content:literal)=>{
+		$crate::license!($expr,->$content)
+	};
 	($expr:literal, $fn:expr)=>{
 		$crate::license!($expr.into(),$fn)
 	};
@@ -1727,6 +1763,15 @@ macro_rules! license {
 	};
 	($expr:expr,outputter=>$fn:expr)=>{
 		license!($expr,$fn)
+	};
+	($expr:expr, ->$content_result:literal)=>{
+		$crate::license!($expr,$crate::string_fn!($content_result))
+	};
+	($expr:expr, ->$content_result:expr)=>{
+		$crate::license!($expr,$crate::string_fn!($content_result))
+	};
+	($expr:expr, content=>$content:literal) => {
+		$crate::license!($expr, $crate::string_fn!($content))
 	};
 	($expr:expr, content=>$content:expr) => {
 		$crate::license!($expr, $crate::string_fn!($content))
@@ -1745,18 +1790,46 @@ macro_rules! license {
 	};
 	(expr=>$expr:expr, $i:ident=>$c:expr$(,)?)=>{
 		license!($expr,$i=>$c)
-	}
+	};
+	(->$license:expr)=>{
+		$license
+	};
 }
 
 #[cfg(test)]
 mod tests {
-	use crate::{Flag, FlagType, FlagValue, Vector};
+	use std::collections::VecDeque;
+
+	use crate::{
+		command::{presets, License},
+		Command, Context, Flag, FlagType, FlagValue, Vector,
+	};
 
 	macro_rules! assert_eqs {
 		($left:expr,$($right:expr),+$(,)?) => {
 			$(assert_eq!($left,$right);)+
-			//println!("OK: {:?}",$left);
 		};
+	}
+
+	#[test]
+	fn vector_macro_test() {
+		assert_eqs!(
+			Vector::<String>(None),
+			v!(),
+			v!(None),
+			v!(None; :String),
+			v!(::<String>)
+		);
+		let _r: Vector<String> = Vector(Some(vec!["a".to_owned(), "b".to_owned(), "c".to_owned()]));
+		assert_eq!(_r, v!("a".to_owned(), "b".to_owned(), "c".to_owned()));
+		assert_eq!(_r, v!("a".to_owned(), "b".to_owned(), "c".to_owned(),));
+		assert_eq!(
+			_r,
+			v!("a".to_owned(), "b".to_owned(), "c".to_owned();:String)
+		);
+		assert_eq!(_r, v!["a","b","c";=>String]);
+		assert_eq!(_r, v!["a","b","c",;=>String]);
+		let _r: Vector<String> = Vector(Some(vec!["a".to_owned(), "a".to_owned(), "a".to_owned()]));
 	}
 	#[test]
 	fn short_alias_macro_test() {
@@ -1779,11 +1852,13 @@ mod tests {
 		assert_eq!(_r, long_alias!(--aaa, --bbb, --ccc));
 		assert_eq!(_r, long_alias!(aaa, bbb, ccc));
 		assert_eq!(_r, long_alias!(--aaa, bbb, ccc));
-		assert_eq!(_r, long_alias!("aaa", "bbb", "ccc"));
+		assert_eq!(_r, long_alias!(--"aaa", --"bbb", --"ccc"));
+		assert_eq!(_r, long_alias!(aaa, "bbb", ccc));
+		assert_eq!(_r, long_alias!(aaa, "bbb", --ccc));
+		assert_eq!(_r, long_alias!(--aaa, --"bbb", ccc));
 	}
 	#[test]
 	fn flag_test() {
-		// flag![(test_flag=>[bool,-s,-f,--long,@"test",@def false]),];
 		let _t = "test";
 		let _t_string = String::from(_t);
 		let full = Flag {
@@ -2273,6 +2348,191 @@ mod tests {
 			[--long --long2]
 			[false]
 			),
+		);
+	}
+
+	fn get_context_for_test() -> Context {
+		let _r = License::new(Some(("test".into(), |_: &Context| -> String {
+			"test_license_content".to_owned()
+		})));
+		Context::new(
+			vec!["raw".into(), "arg".into(), "test".into()],
+			VecDeque::default(),
+			Vector::default(),
+			Vector::default(),
+			Vector::default(),
+			"exe_path".into(),
+			"now_cmd_authors".into(),
+			"now_cmd_version".into(),
+			"now_cmd_copyright".into(),
+			_r.clone(),
+		)
+	}
+
+	#[test]
+	fn license_macro_test() {
+		let _r = License::new(Some(("test".into(), |_: &Context| -> String {
+			"test_license_content".to_owned()
+		})));
+		let _c = get_context_for_test();
+
+		let comp = |left: &License, right: &License, c: &Context| {
+			assert_eq!(left.expr(), right.expr());
+			assert_eq!(left.output(c), right.output(c));
+		};
+		comp(&_r, &license!("test",->"test_license_content"), &_c);
+		comp(
+			&_r,
+			&license!("test",->"test_license_content".to_owned()),
+			&_c,
+		);
+		comp(&_r, &license!("test", "test_license_content"), &_c);
+		comp(
+			&_r,
+			&license!("test", string_fn!("test_license_content".to_owned())),
+			&_c,
+		);
+		comp(
+			&_r,
+			&license!("test", |_: &Context| -> String {
+				"test_license_content".into()
+			}),
+			&_c,
+		);
+		comp(
+			&_r,
+			&license!(expr=>"test", outputter=>|_: &Context| -> String {
+				"test_license_content".into()
+			}),
+			&_c,
+		);
+	}
+
+	fn compare_cmd(left: Command, right: Command, c: Context) {
+		assert_eq!(left.name, right.name);
+		match (left.action, right.action) {
+			(Some(la), Some(ra)) => {
+				assert!(la(c.clone()).unwrap().is_done());
+				assert!(ra(c.clone()).unwrap().is_done());
+				assert_eq!(la, ra);
+				assert_eq!(la as usize, ra as usize);
+			}
+			(None, None) => {}
+			(None, Some(_)) => {
+				panic!("action is not equal")
+			}
+			(Some(_), None) => {
+				panic!("action is not equal")
+			}
+		}
+		assert_eq!(left.authors, right.authors);
+		assert_eq!(left.copyright, right.copyright);
+		assert_eqs!(left.license.expr(), right.license.expr());
+		assert_eq!(left.license.output(&c), right.license.output(&c));
+		match (left.license.output_fn(), right.license.output_fn()) {
+			(Some(loutput), Some(routput)) => {
+				assert_eq!(loutput as usize, routput as usize);
+			}
+			(None, None) => {}
+			(_, _) => {
+				panic!("license output_fn not match!")
+			}
+		}
+		assert_eq!(left.description, right.description);
+		assert_eq!(left.usage, right.usage);
+		assert_eq!(left.alias, right.alias);
+		assert_eq!(left.version, right.version);
+		match (left.sub, right.sub) {
+			(Vector(None), Vector(None)) => {}
+			(Vector(Some(lsub)), Vector(Some(rsub))) => {
+				for (index, lsc) in lsub.iter().enumerate() {
+					compare_cmd(lsc.clone(), rsub[index].clone(), c.clone())
+				}
+			}
+			(_, _) => {
+				panic!("sub commands does not match");
+			}
+		}
+
+		match (left.help, right.help) {
+			(Some(_), Some(_)) => {
+				assert_eq!(left.help.unwrap() as usize, right.help.unwrap() as usize);
+			}
+			(None, None) => {}
+			(_, _) => {
+				panic!("help is not match")
+			}
+		}
+	}
+	#[test]
+	fn cmd_macro_test() {
+		let _act = |c: Context| -> action_result!() {
+			println!("action!{:?}", c);
+			assert_eq!(
+				c.raw_args,
+				vec!["raw".to_owned(), "arg".to_owned(), "test".to_owned()]
+			);
+			done!()
+		};
+		let _l = license!("test_license",->"test_license_fn");
+		let _lsub = license!("test_license_sub",->"test_license_fn_sub");
+		let _lleaf = license!("test_license_sub2",->"test_license_fn_sub2");
+		println!("{:?}", _l);
+		let leaf = Command::with_name("leaf")
+			.action(|c| {
+				println!("Context: {:?}", c);
+				done!()
+			})
+			.license(_lleaf.clone());
+		let sub = Command::with_name("sub")
+			.local_flag(Flag::new_bool("sub_local"))
+			.local_flag(Flag::new_string("sub_lstr"))
+			.common_flag(Flag::new_bool("sub_common"))
+			.local_flag(Flag::new_string("sub_cstr"))
+			.action(|c| {
+				assert_eq!(c.now_cmd_authors, "now_cmd_authors".to_owned());
+				done!()
+			})
+			.sub_command(leaf)
+			.license(_lsub.clone());
+		let sub2 = Command::with_name("sub").action(|_| {
+			println!("sub");
+			done!()
+		});
+		let _r = Command::with_all_field(
+			"test".into(),
+			Some(_act),
+			"suquiya test".into(),
+			"suquiya".into(),
+			_l.clone(),
+			Some("test_command".into()),
+			"test_usage".into(),
+			flags!({tlf[="test_local_flag" -l >bool?false]}),
+			flags!({tcf[="test_common_flag" -c >bool?false]}),
+			Vector(Some(vec!["alias".into(), "alias2".into()])),
+			"0.0.1".into(),
+			vector![sub.clone(),sub2.clone();:Command],
+			Some(presets::help),
+		);
+		let _c = get_context_for_test();
+
+		compare_cmd(
+			_r,
+			cmd!(test=>[
+				=_act,
+				<"suquiya test",
+				@"suquiya",
+				+ [->_l.clone()],
+				="test_command",
+				:"test_usage",
+				l#flags!({tlf[="test_local_flag" -l >bool?false]}),
+				c#flags!({tcf[="test_common_flag" -c >bool?false]}),
+				&Vector(Some(vec!["alias".into(), "alias2".into()])),
+				n "0.0.1",
+				| vector![sub.clone(),sub2.clone();:Command],
+				? presets::help
+			]),
+			_c.clone(),
 		);
 	}
 }

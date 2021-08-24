@@ -538,9 +538,45 @@ macro_rules! cmd {
 	($name:expr=>[$($t:tt)*])=>{
 		cmd!(->$crate::string_from!($name)=>[$($t)*])
 	};
+	(->$name:expr=>{$($at:tt)*}[,$($t:tt)*])=>{
+		cmd!(->$name=>{$($at)*}[$($t)*])
+	};
+	(->$name:expr=>{$($at:tt)*}[;$($t:tt)*])=>{
+		cmd!(->$name=>{$($at)*}[$($t)*])
+	};
+	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[>|$c:ident$(:Context)?|$(->$crate::action_result!())?$(->$r:ty)?{$($c2:tt)*}$($t:tt)*])=>{
+		cmd!(->$name=>{>[|$c:Context|->$crate::action_result!(){$($c2)*}],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
+	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[>$action:ident$($t:tt)*])=>{
+		cmd!(->$name=>{>[$action],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
 	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[>$action:expr$(,$($t:tt)*)?])=>{
 		cmd!(->$name=>{>[$action],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[>$action:expr$(;$($t:tt)*)?])=>{
+		cmd!(->$name=>{>[$action],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[<$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[<fc$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[<from_crate$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
@@ -569,9 +605,49 @@ macro_rules! cmd {
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
-	[@[$($license:tt)*]$(,$($t:tt)*)?])=>{
+	[@[$($license:tt)*]$($t:tt)*])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$($license)*],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
-		[$($($t)*)?])
+		[$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[@$lexpr:literal,$(->)?$lcontent:literal$($t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[@$lexpr:expr,$(->)?$lcontent:literal$($t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[@$lexpr:literal,->$lcontent:expr$(,$t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[@$lexpr:literal,->$lcontent:expr$(;$t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[@$lexpr:literal,$(fp)?:$lfile:expr$(,$t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,:$lfile],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[@$lexpr:literal,$lcontent:expr$(;$t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,:$lfile],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[@$lexpr:literal,$lcontent:expr$(,$t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[@$lexpr:literal,$lcontent:expr$(;$t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[@$license:expr$(,$($t:tt)*)?])=>{
@@ -579,14 +655,14 @@ macro_rules! cmd {
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
-	[=$description:literal$(,$($t:tt)*)?])=>{
+	[=$description:literal$($t:tt)*])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=[$description],:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
-		[$($($t)*)?])
+		[$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
-	[=[$($description:tt)*]$(,$($t:tt)*)?])=>{
+	[=[$($description:tt)*]$($t:tt)*])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=[$($description)*],:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
-		[$($($t)*)?])
+		[$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[:$usage:literal$(,$($t:tt)*)?])=>{
@@ -599,13 +675,28 @@ macro_rules! cmd {
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[l#{$($lf:tt)*}$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[$($lf)*],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[l#($($lf:tt)*)$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[$($lf)*],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[l#[$($lf:tt)*]$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[$($lf)*],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[l#$l_flags:expr$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[$l_flags],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[->$l_flags],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[c#$c_flags:expr$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#[$c_flags],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#[->$c_flags],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
@@ -650,7 +741,7 @@ macro_rules! cmd {
 	};
 	(->$name:expr=>{>[$($action:tt)*],<[$($authors:tt)*],@[$($copyright:tt)*],@[$($license:tt)*],=[$($description:tt)*],:[$($usage:tt)*],l#[$($l_flags:tt)*],c#[$($c_flags:tt)*],&[$($alias:tt)*],n[$($version:tt)*],+[$($sub:tt)*],?[$help:expr]}
 	[])=>{
-		cmd!(->$name=>[>$($action)*,<[$($authors)*],@[$($copyright)*],@[$($license)*],=[$crate::string_from!($($description)*)],:[$($usage)*],l#$($l_flags)*,c#$($c_flags)*,&[$($alias)*],n[$($version)*],+[$($sub)*],?$help])
+		cmd!(->$name=>[>$($action)*,<[$($authors)*],@[$($copyright)*],@[$($license)*],=[$crate::string_from!($($description)*)],:[$($usage)*],l#[$($l_flags)*],c#[$($c_flags)*],&[$($alias)*],n[$($version)*],+[$($sub)*],?$help])
 	};
 	(->$name:expr=>[>>$(>)*$action:expr$(,$($t:tt)*)?])=>{
 		$crate::cmd!(->$name=>{>,<,@,@,=,:,l#,c#,&,n,+,?}[>$action$(,$($t)*)?])
@@ -673,8 +764,8 @@ macro_rules! cmd {
 			@$license:tt,
 			$(=)+$desc:tt,
 			:$usage:tt,
-			l#$l_flags:expr,
-			c#$c_flags:expr,
+			l#$l_flags:tt,
+			c#$c_flags:tt,
 			&$alias:tt,
 			n $ver:tt,
 			+ $sub:tt,
@@ -689,8 +780,8 @@ macro_rules! cmd {
 			$crate::license!$license,
 			$crate::option_wrap!$desc,
 			$crate::string_from!$usage,
-			$l_flags,
-			$c_flags,
+			$crate::flags!$l_flags,
+			$crate::flags!$c_flags,
 			$crate::alias!$alias,
 			$crate::string_from!$ver,
 			$crate::cmds!$sub,
@@ -749,6 +840,9 @@ macro_rules! copyright {
 #[macro_export]
 /// Helps for creating flag*s*.
 macro_rules! flags {
+	(->$expr:expr)=>{
+		$expr
+	};
 	($($flag_arg:tt),* $(,)?) => {
 		$crate::vector![$($crate::flag!$flag_arg),*]
 	};
@@ -1962,6 +2056,12 @@ macro_rules! license {
 	($expr:expr,$fn:expr)=>{
 		$crate::command::License(Some(($expr,$fn)))
 	};
+	($expr:expr,fp:$file_path:expr)=>{
+		$crate::license!($expr,file_path=>$file_path)
+	};
+	($expr:expr,:$file_path:expr)=>{
+		$crate::license!($expr,fp:$file_path)
+	};
 	($expr:expr,outputter=>$fn:expr)=>{
 		license!($expr,$fn)
 	};
@@ -2631,8 +2731,8 @@ mod tests {
 		assert_eqs!(left.license.expr(), right.license.expr());
 		assert_eq!(left.license.output(&c), right.license.output(&c));
 		match (left.license.output_fn(), right.license.output_fn()) {
-			(Some(loutput), Some(routput)) => {
-				assert_eq!(loutput as usize, routput as usize);
+			(Some(_loutput), Some(_routput)) => {
+				//assert_eq!(_loutput as usize, _routput as usize);
 			}
 			(None, None) => {}
 			(_, _) => {
@@ -2803,10 +2903,10 @@ mod tests {
 				? presets::help
 			]),
 			cmd!("test"[
-				>act,
+				>act
 				<crate_authors!(),
 				@"suquiya copyright",
-				@_l.clone(),
+				@["test_license",->"test_license_fn"],
 				="test_command",
 				:"test_usage",
 				l#flags!({tlf[="test_local_flag" -l >bool?false]}),
@@ -2814,6 +2914,20 @@ mod tests {
 				&[alias, alias2],
 				n "0.0.1",
 				+ [sub.clone(),sub2.clone();:Command],
+				? presets::help
+			]),
+			cmd!("test"[
+				>act
+				<crate_authors!(),
+				@"suquiya copyright",
+				@"test_license","test_license_fn",
+				="test_command",
+				:"test_usage",
+				l#({tlf[="test_local_flag" -l >bool?false]}),
+				c#flags!({tcf[="test_common_flag" -c >bool?false]}),
+				&[alias, alias2],
+				n "0.0.1",
+				+ [sub.clone(),sub2.clone()],
 				? presets::help
 			]),
 		);

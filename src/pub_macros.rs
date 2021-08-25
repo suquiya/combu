@@ -685,14 +685,14 @@ macro_rules! cmd {
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
-	[l#{$($lf:tt)*}$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[$($lf)*],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
-		[$($($t)*)?])
+	[l#{$($lf:tt)*}$($t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[l#[$($lf)*]$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
-	[l#($($lf:tt)*)$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[$($lf)*],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
-		[$($($t)*)?])
+	[l#($($lf:tt)*)$($t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[l#[$($lf)*]$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[l#[$($lf:tt)*]$(,$($t:tt)*)?])=>{
@@ -703,6 +703,21 @@ macro_rules! cmd {
 	[l#$l_flags:expr$(,$($t:tt)*)?])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[->$l_flags],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
 		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[c#{$($cf:tt)*}$($t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[c#[$($cf)*]$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[c#($($cf:tt)*)$($t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[c#[$($cf)*]$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[c#[$($cf:tt)*]$($t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#[$($cf)*],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[c#$c_flags:expr$(,$($t:tt)*)?])=>{
@@ -2934,7 +2949,7 @@ mod tests {
 				="test_command",
 				:"test_usage",
 				l#({tlf[="test_local_flag" -l >bool?false]}),
-				c#flags!({tcf[="test_common_flag" -c >bool?false]}),
+				c#({tcf[="test_common_flag" -c >bool?false]}),
 				&[alias, alias2],
 				n "0.0.1",
 				+ [sub.clone(),sub2.clone()],

@@ -621,6 +621,11 @@ macro_rules! cmd {
 		[(c)$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[(c)$($copyright:literal)+$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright),+],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[(c)$copyright:literal$(,$($t:tt)*)?])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$copyright],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
 		[$($($t)*)?])
@@ -939,23 +944,35 @@ macro_rules! copyright {
 	([$year:literal]) => {
 		$crate::copyright!($year, $crate::crate_authors!())
 	};
-	([$year:literal,$holder:ident]) => {
+	([$year:literal$(,)?$holder:ident]) => {
 		$crate::copyright!($year, stringify!($holder))
 	};
-	([$year:literal,$holder:expr]) => {
+	([$year:literal$(,)?$holder:expr]) => {
 		copyright!($year, $holder)
 	};
-	($year:literal,$holder:ident) => {
+	($year:literal$(,)?$holder:ident) => {
 		copyright!($year, stringify!($holder))
 	};
-	($year:literal,$holder:expr) => {
+	($year:literal$(,)?$holder:expr) => {
 		$crate::copyright!("Copyright (c)", $year, $holder)
 	};
-	([$prefix:expr, $year:literal,$holder:ident]) => {
+	([$prefix:literal$(,)?$year:literal$(,)?$holder:ident]) => {
 		$crate::copyright!($prefix, $year, stringify!($holder))
 	};
-	([$prefix:expr, $year:literal,$holder:expr]) => {
+	([$prefix:literal$(,)?$year:literal$(,)?$holder:expr]) => {
 		$crate::copyright!($prefix, $year, $holder)
+	};
+	([$prefix:expr, $year:literal$(,)?$holder:ident]) => {
+		$crate::copyright!($prefix, $year, stringify!($holder))
+	};
+	([$prefix:expr, $year:literal$(,)?$holder:expr]) => {
+		$crate::copyright!($prefix, $year, $holder)
+	};
+	($prefix:literal$(,)? $year:literal$(,)?$holder:literal) => {
+		concat!($prefix," ", $year," ", $holder).to_owned()
+	};
+	($prefix:literal$(,)? $year:literal$(,)?$holder:ident) => {
+		copyright!($prefix, $year, stringify!($holder))
 	};
 	($prefix:expr, $year:expr,$holder:ident) => {
 		copyright!($prefix, $year, stringify!($holder))
@@ -3217,8 +3234,8 @@ mod tests {
 			cmd!("test"[
 				action=>act
 				authors=crate_authors!(),
-				(c)"suquiya copyright",
-				@"test_license","test_license_fn",
+				(c)2020 "suquiya",
+				(l)"test_license","test_license_fn",
 				="test_command",
 				:"test_usage",
 				l#{tlf[="test_local_flag" -l >bool?false]},

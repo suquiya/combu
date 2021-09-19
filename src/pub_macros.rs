@@ -1,3 +1,6 @@
+//! export macros for combu
+//! combuのためのエクスポート用マクロ集
+
 #[macro_export]
 /// Creates new Vector.
 macro_rules! v {
@@ -1160,7 +1163,8 @@ macro_rules! flag {
 }
 
 #[macro_export]
-/// flag basic constructor
+#[doc(hidden)]
+// flag basic constructor
 macro_rules! _flag_basic_constructor {
 	(->$name:expr=>[
 		$(=)?$description:expr,
@@ -1190,7 +1194,8 @@ macro_rules! _flag_basic_constructor {
 }
 
 #[macro_export]
-/// inner for first parse name and tify little after name.
+#[doc(hidden)]
+// inner for first parse name and tify little after name.
 macro_rules! _ffp {
 	(->$name:ident$t:tt)=>{
  		$crate::_fsp!(->$name=>$t)
@@ -1261,7 +1266,8 @@ macro_rules! _ffp {
 }
 
 #[macro_export]
-/// macro for inner flag
+#[doc(hidden)]
+// macro for inner flag
 macro_rules! _fsp {
 	(*$($t:tt)*)=>{
 		$crate::flag!($($t)*)
@@ -1302,7 +1308,8 @@ macro_rules! _fsp {
 }
 
 #[macro_export]
-/// macro for innser flag
+#[doc(hidden)]
+// macro for innser flag
 macro_rules! _ftp{
 	(->$name:expr=>$t:tt$($t2:tt)+)=>{
 		{
@@ -1374,7 +1381,8 @@ macro_rules! _ftp{
 	};
 }
 #[macro_export]
-/// macro for innser flag
+#[doc(hidden)]
+// macro for innser flag
 macro_rules! _ftp_s {
 	(->$name:expr=>{$($at:tt)*}[$($t:tt)*])=>{
 		$crate::_ftp_t!(->$name=>{$($at)*}[$($t)*])
@@ -1385,7 +1393,8 @@ macro_rules! _ftp_s {
 }
 
 #[macro_export]
-/// macro for innser flag
+#[doc(hidden)]
+// macro for innser flag
 macro_rules! _ftp_t {
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}[,$($t:tt)*])=>{
@@ -1796,7 +1805,8 @@ macro_rules! long_alias {
 }
 
 #[macro_export]
-/// inner macro in flag! macro
+#[doc(hidden)]
+// inner macro in flag! macro
 macro_rules! _fp_ident_s_assigner {
 	(->$name:expr=>$({$($ta:tt)*})?[a$($t:tt)*],$macro:ident$(,$($p:tt)*)?) => {
 		$crate::$macro!(->$name=>$({$($ta)*})?[-a$($t)*])
@@ -1960,7 +1970,8 @@ macro_rules! _fp_ident_s_assigner {
 }
 
 #[macro_export]
-/// sub macro for flag
+#[doc(hidden)]
+// sub macro for flag
 macro_rules! _fp_ident_ft_assigner {
 	(->$name:expr=>$({$($ta:tt)*})?[bool$($t:tt)*],$macro:ident$(,$($p:tt)*)?)=>{
 		$crate::$macro!(->$name=>$({$($ta)*})?[>bool$($t)*])

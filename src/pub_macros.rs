@@ -624,6 +624,16 @@ macro_rules! cmd {
 		[(c)$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[(c)$($copyright:literal),+$(;$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright),+],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[(c)$($year:literal)?$(,)?...$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($year,)?...],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[(c)$($copyright:literal)+$(,$($t:tt)*)?])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright),+],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
 		[$($($t)*)?])
@@ -649,7 +659,7 @@ macro_rules! cmd {
 		[$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
-	[(l)$lexpr:literal,$(->)?$lcontent:literal$($t:tt)*])=>{
+	[(l)$lexpr:literal$(,)?$(->)?$lcontent:literal$($t:tt)*])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
 		[$($t)*])
 	};
@@ -669,7 +679,7 @@ macro_rules! cmd {
 		[$($t)*])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
-	[(l)$lexpr:literal,$(fp)?:$lfile:expr$(,$t:tt)*])=>{
+	[(l)$lexpr:literal$(,)?$(fp)?:$lfile:expr$(,$t:tt)*])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,:$lfile],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
 		[$($t)*])
 	};
@@ -685,6 +695,11 @@ macro_rules! cmd {
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
 	[(l)$lexpr:literal,$lcontent:expr$(;$t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
+		[$($t)*])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?,?$([$help:expr])?}
+	[(l)$lexpr:literal $lcontent:expr$(;$t:tt)*])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?,?$([$help])?}
 		[$($t)*])
 	};
@@ -918,7 +933,7 @@ macro_rules! cmd {
 }
 
 #[macro_export]
-/// Create copyright macro
+/// Macro for creating copyright
 macro_rules! copyright {
 	($raw_str:literal) => {
 		$raw_str.to_string()
@@ -933,10 +948,10 @@ macro_rules! copyright {
 		$crate::copyright!("Copyright (c)", "", $crate::crate_authors!())
 	};
 	(...$(,)?$year:literal)=>{
-		$crate::copyright!("Copyright (c)", $year, $crate::crate_authors!)
+		$crate::copyright!("Copyright (c)", $year, $crate::crate_authors!())
 	};
 	($year:literal$(,)?...)=>{
-		$crate::copyright!("Copyright (c)", $year, $crate::crate_authors!)
+		$crate::copyright!("Copyright (c)", $year, $crate::crate_authors!())
 	};
 	({$($t:tt)+})=>{
 		copyright!([$($t:tt)+])
@@ -3239,14 +3254,14 @@ mod tests {
 			]),
 		);
 
-		let _r = r.copyright(copyright![2020, suquiya]);
+		let _r = r.clone().copyright(copyright![2020, suquiya]);
 		compare_cmd(
 			_r.clone(),
 			cmd!("test"[
 				action=>act
 				authors=crate_authors!(),
-				(c)2020 "suquiya",
-				(l)"test_license","test_license_fn",
+				(c)2020,"suquiya";
+				(l)"test_license" "test_license_fn",
 				="test_command",
 				:"test_usage",
 				l#{tlf[="test_local_flag" -l >bool?false]},
@@ -3258,7 +3273,49 @@ mod tests {
 				+ sub2.clone(),
 				? presets::help
 			]),
-			_c,
+			_c.clone(),
+		);
+		let _r = r.clone().copyright(copyright![...]);
+		compare_cmd(
+			_r.clone(),
+			cmd!("test"[
+				action=>act
+				authors=crate_authors!(),
+				(c)...,
+				(l)"test_license" "test_license_fn",
+				="test_command",
+				:"test_usage",
+				l#{tlf[="test_local_flag" -l >bool?false]},
+				c#{tcf[="test_common_flag" -c >bool?false]},
+				&alias,
+				&alias2,
+				n "0.0.1",
+				+ sub.clone(),
+				+ sub2.clone(),
+				? presets::help
+			]),
+			_c.clone(),
+		);
+		let _r = r.clone().copyright(copyright![2020,...]);
+		compare_cmd(
+			_r.clone(),
+			cmd!("test"[
+				action=>act
+				authors=crate_authors!(),
+				(c)2020,...,
+				(l)"test_license" "test_license_fn",
+				="test_command",
+				:"test_usage",
+				l#{tlf[="test_local_flag" -l >bool?false]},
+				c#{tcf[="test_common_flag" -c >bool?false]},
+				&alias,
+				&alias2,
+				n "0.0.1",
+				+ sub.clone(),
+				+ sub2.clone(),
+				? presets::help
+			]),
+			_c.clone(),
 		);
 	}
 }

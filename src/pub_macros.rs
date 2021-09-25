@@ -3318,7 +3318,7 @@ mod tests {
 				(l)"test_license" "test_license_fn",
 				="test_command",
 				:"test_usage",
-				l#{tlf[="test_local_flag" -l >bool?false]},
+				l#tlf[="test_local_flag" -l >bool?false],
 				c#{tcf[="test_common_flag" -c >bool?false]},
 				&alias,
 				&alias2,

@@ -2,7 +2,7 @@ use crate::{
 	command::License,
 	parser::{ErrorInfo, MiddleArg},
 	vector::flag::{FlagSearch, LongFound},
-	Flag, FlagValue, Vector,
+	Command, Flag, FlagValue, Vector,
 };
 use std::collections::VecDeque;
 
@@ -20,8 +20,6 @@ pub struct Context {
 	pub common_flags: Vector<Vector<Flag>>,
 	/// routes of from root to end
 	pub routes: Vector<String>,
-	/// local flags
-	pub local_flags: Vector<Flag>,
 	/// exe_path (String, not PathBuf)
 	pub exe_path: String,
 	/// storage of result of parsing common flags values
@@ -34,13 +32,13 @@ pub struct Context {
 	/// error inforamation list of parsing
 	pub error_info_list: Vector<ErrorInfo>,
 	/// authors
-	pub now_cmd_authors: String,
+	pub cmd_authors: String,
 	/// version
-	pub now_cmd_version: String,
+	pub cmd_version: String,
 	/// licence information
-	pub now_cmd_license: License,
+	pub cmd_license: License,
 	/// copyright
-	pub now_cmd_copyright: String,
+	pub cmd_copyright: String,
 }
 
 impl Context {
@@ -49,29 +47,27 @@ impl Context {
 		raw_args: Vec<String>,
 		args: VecDeque<String>,
 		common_flags: Vector<Flag>,
-		local_flags: Vector<Flag>,
 		routes: Vector<String>,
 		exe_path: String,
-		now_cmd_authors: String,
-		now_cmd_version: String,
-		now_cmd_copyright: String,
-		now_cmd_license: License,
+		cmd_authors: String,
+		cmd_version: String,
+		cmd_copyright: String,
+		cmd_license: License,
 	) -> Context {
 		Context {
 			raw_args,
 			args,
 			common_flags: Vector(Some(vec![common_flags])),
 			routes: routes.into(),
-			local_flags,
 			exe_path,
 			common_flags_values: Vector::default(),
 			local_flags_values: Vector::default(),
 			parsing_args: None,
 			error_info_list: Vector::default(),
-			now_cmd_version,
-			now_cmd_authors,
-			now_cmd_copyright,
-			now_cmd_license,
+			cmd_version,
+			cmd_authors,
+			cmd_copyright,
+			cmd_license,
 		}
 	}
 
@@ -80,33 +76,31 @@ impl Context {
 		raw_args: Vec<String>,
 		args: VecDeque<String>,
 		common_flags: Vector<Vector<Flag>>,
-		local_flags: Vector<Flag>,
 		exe_path: String,
 		routes: Vector<String>,
 		common_flags_values: Vector<(String, FlagValue)>,
 		local_flags_values: Vector<(String, FlagValue)>,
 		parsing_args: Option<VecDeque<MiddleArg>>,
 		error_info_list: Vector<ErrorInfo>,
-		now_cmd_authors: String,
-		now_cmd_version: String,
-		now_cmd_copyright: String,
-		now_cmd_license: License,
+		cmd_authors: String,
+		cmd_version: String,
+		cmd_copyright: String,
+		cmd_license: License,
 	) -> Context {
 		Context {
 			raw_args,
 			args,
 			common_flags,
 			routes,
-			local_flags,
 			exe_path,
 			common_flags_values,
 			local_flags_values,
 			parsing_args,
 			error_info_list,
-			now_cmd_authors,
-			now_cmd_version,
-			now_cmd_copyright,
-			now_cmd_license,
+			cmd_authors,
+			cmd_version,
+			cmd_copyright,
+			cmd_license,
 		}
 	}
 
@@ -124,20 +118,6 @@ impl Context {
 	/// Change exe_path's value
 	pub fn change_current(mut self, path: String) {
 		self.exe_path = path;
-	}
-
-	/// Find long form of local flag matches name_or_alias
-	/// ロングフォームがname_or_aliasと一致するローカルフラグを検索してその結果を返す
-	#[inline]
-	pub fn find_local_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
-		self.local_flags.find_long_flag(name_or_alias)
-	}
-
-	/// Find short form of local flag matches name_or_alias
-	/// ショートフォームがname_or_aliasと一致するローカルフラグを検索してその結果を返す
-	#[inline]
-	pub fn find_local_short_flag(&self, short_alias: &char) -> Option<&Flag> {
-		self.local_flags.find_short_flag(short_alias)
 	}
 
 	/// Find long form of common flag matches name_or_alias
@@ -184,8 +164,12 @@ impl Context {
 
 	/// Takes flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
 	/// contextからフラグ値を取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はデフォルト値のコピー）そのものを返す
-	pub fn take_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
-		match self.take_local_flag_value_of(flag_name) {
+	pub fn take_flag_value_of(
+		&mut self,
+		current_command: &Command,
+		flag_name: &str,
+	) -> Option<FlagValue> {
+		match self.take_local_flag_value_of(flag_name, current_command) {
 			None => self.take_common_flag_value_of(flag_name),
 			val => val,
 		}
@@ -202,9 +186,13 @@ impl Context {
 
 	/// Takes flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
 	/// contextからローカルフラグの値を取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はデフォルト値のコピー）そのものを返す
-	pub fn take_local_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
+	pub fn take_local_flag_value_of(
+		&mut self,
+		flag_name: &str,
+		current_command: &Command,
+	) -> Option<FlagValue> {
 		match self.take_inputted_common_flag_value_of(flag_name) {
-			None => match self.local_flags.find(flag_name) {
+			None => match current_command.l_flags.find(flag_name) {
 				None => None,
 				Some(f) => Some(f.default_value.clone()),
 			},
@@ -261,8 +249,12 @@ impl Context {
 	/// Gets FlagValue's clone of the flag matches flag_name from context.
 	/// contextからフラグ値のcloneを取得する。フラグが設定されていない場合はNoneを返す
 	/// なお明示的に値が指定されない場合、Bool型のフラグであればFlagValue::Bool(true)とし、String型のフラグであればFlagValue::String(String::new())、それ以外の型のフラグではFlagValue::NoneをSomeで包んで返す
-	pub fn get_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
-		match self.get_local_flag_value_of(flag_name) {
+	pub fn get_flag_value_of(
+		&self,
+		flag_name: &str,
+		current_command: &Command,
+	) -> Option<FlagValue> {
+		match self.get_local_flag_value_of(flag_name, current_command) {
 			None => self.get_common_flag_value_of(flag_name),
 			flag_val => flag_val,
 		}
@@ -298,13 +290,17 @@ impl Context {
 	/// Gets FlagValue's clone of the common flag matches flag_name from context. If it is not defined, Returns None.
 	/// contextからユーザから指定された場合のローカルフラグ値のcloneを取得する。ユーザから入力されていないが定義されている場合はデフォルト値のクローンを返す。定義もされていない場合はNoneを返す。
 	/// なお明示的に値が指定されない場合、Bool型のフラグであればFlagValue::Bool(true)とし、String型のフラグであればFlagValue::String(String::new())、それ以外の型のフラグではFlagValue::NoneをSomeで包んで返す
-	pub fn get_local_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
+	pub fn get_local_flag_value_of(
+		&self,
+		flag_name: &str,
+		current_command: &Command,
+	) -> Option<FlagValue> {
 		match self.get_inputted_local_flag_value_of(flag_name) {
-			None => match self.local_flags.find(flag_name) {
+			None => match current_command.l_flags.find(flag_name) {
 				Some(f) => Some(f.default_value.clone()),
 				None => None,
 			},
-			Some(FlagValue::None) => match self.local_flags.find(flag_name) {
+			Some(FlagValue::None) => match current_command.l_flags.find(flag_name) {
 				Some(f) => Some(f.derive_flag_value_if_no_value()),
 				None => None,
 			},
@@ -337,8 +333,8 @@ impl Context {
 	}
 
 	/// Returns flag has specified name is true flag.
-	pub fn is_flag_true(&self, name: &str) -> bool {
-		Some(FlagValue::Bool(true)) == self.get_flag_value_of(name)
+	pub fn is_flag_true(&self, name: &str, current_command: &Command) -> bool {
+		Some(FlagValue::Bool(true)) == self.get_flag_value_of(name, current_command)
 	}
 }
 
@@ -353,17 +349,16 @@ impl<'a> From<Vec<String>> for Context {
 			raw_args,
 			args,
 			common_flags: Vector::default(),
-			local_flags: Vector::default(),
 			routes: Vector::default(),
 			exe_path,
 			common_flags_values: Vector::default(),
 			local_flags_values: Vector::default(),
 			parsing_args: None,
 			error_info_list: Vector::default(),
-			now_cmd_authors: String::default(),
-			now_cmd_version: String::default(),
-			now_cmd_license: License::default(),
-			now_cmd_copyright: String::default(),
+			cmd_authors: String::default(),
+			cmd_version: String::default(),
+			cmd_license: License::default(),
+			cmd_copyright: String::default(),
 		}
 	}
 }

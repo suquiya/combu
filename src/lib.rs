@@ -23,7 +23,7 @@ pub mod parser;
 pub mod vector;
 
 pub use action::{
-	Action, ActionError, ActionResult, ActionResult::Done, ActionResult::ShowHelpRequest,
+	Action, ActionError, ActionResult, ActionResult::Done, ActionResult::ParentActionRequest,
 };
 pub use command::Command;
 pub use context::Context;

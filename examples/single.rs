@@ -8,8 +8,8 @@ fn main() {
 		.single_run(env::args().collect::<Vec<String>>());
 }
 
-fn act(c: Context) -> Result<ActionResult, ActionError> {
-	let r = c.get_flag_value_of("reverse").unwrap();
+fn act(c: Context, cmd: Command) -> Result<ActionResult, ActionError> {
+	let r = c.get_flag_value_of("reverse", &cmd).unwrap();
 
 	println!(
 		"{}",

@@ -37,8 +37,6 @@ pub struct Command {
 	pub version: String,
 	///container of sub-command
 	pub sub: Vector<Command>,
-	///custom help fuction
-	pub help: Option<HelpFunc>,
 }
 
 // Helper inner macros
@@ -79,10 +77,10 @@ macro_rules! sub_check_field {
 
 macro_rules! sub_check {
 	($context:expr, $sub:expr, $self:expr) => {
-		sub_check_field!($context, now_cmd_authors, $sub, $self, authors);
-		sub_check_field!($context, now_cmd_version, $sub, $self, version);
-		sub_check_field!($context, now_cmd_copyright, $sub, $self, copyright);
-		sub_check_field!($context, now_cmd_license, $sub, $self, license: License);
+		sub_check_field!($context, cmd_authors, $sub, $self, authors);
+		sub_check_field!($context, cmd_version, $sub, $self, version);
+		sub_check_field!($context, cmd_copyright, $sub, $self, copyright);
+		sub_check_field!($context, cmd_license, $sub, $self, license: License);
 	};
 }
 
@@ -210,13 +208,12 @@ macro_rules! gen_context_for_self_action {
 			$raw_args,
 			$args,
 			$self.c_flags.take(),
-			$self.l_flags.take(),
 			$self.derive_route_init_vector(),
 			$exe_path,
-			take(&mut $self.authors),
-			take(&mut $self.version),
-			take(&mut $self.copyright),
-			$self.license.take(),
+			String::default(),
+			String::default(),
+			String::default(),
+			License::default(),
 		)
 	};
 	($self:expr, $raw_args:expr,$args:expr,$exe_path:expr, $inter_mediate_args:expr) => {
@@ -224,17 +221,16 @@ macro_rules! gen_context_for_self_action {
 			$raw_args,
 			$args,
 			$self.c_flags.take().into(),
-			$self.l_flags.take(),
 			$exe_path,
 			$self.derive_route_init_vector(),
 			Vector::default(),
 			Vector::default(),
 			Some($inter_mediate_args),
 			Vector(None),
-			take(&mut $self.authors),
-			take(&mut $self.version),
-			take(&mut $self.copyright),
-			$self.license.take(),
+			String::default(),
+			String::default(),
+			String::default(),
+			License::default(),
 		)
 	};
 }
@@ -259,7 +255,6 @@ macro_rules! gen_context_for_sub_run {
 			$raw_args,
 			$args,
 			Vector::with_first_elem($self.c_flags.take()),
-			Vector(None),
 			$exe_path,
 			$self.derive_route_init_vector(),
 			Vector::default(),
@@ -301,7 +296,6 @@ impl Command {
 			Vector::default(),
 			version.into(),
 			Vector::default(),
-			None,
 		)
 	}
 
@@ -320,7 +314,6 @@ impl Command {
 			alias: Vector::default(),
 			version: String::default(),
 			sub: Vector::default(),
-			help: None,
 		}
 	}
 
@@ -339,7 +332,6 @@ impl Command {
 		alias: Vector<String>,
 		version: String,
 		sub: Vector<Command>,
-		help: Option<HelpFunc>,
 	) -> Command {
 		Command {
 			name,
@@ -354,12 +346,11 @@ impl Command {
 			alias,
 			version,
 			sub,
-			help,
 		}
 	}
 
 	/// Run command with collecting args automatically
-	pub fn run_with_auto_arg_collect(&mut self) -> run_result!() {
+	pub fn run_with_auto_arg_collect(self) -> run_result!() {
 		match self.sub {
 			Vector(None) => {
 				let r = self.single_run(std::env::args().collect::<Vec<String>>());
@@ -370,37 +361,27 @@ impl Command {
 	}
 
 	/// Run command as single(do not have sub) command
-	pub fn single_run(&mut self, raw_args: Vec<String>) -> run_result!() {
+	/// ルートからサブコマンドがないシンプルな状態の時
+	/// アクションが登録されていなければサブコマンドがあるかを調査する
+	pub fn single_run(mut self, raw_args: Vec<String>) -> run_result!() {
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
-					let req = action(gen_context_for_self_action!(self, raw_args));
-					self.handle_action_result(req)
+					action(gen_context_for_self_action!(self, raw_args), self)
 				} else {
 					let mut context = gen_context_for_self_action!(self, raw_args);
 					//println!("single_run_context: {:?}", context);
-					context = Parser::default().parse_args_until_end(context);
-
-					let req = action(context);
-					self.handle_action_result(req)
+					context = Parser::default().parse_args_until_end(&self.l_flags, context);
+					action(context, self)
 				}
 			}
 			None => match self.sub {
 				Vector(None) => {
 					let c = gen_context_for_self_action!(self, raw_args);
-					self.handle_action_result(no_registered_error!(c))
+					no_registered_error!(c)
 				}
 				_ => self.run(raw_args),
 			},
-		}
-	}
-
-	/// Show command's help
-	pub fn show_help(&self, c: &Context) {
-		if let Some(help) = self.help {
-			println!("{}", help(&self, c));
-		} else {
-			println!("No help exist at this command.");
 		}
 	}
 
@@ -494,12 +475,6 @@ impl Command {
 		self
 	}
 
-	/// Set custom help function
-	pub fn help(mut self, help_function: HelpFunc) -> Self {
-		self.help = Some(help_function);
-		self
-	}
-
 	/// Returns true if name_or_alias matches command's name or one of alias at least
 	/// name_or_aliasがコマンド名かエイリアスのうち少なくとも一つにマッチした場合trueを返す
 	pub fn is(&self, name_or_alias: &str) -> bool {
@@ -566,7 +541,6 @@ impl From<String> for Command {
 			alias: Vector::default(),
 			version: String::default(),
 			sub: Vector::default(),
-			help: None,
 		}
 	}
 }
@@ -574,24 +548,24 @@ impl From<String> for Command {
 /// Trait for implementation Run function.
 pub trait Run<T> {
 	/// run function
-	fn run(&mut self, args: T) -> run_result!();
+	fn run(self, args: T) -> run_result!();
 }
 
 impl Run<Vec<String>> for Command {
-	fn run(&mut self, args: Vec<String>) -> run_result!() {
+	fn run(self, args: Vec<String>) -> run_result!() {
 		self.run_from_args(args)
 	}
 }
 
 impl Run<Context> for Command {
-	fn run(&mut self, c: Context) -> run_result!() {
+	fn run(self, c: Context) -> run_result!() {
 		self.run_with_context(c)
 	}
 }
 
 impl Command {
 	/// Run commands with raw_args
-	pub fn run_from_args(&mut self, raw_args: Vec<String>) -> run_result!() {
+	pub fn run_from_args(mut self, raw_args: Vec<String>) -> run_result!() {
 		if self.sub.is_none() {
 			return self.single_run(raw_args);
 		}
@@ -602,11 +576,8 @@ impl Command {
 			//引数がない場合
 			let c = gen_context_for_self_action!(self, raw_args, args, exe_path);
 			match self.action {
-				Some(action) => {
-					let req = action(c);
-					self.handle_action_result(req)
-				}
-				None => self.handle_action_result(no_registered_error!(c)),
+				Some(action) => action(c, self),
+				None => no_registered_error!(c),
 			}
 		} else {
 			//get before first non-flag arg with parsing flags
@@ -625,22 +596,23 @@ impl Command {
 				Some(arg) => {
 					match self.take_sub(&arg) {
 						None => {
+							// ルートコマンド実行のとき
 							args.push_front(arg);
 							let mut c = gen_context_for_self_action!(self, raw_args, args, exe_path);
 							match self.action {
-								None => self.handle_action_result(no_registered_error!(c)),
+								None => no_registered_error!(c),
 								Some(action) => {
-									c = p.parse_args_until_end(c);
-									self.handle_action_result(action(c))
+									c = p.parse_args_until_end(&self.l_flags, c);
+									action(c, self)
 								}
 							}
 						}
 						Some(mut sub) => {
-							//println!("{}", sub.name);
-							//let common_flag = ;
+							// サブコマンドがヒットしたとき
 							let c = gen_context_for_sub_run!(self, sub, raw_args, args, exe_path);
 							let r = sub.run(c);
-							r
+							// サブコマンドの結果をハンドリング
+							self.handle_sub_result(r)
 						}
 					}
 				}
@@ -653,22 +625,22 @@ impl Command {
 	}
 
 	/// Run command with context
-	pub fn run_with_context(&mut self, mut context: Context) -> run_result!() {
+	pub fn run_with_context(mut self, mut context: Context) -> run_result!() {
 		if self.sub.is_none() {
-			context.local_flags = self.l_flags.take();
+			// サブコマンドがない場合
 			context.common_flags.push(self.c_flags.take());
-
 			let p = Parser::default();
-			let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
+			let (mut context, non_flag_args) =
+				p.parse_inter_mediate_args(&self.l_flags, context, true);
 			if let Some(mut non_flag_args) = non_flag_args {
 				non_flag_args.append(&mut context.args);
 				context.args = non_flag_args;
 			}
-			context = p.parse_args_until_end(context);
+			context = p.parse_args_until_end(&self.l_flags, context);
 			context.routes.push(self.name.clone());
 			match self.action {
-				Some(action) => self.handle_action_result(action(context)),
-				None => self.handle_action_result(no_registered_error!(context)),
+				Some(action) => action(context, self),
+				None => no_registered_error!(context),
 			}
 		} else {
 			//サブコマンドと一致するかを捜査
@@ -687,34 +659,32 @@ impl Command {
 					//println!("arg sub-sub: {}", &arg);
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
-							//println!("{}", &sub.name);
 							context.common_flags.push(self.c_flags.take());
 							sub_check!(context, sub, self);
 							println!("{:?}", &context);
 							let r = sub.run(context);
-							r
+							self.handle_sub_result(r)
 						}
 						None => {
 							context.common_flags.push(self.c_flags.take());
-							context.local_flags = self.l_flags.take();
 							match self.action {
-								None => self.handle_action_result(no_registered_error!(context)),
+								None => no_registered_error!(context),
 								Some(action) => {
-									let c = match p.parse_inter_mediate_args(context, true) {
+									let c = match p.parse_inter_mediate_args(&self.l_flags, context, true) {
 										(mut context, None) => {
-											context = p.parse_args_until_end(context);
+											context = p.parse_args_until_end(&self.l_flags, context);
 											context.args.push_front(arg);
 											context
 										}
 										(mut context, Some(mut non_flag_args)) => {
-											context = p.parse_args_until_end(context);
+											context = p.parse_args_until_end(&self.l_flags, context);
 											context.args.push_front(arg);
 											non_flag_args.append(&mut context.args);
 											context.args = non_flag_args;
 											context
 										}
 									};
-									self.handle_action_result(action(c))
+									action(c, self)
 								}
 							}
 						}
@@ -724,26 +694,26 @@ impl Command {
 					//サブコマンド等の処理の必要がないのでこのまま叩き込む
 					match self.action {
 						Some(action) => {
-							context.local_flags = self.l_flags.take();
 							context.common_flags.push(self.c_flags.take());
 
-							let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
+							let (mut context, non_flag_args) =
+								p.parse_inter_mediate_args(&self.l_flags, context, true);
 							if let Some(mut non_flag_args) = non_flag_args {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
 							}
-							self.handle_action_result(action(context))
+							action(context, self)
 						}
 						None => {
-							context.local_flags = self.l_flags.take();
 							context.common_flags.push(self.c_flags.take());
 
-							let (mut context, non_flag_args) = p.parse_inter_mediate_args(context, true);
+							let (mut context, non_flag_args) =
+								p.parse_inter_mediate_args(&self.l_flags, context, true);
 							if let Some(mut non_flag_args) = non_flag_args {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
 							}
-							self.handle_action_result(no_registered_error!(context))
+							no_registered_error!(context)
 						}
 					}
 				}
@@ -751,10 +721,10 @@ impl Command {
 		}
 	}
 
-	/// Assign context to sub command or command's own action.
+	/// Assign context to sub command or self own action.
 	/// コンテキストのargsを見てもサブコマンド行きかコマンドでそのまま処理すればいいか分からなかった時の処理用
 	pub fn assign_context(
-		&mut self,
+		mut self,
 		mut c: Context,
 		p: Parser,
 		mut inter_mediate_args: VecDeque<MiddleArg>,
@@ -767,6 +737,7 @@ impl Command {
 		match next_non_flag {
 			Some(arg) => match self.take_sub(&arg) {
 				Some(mut sub) => {
+					// サブコマンド実行だった時
 					c.common_flags.push(self.c_flags.take());
 					c.args = args;
 					inter_mediate_args.push_back(last);
@@ -778,11 +749,12 @@ impl Command {
 					}
 					sub_check!(c, sub, self);
 					let r = sub.run(c);
-					r
+					self.handle_sub_result(r)
 				}
 				None => match &last {
 					MiddleArg::LongFlag(_, FlagValue::None)
 					| MiddleArg::ShortFlag(_, FlagValue::None) => {
+						// 値が設定されていないフラグが前の引数の時はそのフラグの値として扱い、次の引数をハンドリング
 						inter_mediate_args.push_back(last);
 						inter_mediate_args.push_back(MiddleArg::Normal(arg));
 						c.args = args;
@@ -806,7 +778,7 @@ impl Command {
 									}
 									sub_check!(c, sub, self);
 									let r = sub.run(c);
-									r
+									self.handle_sub_result(r)
 								}
 								None => {
 									if let Some(mut parsing_args) = c.parsing_args {
@@ -815,19 +787,18 @@ impl Command {
 									} else {
 										c.parsing_args = Some(inter_mediate_args);
 									}
-
-									c.local_flags = self.l_flags.take();
 									c.common_flags.push(self.c_flags.take());
-									let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
-									c = p.parse_args_until_end(c);
+									let (mut c, non_flag_args) =
+										p.parse_inter_mediate_args(&self.l_flags, c, false);
+									c = p.parse_args_until_end(&self.l_flags, c);
 									c.args.push_front(arg);
 									if let Some(mut non_flag_args) = non_flag_args {
 										non_flag_args.append(&mut c.args);
 										c.args = non_flag_args;
 									}
 									match self.action {
-										Some(action) => self.handle_action_result(action(c)),
-										None => self.handle_action_result(no_registered_error!(c)),
+										Some(action) => action(c, self),
+										None => self.handle_sub_result(no_registered_error!(c)),
 									}
 								}
 							},
@@ -838,16 +809,15 @@ impl Command {
 								} else {
 									c.parsing_args = Some(inter_mediate_args);
 								}
-								c.local_flags = self.l_flags.take();
-								let (mut c, args) = p.parse_inter_mediate_args(c, false);
+								let (mut c, args) = p.parse_inter_mediate_args(&self.l_flags, c, false);
 
 								if let Some(mut args) = args {
 									args.append(&mut c.args);
 									c.args = args;
 								}
 								match self.action {
-									Some(action) => self.handle_action_result(action(c)),
-									None => self.handle_action_result(no_registered_error!(c)),
+									Some(action) => action(c, self),
+									None => self.handle_sub_result(no_registered_error!(c)),
 								}
 							}
 						}
@@ -856,21 +826,20 @@ impl Command {
 						inter_mediate_args.push_back(last);
 						c.args = args;
 						c.common_flags.push(self.c_flags.take());
-						c.local_flags = self.l_flags.take();
 						if let Some(mut parsing_args) = c.parsing_args {
 							parsing_args.append(&mut inter_mediate_args);
 							c.parsing_args = Some(parsing_args);
 						}
-						let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
-						c = p.parse_args_until_end(c);
+						let (mut c, non_flag_args) = p.parse_inter_mediate_args(&self.l_flags, c, false);
+						c = p.parse_args_until_end(&self.l_flags, c);
 						c.args.push_front(arg);
 						if let Some(mut non_flag_args) = non_flag_args {
 							non_flag_args.append(&mut c.args);
 							c.args = non_flag_args;
 						}
 						match self.action {
-							Some(action) => self.handle_action_result(action(c)),
-							None => self.handle_action_result(no_registered_error!(c)),
+							Some(action) => action(c, self),
+							None => no_registered_error!(c),
 						}
 					}
 				},
@@ -885,15 +854,14 @@ impl Command {
 					c.parsing_args = Some(inter_mediate_args);
 				}
 				c.common_flags.push(self.c_flags.take());
-				c.local_flags = self.l_flags.take();
-				let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
+				let (mut c, non_flag_args) = p.parse_inter_mediate_args(&self.l_flags, c, false);
 				//println!("after_parse_ima:{:?}", c);
 				if let Some(non_flag_args) = non_flag_args {
 					//non_flag_args.append(&mut c.args);
 					c.args = non_flag_args;
 				}
 				match self.action {
-					Some(action) => self.handle_action_result(action(c)),
+					Some(action) => action(c, self),
 					None => no_registered_error!(c),
 				}
 			}
@@ -903,7 +871,7 @@ impl Command {
 	/// Assign subcomannd's run or command's own action with no context
 	/// コンテキストが生成されていないときに、run_from_args内で第一引数からサブコマンドかそうでないか分からなかった時に再帰処理を行って割り当てを行う関数
 	pub fn assign_run(
-		&mut self,
+		mut self,
 		mut args: VecDeque<String>,
 		mut inter_mediate_args: VecDeque<MiddleArg>,
 		p: Parser,
@@ -970,16 +938,17 @@ impl Command {
 												exe_path,
 												inter_mediate_args
 											);
-											let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
-											c = p.parse_args_until_end(c);
+											let (mut c, non_flag_args) =
+												p.parse_inter_mediate_args(&self.l_flags, c, false);
+											c = p.parse_args_until_end(&self.l_flags, c);
 											c.args.push_front(arg);
 											if let Some(mut non_flag_args) = non_flag_args {
 												non_flag_args.append(&mut c.args);
 												c.args = non_flag_args;
 											};
 											match self.action {
-												Some(action) => self.handle_action_result(action(c)),
-												None => self.handle_action_result(no_registered_error!(c)),
+												Some(action) => action(c, self),
+												None => no_registered_error!(c),
 											}
 										}
 									},
@@ -992,14 +961,15 @@ impl Command {
 											exe_path,
 											inter_mediate_args
 										);
-										let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
+										let (mut c, non_flag_args) =
+											p.parse_inter_mediate_args(&self.l_flags, c, false);
 										if let Some(mut non_flag_args) = non_flag_args {
 											non_flag_args.append(&mut c.args);
 											c.args = non_flag_args;
 										}
 										match self.action {
-											Some(action) => action(c),
-											None => self.handle_action_result(no_registered_error!(c)),
+											Some(action) => action(c, self),
+											None => no_registered_error!(c),
 										}
 									}
 								}
@@ -1016,16 +986,17 @@ impl Command {
 									exe_path,
 									inter_mediate_args
 								);
-								let (mut c, non_flag_args) = p.parse_inter_mediate_args(c, false);
-								c = p.parse_args_until_end(c);
+								let (mut c, non_flag_args) =
+									p.parse_inter_mediate_args(&self.l_flags, c, false);
+								c = p.parse_args_until_end(&self.l_flags, c);
 								c.args.push_front(arg);
 								if let Some(mut non_flag_args) = non_flag_args {
 									non_flag_args.append(&mut c.args);
 									c.args = non_flag_args;
 								}
 								match self.action {
-									Some(action) => self.handle_action_result(action(c)),
-									_ => self.handle_action_result(no_registered_error!(c)),
+									Some(action) => action(c, self),
+									_ => self.handle_sub_result(no_registered_error!(c)),
 								}
 							}
 						}
@@ -1038,40 +1009,37 @@ impl Command {
 				inter_mediate_args.push_back(last);
 				let context =
 					gen_context_for_self_action!(self, raw_args, args, exe_path, inter_mediate_args);
-				let (mut c, non_flag_args) = p.parse_inter_mediate_args(context, false);
+				let (mut c, non_flag_args) = p.parse_inter_mediate_args(&self.l_flags, context, false);
 				if let Some(mut non_flag_args) = non_flag_args {
 					non_flag_args.append(&mut c.args);
 					c.args = non_flag_args;
 				}
 
 				match self.action {
-					Some(action) => self.handle_action_result(action(c)),
-					None => self.handle_action_result(no_registered_error!(c)),
+					Some(action) => action(c, self),
+					None => self.handle_sub_result(no_registered_error!(c)),
 				}
 			}
 		}
 	}
 
-	/// Handle action's result (Result<ActionResult, ActionError>).
-	///Implemented: show help / show help following show error
-	/// アクションの結果であるResult<ActionResult, ActionError>をハンドルする関数。現在はhelp表示もしくはエラーを表示したのちのヘルプ表示のみ
-	pub fn handle_action_result(
-		&mut self,
-		mut req: Result<ActionResult, ActionError>,
-	) -> run_result!() {
+	/// Handle sub action's result (Result<ActionResult, ActionError>).
+	///Implemented: at ParentActionRequest and Err
+	/// アクションの結果であるResult<ActionResult, ActionError>をハンドルする関数。現在はParentActionRequestのハンドリング、もしくはエラー表示のみ
+	pub fn handle_sub_result(mut self, mut req: Result<ActionResult, ActionError>) -> run_result!() {
 		match req {
 			done!() => {
 				// Doneなら何もしないでreqを上にあげる
 				req
 			}
-			Ok(ActionResult::ShowHelpRequest(c)) => {
-				self.show_help(&c);
-				done!()
+			Ok(ActionResult::ParentActionRequest(c, cmd, action)) => {
+				// サブコマンドからリクエストが飛んでいた時はselfを与えてリクエストされたアクションを実行
+				self.sub.push(cmd);
+				action(c, self)
 			}
 			Err(ref mut err) => {
 				if !err.printed {
 					println!("error: {}", err);
-					self.show_help(&err.context);
 				}
 				err.printed = true;
 				req
@@ -1099,7 +1067,7 @@ mod tests {
 			"test".to_string(),
 			"test".to_string(),
 		];
-		let mut root = base_root().action(|c| {
+		let root = base_root().action(|c, _| {
 			println!("test_action: {:?}", c);
 			let raw_args = vec![
 				"exe_path".to_string(),
@@ -1124,8 +1092,8 @@ mod tests {
 		arg.push("--local=L_after".into());
 		arg.insert(1, "--common=C_before".into());
 		arg.insert(1, "--local=L_before".into());
-		let mut root = Command::with_name("root")
-			.action(|c| {
+		let root = Command::with_name("root")
+			.action(|c, _| {
 				println!("test_action: {:?}", c);
 				let raw_args: Vec<String> = vec![
 					"exe_path".to_string(),
@@ -1157,9 +1125,9 @@ mod tests {
 					("common".to_string(), FlagValue::String("C_after".into())),
 				]);
 				assert_eq!(c.common_flags_values, c_flag_values);
-				assert_eq!(c.now_cmd_version, "root_version".to_owned());
-				assert_eq!(c.now_cmd_copyright, "root_copyright".to_owned());
-				assert_eq!(c.now_cmd_license.unwrap().0, String::from("root_license"));
+				assert_eq!(c.cmd_version, "root_version".to_owned());
+				assert_eq!(c.cmd_copyright, "root_copyright".to_owned());
+				assert_eq!(c.cmd_license.unwrap().0, String::from("root_license"));
 				done!()
 			})
 			.common_flag(Flag::new(
@@ -1187,8 +1155,8 @@ mod tests {
 			"--local".to_string(),
 			"test".to_string(),
 		];
-		let mut root = Command::new()
-			.action(|mut c| {
+		let root = Command::new()
+			.action(|mut c, now| {
 				println!("test_action: {:?}", c);
 				let raw_args = vec![
 					"exe_path".to_string(),
@@ -1202,21 +1170,21 @@ mod tests {
 				assert_eq!(c.args, expect_args);
 				assert_eq!(c.exe_path, String::from("exe_path"));
 				assert_eq!(
-					c.get_local_flag_value_of("local"),
+					c.get_local_flag_value_of("local", &now),
 					Some(FlagValue::String("test".into()))
 				);
 				assert_eq!(
-					c.get_flag_value_of("local"),
+					c.get_flag_value_of("local", &now),
 					Some(FlagValue::String("test".into()))
 				);
 				assert_eq!(
-					c.get_flag_value_of("common"),
+					c.get_flag_value_of("common", &now),
 					Some(FlagValue::String(String::default()))
 				);
 				assert_eq!(c.routes, Vector(None));
-				assert_eq!(c.now_cmd_version, "root_version".to_owned());
-				assert_eq!(c.now_cmd_copyright, "root_copyright".to_owned());
-				let License(inner) = c.now_cmd_license.take();
+				assert_eq!(c.cmd_version, "root_version".to_owned());
+				assert_eq!(c.cmd_copyright, "root_copyright".to_owned());
+				let License(inner) = c.cmd_license.take();
 				let inner = inner.unwrap();
 				assert_eq!(inner.0, String::from("root_license"));
 				assert_eq!(inner.1(&c), String::from("root_license_content"));
@@ -1228,7 +1196,7 @@ mod tests {
 				"sample common flag",
 			))
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
-			.sub_command(Command::with_name("sub").action(|_| {
+			.sub_command(Command::with_name("sub").action(|_, _| {
 				println!("sub");
 				done!()
 			}))
@@ -1260,13 +1228,13 @@ mod tests {
 	macro_rules! assert_attrs {
 		($prefix:expr, $context:expr) => {
 			let prefix = String::from($prefix);
-			assert_eq!($context.now_cmd_authors, prefix.clone() + "authors");
-			assert_eq!($context.now_cmd_version, prefix.clone() + "version");
-			assert_eq!($context.now_cmd_copyright, prefix.clone() + "copyright");
+			assert_eq!($context.cmd_authors, prefix.clone() + "authors");
+			assert_eq!($context.cmd_version, prefix.clone() + "version");
+			assert_eq!($context.cmd_copyright, prefix.clone() + "copyright");
 			assert_eq!(
 				(
-					$context.now_cmd_license.expr_unwrap(),
-					$context.now_cmd_license.output_unwrap(&$context)
+					$context.cmd_license.expr_unwrap(),
+					$context.cmd_license.output_unwrap(&$context)
 				),
 				(prefix.clone() + "license", prefix + "license_content")
 			);
@@ -1275,20 +1243,20 @@ mod tests {
 	#[test]
 	fn run_root_with_flag_before_normal_arg() {
 		let mut arg = cnv_arg(vec!["exe_path", "--local=test"]);
-		let root = base_root().sub_command(Command::with_name("sub").action(|c| {
+		let root = base_root().sub_command(Command::with_name("sub").action(|c, _| {
 			panic!("not root, in sub: {:?}", c);
 		}));
 		arg.push("test".into());
 		let _ = root
 			.clone()
-			.action(|c| {
+			.action(|c, now| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "test"]),
 					c.raw_args
 				);
 				assert_eq!(
-					c.get_flag_value_of("local").unwrap(),
+					c.get_flag_value_of("local", &now).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(c.routes, Vector(None));
@@ -1299,18 +1267,18 @@ mod tests {
 		arg[2] = "--common".into();
 		let _ = root
 			.clone()
-			.action(|c| {
+			.action(|c, cur| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "--common"]),
 					c.raw_args
 				);
 				assert_eq!(
-					c.get_flag_value_of("local").unwrap(),
+					c.get_flag_value_of("local", &cur).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common").unwrap(),
+					c.get_flag_value_of("common", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
@@ -1322,7 +1290,7 @@ mod tests {
 		arg.push("test".into());
 		let _ = root
 			.clone()
-			.action(|c| {
+			.action(|c, cc| {
 				println!("{:?}", c);
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "--common", "test"]),
@@ -1330,11 +1298,11 @@ mod tests {
 				);
 				assert_eq!(VecDeque::from(vec!["test".to_string()]), c.args);
 				assert_eq!(
-					c.get_flag_value_of("local").unwrap(),
+					c.get_flag_value_of("local", &cc).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common").unwrap(),
+					c.get_flag_value_of("common", &cc).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
@@ -1350,7 +1318,7 @@ mod tests {
 		arg.push("--cafter".into());
 		let _ = root
 			.clone()
-			.action(|c| {
+			.action(|c, cur| {
 				println!("{:?}", c);
 				assert_eq!(
 					cnv_arg(vec![
@@ -1370,19 +1338,19 @@ mod tests {
 					c.args
 				);
 				assert_eq!(
-					c.get_flag_value_of("local").unwrap(),
+					c.get_flag_value_of("local", &cur).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common").unwrap(),
+					c.get_flag_value_of("common", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("cafter").unwrap(),
+					c.get_flag_value_of("cafter", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lafter").unwrap(),
+					c.get_flag_value_of("lafter", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
@@ -1397,7 +1365,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.action(|c| {
+			.action(|c, cur| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1413,19 +1381,19 @@ mod tests {
 				);
 				assert_eq!(VecDeque::from(cnv_arg(vec!["test", "arg"])), c.args);
 				assert_eq!(
-					c.get_flag_value_of("local").unwrap(),
+					c.get_flag_value_of("local", &cur).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common").unwrap(),
+					c.get_flag_value_of("common", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("cafter").unwrap(),
+					c.get_flag_value_of("cafter", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lafter").unwrap(),
+					c.get_flag_value_of("lafter", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
@@ -1437,7 +1405,7 @@ mod tests {
 		arg.push("ex_arg".into());
 		let _ = root
 			.clone()
-			.action(|c| {
+			.action(|c, cur| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1457,19 +1425,19 @@ mod tests {
 					c.args
 				);
 				assert_eq!(
-					c.get_flag_value_of("local").unwrap(),
+					c.get_flag_value_of("local", &cur).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common").unwrap(),
+					c.get_flag_value_of("common", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("cafter").unwrap(),
+					c.get_flag_value_of("cafter", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lafter").unwrap(),
+					c.get_flag_value_of("lafter", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
@@ -1480,7 +1448,7 @@ mod tests {
 		arg[4] = "-a".into();
 		let _ = root
 			.clone()
-			.action(|c| {
+			.action(|c, cur| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1500,19 +1468,19 @@ mod tests {
 					c.args
 				);
 				assert_eq!(
-					c.get_flag_value_of("local").unwrap(),
+					c.get_flag_value_of("local", &cur).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common").unwrap(),
+					c.get_flag_value_of("common", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("cafter").unwrap(),
+					c.get_flag_value_of("cafter", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lafter").unwrap(),
+					c.get_flag_value_of("lafter", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
@@ -1527,7 +1495,7 @@ mod tests {
 		let mut arg = cnv_arg(vec![
 			"exe_path", "sub", "test", "--common", "test", "--cstr", "strt", "-b", "--local",
 		]);
-		let root = base_root().action(|c| {
+		let root = base_root().action(|c, _| {
 			println!("test_action: {:?}", c);
 			panic!("not sub");
 		});
@@ -1535,7 +1503,7 @@ mod tests {
 			.local_flag(Flag::new_bool("bool").short_alias('b'))
 			.local_flag(Flag::new_string("string").short_alias('s'))
 			.common_flag(Flag::new_bool("cl"))
-			.sub_command(Command::with_name("leaf").action(|c| {
+			.sub_command(Command::with_name("leaf").action(|c, _| {
 				println!("Context: {:?}", c);
 				panic!("in leaf")
 			}))
@@ -1548,7 +1516,7 @@ mod tests {
 			));
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c| {
+			.sub_command(sub.clone().action(|c, cur| {
 				println!("{:?}", c);
 				let raw_args = cnv_arg(vec![
 					"exe_path", "sub", "test", "--common", "test", "--cstr", "strt", "-b", "--local",
@@ -1557,10 +1525,16 @@ mod tests {
 				assert_eq!(c.exe_path, String::from("exe_path"));
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
-				assert_eq!(c.get_flag_value_of("common"), Some(FlagValue::Bool(true)));
-				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
-				assert_eq!(c.get_flag_value_of("commons"), None);
-				assert_eq!(c.get_flag_value_of("local"), None);
+				assert_eq!(
+					c.get_flag_value_of("common", &cur),
+					Some(FlagValue::Bool(true))
+				);
+				assert_eq!(
+					c.get_flag_value_of("bool", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(c.get_flag_value_of("commons", &cur), None);
+				assert_eq!(c.get_flag_value_of("local", &cur), None);
 				assert_eq!(c.routes, "sub".to_owned().into());
 				assert_attrs!("sub_", c);
 				done!()
@@ -1572,17 +1546,20 @@ mod tests {
 		let _ = root
 			.clone()
 			.name("root")
-			.sub_command(sub.clone().action(|c| {
+			.sub_command(sub.clone().action(|c, cur| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec!["exe_path", "--cstr=test", "-b", "sub"])
 				);
 				assert_eq!(
-					c.get_flag_value_of("cstr").unwrap(),
+					c.get_flag_value_of("cstr", &cur).unwrap(),
 					FlagValue::String("test".into())
 				);
-				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.get_flag_value_of("bool", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
 				assert_eq!(
 					c.routes,
 					Vector(Some(vec!["root".to_string(), "sub".to_string()]))
@@ -1598,17 +1575,20 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c| {
+			.sub_command(sub.clone().action(|c, cur| {
 				println!("c:{:?}", c);
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec!["exe_path", "--cstr", "test", "-b", "sub"])
 				);
 				assert_eq!(
-					c.get_flag_value_of("cstr").unwrap(),
+					c.get_flag_value_of("cstr", &cur).unwrap(),
 					FlagValue::String("test".into())
 				);
-				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.get_flag_value_of("bool", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
 				assert_attrs!("sub_", c);
 				done!()
@@ -1624,7 +1604,7 @@ mod tests {
 		arg.push("testStr".into());
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c| {
+			.sub_command(sub.clone().action(|c, cur| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1642,17 +1622,20 @@ mod tests {
 				);
 				assert_eq!(c.args, cnv_arg(vec!["test_arg", "test_arg2"]));
 				assert_eq!(
-					c.get_flag_value_of("cstr").unwrap(),
+					c.get_flag_value_of("cstr", &cur).unwrap(),
 					FlagValue::String("test".into())
 				);
-				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
 				assert_eq!(
-					c.get_flag_value_of("cafter").unwrap(),
+					c.get_flag_value_of("bool", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
-				assert_eq!(c.get_local_flag_value_of("cafter"), None);
 				assert_eq!(
-					c.get_flag_value_of("string").unwrap(),
+					c.get_flag_value_of("cafter", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(c.get_local_flag_value_of("cafter", &cur), None);
+				assert_eq!(
+					c.get_flag_value_of("string", &cur).unwrap(),
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
@@ -1665,7 +1648,7 @@ mod tests {
 		arg.remove(4);
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c| {
+			.sub_command(sub.clone().action(|c, cur| {
 				println!("result_c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1686,7 +1669,7 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_local_flag_value_of("string").unwrap(),
+					c.get_local_flag_value_of("string", &cur).unwrap(),
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(
@@ -1704,7 +1687,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c| {
+			.sub_command(sub.clone().action(|c, _| {
 				println!("C: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1735,7 +1718,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c| {
+			.sub_command(sub.clone().action(|c, cur| {
 				println!("C: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1767,7 +1750,7 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_local_flag_value_of("bool").unwrap(),
+					c.get_local_flag_value_of("bool", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
@@ -1775,7 +1758,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("string").unwrap(),
+					c.get_flag_value_of("string", &cur).unwrap(),
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
@@ -1791,7 +1774,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c| {
+			.sub_command(sub.clone().action(|c, cur| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1807,20 +1790,23 @@ mod tests {
 				);
 				assert_eq!(c.args.len(), 0);
 				assert_eq!(
-					c.get_flag_value_of("cstr").unwrap(),
+					c.get_flag_value_of("cstr", &cur).unwrap(),
 					FlagValue::String("test".into())
 				);
-				assert_eq!(c.get_flag_value_of("bool").unwrap(), FlagValue::Bool(true));
 				assert_eq!(
-					c.get_flag_value_of("cafter").unwrap(),
+					c.get_flag_value_of("bool", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("string").unwrap(),
+					c.get_flag_value_of("cafter", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(
+					c.get_flag_value_of("string", &cur).unwrap(),
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common").unwrap(),
+					c.get_flag_value_of("common", &cur).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
@@ -1842,8 +1828,8 @@ mod tests {
 			"-c".to_string(),
 			"--local".to_string(),
 		];
-		let mut root = Command::new()
-			.action(|c| {
+		let root = Command::new()
+			.action(|c, _| {
 				println!("test_action: {:?}", c);
 				panic!("not sub");
 			})
@@ -1852,7 +1838,7 @@ mod tests {
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.sub_command(
 				Command::with_name("sub")
-					.action(|c| {
+					.action(|c, _| {
 						panic!("sub: {:?}", c);
 					})
 					.version("sub_version")
@@ -1864,7 +1850,7 @@ mod tests {
 					.authors("sub_authors")
 					.sub_command(
 						Command::with_name("leaf")
-							.action(|c| {
+							.action(|c, cur| {
 								println!("{:?}", c);
 								let raw_args = vec![
 									"exe_path".to_string(),
@@ -1882,7 +1868,7 @@ mod tests {
 								assert_eq!(c.raw_args, raw_args);
 								assert_eq!(c.args, expect_args);
 								assert_eq!(
-									c.get_flag_value_of("common"),
+									c.get_flag_value_of("common", &cur),
 									Some(FlagValue::String("test".into()))
 								);
 								assert_eq!(
@@ -1890,10 +1876,13 @@ mod tests {
 									FlagValue::None
 								);
 								assert_eq!(
-									c.get_flag_value_of("cshort").unwrap(),
+									c.get_flag_value_of("cshort", &cur).unwrap(),
 									FlagValue::String("".into())
 								);
-								assert_eq!(c.get_flag_value_of("local").unwrap(), FlagValue::Bool(true));
+								assert_eq!(
+									c.get_flag_value_of("local", &cur).unwrap(),
+									FlagValue::Bool(true)
+								);
 								assert_eq!(c.get_common_flag_value_of("local"), None);
 								assert_eq!(
 									c.routes,
@@ -1917,7 +1906,7 @@ mod tests {
 
 	#[test]
 	fn run_leaf_with_flag_before_normal_flag() {
-		let root = base_root().action(|c| {
+		let root = base_root().action(|c, _| {
 			panic!("root action: {:?} - not leaf", c);
 		});
 		let sub = Command::with_name("sub")
@@ -1925,7 +1914,7 @@ mod tests {
 			.local_flag(Flag::new_string("sub_lstr"))
 			.common_flag(Flag::new_bool("sub_common"))
 			.local_flag(Flag::new_string("sub_cstr"))
-			.action(|c| {
+			.action(|c, _| {
 				panic!("sub action: {:?} - not leaf", c);
 			});
 		let leaf = Command::with_name("leaf")
@@ -1955,16 +1944,19 @@ mod tests {
 			root.clone().name("root"),
 			sub.clone(),
 			leaf.clone(),
-			|c| {
+			|c, cur| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec!["exe_path", "--lbool", "sub", "--lsbefore", "leaf"])
 				);
 				assert_eq!(c.args, VecDeque::new());
-				assert_eq!(c.get_flag_value_of("lbool").unwrap(), FlagValue::Bool(true));
 				assert_eq!(
-					c.get_flag_value_of("lsbefore").unwrap(),
+					c.get_flag_value_of("lbool", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(
+					c.get_flag_value_of("lsbefore", &cur).unwrap(),
 					FlagValue::String("".into())
 				);
 				assert_eq!(
@@ -1987,7 +1979,7 @@ mod tests {
 			root.clone(),
 			sub.clone(),
 			leaf.clone(),
-			|c| {
+			|c, cur| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -2001,9 +1993,12 @@ mod tests {
 					])
 				);
 				assert_eq!(c.args, VecDeque::from(vec![String::from("arg")]));
-				assert_eq!(c.get_flag_value_of("lbool").unwrap(), FlagValue::Bool(true));
 				assert_eq!(
-					c.get_flag_value_of("lsbefore").unwrap(),
+					c.get_flag_value_of("lbool", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(
+					c.get_flag_value_of("lsbefore", &cur).unwrap(),
 					FlagValue::String("".into())
 				);
 				assert_eq!(
@@ -2020,7 +2015,7 @@ mod tests {
 			root.clone(),
 			sub.clone(),
 			leaf.clone(),
-			|c| {
+			|c, cur| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -2034,13 +2029,19 @@ mod tests {
 						"--cbool"
 					])
 				);
-				assert_eq!(c.get_flag_value_of("lbool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.get_flag_value_of("lbool", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
 				assert_eq!(c.args, VecDeque::from(vec!["arg".to_string()]));
 				assert_eq!(
-					c.get_flag_value_of("lsbefore").unwrap(),
+					c.get_flag_value_of("lsbefore", &cur).unwrap(),
 					FlagValue::String("".into())
 				);
-				assert_eq!(c.get_flag_value_of("cbool").unwrap(), FlagValue::Bool(true));
+				assert_eq!(
+					c.get_flag_value_of("cbool", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
 				assert_eq!(
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
@@ -2057,7 +2058,7 @@ mod tests {
 			root.clone(),
 			sub.clone(),
 			leaf.clone(),
-			|c| {
+			|c, cur| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -2073,9 +2074,12 @@ mod tests {
 				);
 				assert_eq!(c.args, VecDeque::from(vec!["arg".to_string()]));
 				assert_eq!(c.args, VecDeque::from(vec![String::from("arg")]));
-				assert_eq!(c.get_flag_value_of("lbool").unwrap(), FlagValue::Bool(true));
 				assert_eq!(
-					c.get_flag_value_of("lsbefore").unwrap(),
+					c.get_flag_value_of("lbool", &cur).unwrap(),
+					FlagValue::Bool(true)
+				);
+				assert_eq!(
+					c.get_flag_value_of("lsbefore", &cur).unwrap(),
 					FlagValue::String("before_arg".into())
 				);
 				assert_eq!(
@@ -2108,7 +2112,7 @@ mod tests {
 		];
 
 		let leaf = Command::with_name("leaf")
-			.action(|c| {
+			.action(|c, cur| {
 				println!("sub_action: {:?}", c);
 				let raw_args = vec![
 					"exe_path".to_string(),
@@ -2130,7 +2134,7 @@ mod tests {
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(
-					c.get_flag_value_of("common"),
+					c.get_flag_value_of("common", &cur),
 					Some(FlagValue::String("test".into()))
 				);
 				assert_eq!(
@@ -2138,24 +2142,27 @@ mod tests {
 					Some(FlagValue::None)
 				);
 				assert_eq!(
-					c.get_flag_value_of("commons"),
+					c.get_flag_value_of("commons", &cur),
 					Some(FlagValue::String("".into()))
 				);
-				assert_eq!(c.get_flag_value_of("local"), None);
+				assert_eq!(c.get_flag_value_of("local", &cur), None);
 				assert_eq!(c.get_inputted_common_flag_value_of("yes"), None);
 				assert_eq!(
-					c.get_local_flag_value_of("yes"),
+					c.get_local_flag_value_of("yes", &cur),
 					Some(FlagValue::Bool(true))
 				);
-				assert_eq!(c.get_flag_value_of("yes"), Some(FlagValue::Bool(true)));
+				assert_eq!(
+					c.get_flag_value_of("yes", &cur),
+					Some(FlagValue::Bool(true))
+				);
 				let expect_error_args = {
 					let mut vd = VecDeque::new();
 					vd.push_back(MiddleArg::LongFlag("local".into(), FlagValue::None));
 					vd
 				};
-				assert_eq!(c.get_flag_value_of("int"), Some(FlagValue::Int(111)));
+				assert_eq!(c.get_flag_value_of("int", &cur), Some(FlagValue::Int(111)));
 				assert_eq!(
-					c.get_flag_value_of("float"),
+					c.get_flag_value_of("float", &cur),
 					Some(FlagValue::Float(10.into()))
 				);
 
@@ -2181,8 +2188,8 @@ mod tests {
 				"sub_license".into(),
 				content=>"sub_license_content".into(),
 			));
-		let mut root = Command::new()
-			.action(|c| {
+		let root = Command::new()
+			.action(|c, _| {
 				println!("test_action: {:?}", c);
 				panic!("not sub");
 			})
@@ -2196,7 +2203,7 @@ mod tests {
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.sub_command(
 				Command::with_name("sub")
-					.action(|c| {
+					.action(|c, _| {
 						println!("sub: {:?}", c);
 						panic!("not leaf");
 					})
@@ -2212,7 +2219,7 @@ pub mod presets {
 	use super::{Action, Command, Context, Flag, License, Vector};
 
 	/// Preset of help function
-	pub fn help<'a>(cmd: &Command, ctx: &Context) -> String {
+	pub fn help<'a>(ctx: &Context, cmd: &Command) -> String {
 		let mut help = String::new();
 		let indent_size: usize = 3;
 		let sp = String::from(" ");
@@ -2227,11 +2234,7 @@ pub mod presets {
 		help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
 
 		//フラグ処理
-		let l_flags: &Vector<Flag> = if ctx.local_flags.is_none() {
-			&cmd.l_flags
-		} else {
-			&ctx.local_flags
-		};
+		let l_flags: &Vector<Flag> = &cmd.l_flags;
 		let c_flags: &Vector<Vector<Flag>>;
 		let vec_inner: Vector<Vector<Flag>>;
 
@@ -2464,7 +2467,6 @@ pub mod presets {
 			Vector::default(),
 			version.into(),
 			Vector::default(),
-			Some(help),
 		)
 	}
 }

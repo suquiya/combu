@@ -1,4 +1,5 @@
-use combu::{action_result, check_help, done, preset_root};
+use combu::command::presets::help;
+use combu::{action_result, check_help, done, preset_root, Command};
 use combu::{Context, Flag};
 use std::env;
 
@@ -9,9 +10,9 @@ fn main() {
 		.run_from_args(env::args().collect());
 }
 
-fn act(c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
+fn act(c: Context, cmd: Command) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
 {
-	check_help!(c);
+	check_help!(c, cmd, help);
 	println!("Hello, combu - {:?}", c.args);
 
 	done!()

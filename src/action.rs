@@ -1,22 +1,19 @@
 use fmt::Debug;
 
-use crate::{Context, Vector};
+use crate::{Command, Context};
 use std::{error::Error, fmt};
 
 ///Action is type for command action. It returns Result<ActionResult, ActionError>.
-pub type Action = fn(Context) -> Result<ActionResult, ActionError>;
+pub type Action = fn(Context, Command) -> Result<ActionResult, ActionError>;
 
-#[derive(Debug)]
 ///ActionResult stores result of action.
 pub enum ActionResult {
 	///Done shows that action is done.
 	Done,
-	/// ShowHelpRequest shows that action requested to show help.
-	ShowHelpRequest(Context),
-	/// ShowHelpReq shows that action requested to show relative's help.
-	ShowOtherHelpReq(Context, usize, Vector<String>),
-	/// Shows return Context and Action as result for parse and run.
-	Result(Context, Action),
+	/// ParentActionRequest shows that action requested to show help.
+	ParentActionRequest(Context, Command, Action),
+	/// Shows return Context, reached Command and Action as result for parse and run.
+	Result(Context, Command, Action),
 	/// Custom result(can have Box including dyn Debug).
 	Custom(Box<dyn Debug>),
 }

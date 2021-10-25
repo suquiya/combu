@@ -1,5 +1,5 @@
 use combu::command::*;
-use combu::{done, Done, Flag, ShowHelpRequest};
+use combu::{done, Done, Flag};
 
 fn main() {
 	/*let action = |c| {
@@ -35,27 +35,22 @@ fn main() {
 fn sub() -> Command {
 	Command::with_name("sublong")
 		.desctiption("sub command")
-		.action(|c| {
+		.action(|c, _| {
 			println!("sub_action: {:?}", c);
-			Ok(ShowHelpRequest(c))
+			Ok(Done)
 		})
 		.alias("s")
 		.version("sublong_version")
 		.common_flag(Flag::with_name("scommon"))
-		.sub_command(Command::with_name("leaf").action(|c| {
+		.sub_command(Command::with_name("leaf").action(|c, cc| {
 			println!("leaf_action: {:?}", c);
-			println!("common: {:?}", c.get_flag_value_of("common"));
+			println!("common: {:?}", c.get_flag_value_of("common", &cc));
 			Ok(Done)
 		}))
 		.sub_command(
 			Command::with_name("help")
-				.action(|c| {
+				.action(|c, _| {
 					println!("send help req: {:?}", c);
-					/*Ok(combu::ActionResult::ShowOtherHelpRequest(
-						c,
-						1,
-						Vector(None),
-					))*/
 					done!()
 				})
 				.version("leaf_version"),

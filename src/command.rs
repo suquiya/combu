@@ -5,7 +5,7 @@ use crate::{
 	Action, Context, Flag, FlagValue, Parser, Vector,
 };
 
-use core::mem::take;
+use core::mem::swap;
 use std::{collections::VecDeque, fmt::Debug};
 
 ///The struct for command information store and command execution
@@ -54,56 +54,30 @@ macro_rules! no_registered_error {
 		))
 	};
 }
-macro_rules! sub_check_field {
-	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident) => {
-		if !$sub.$field.is_empty() {
-			$self.$field = take(&mut $context.$context_field);
-			$context.$context_field = take(&mut $sub.$field);
-		}
-	};
-	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident :Option) => {
-		if $sub.$field.is_some() {
-			$self.$field = $context.$context_field.take();
-			$context.$context_field = $sub.$field.take();
-		}
-	};
-	($context:expr,$context_field:ident,$sub:expr, $self:expr, $field:ident :License) => {
-		if $sub.$field.is_some() {
-			$self.$field = $context.$context_field.take();
-			$context.$context_field = $sub.$field.take();
-		}
-	};
-}
 
-macro_rules! sub_check {
-	($context:expr, $sub:expr, $self:expr) => {
-		sub_check_field!($context, cmd_authors, $sub, $self, authors);
-		sub_check_field!($context, cmd_version, $sub, $self, version);
-		sub_check_field!($context, cmd_copyright, $sub, $self, copyright);
-		sub_check_field!($context, cmd_license, $sub, $self, license: License);
+macro_rules! check_sub {
+	($sub:expr, $self:expr) => {
+		check_sub_field!($sub, $self, authors);
+		check_sub_field!($sub, $self, version);
+		check_sub_field!($sub, $self, copyright);
+		check_sub_field!($sub, $self, license: License);
 	};
 }
 
 macro_rules! check_sub_field {
-	($sub: expr, $field:ident, $self:expr) => {
+	($sub: expr, $self:expr, $field: ident) => {
 		if $sub.$field.is_empty() {
-			take(&mut $self.$field)
-		} else {
-			take(&mut $sub.$field)
+			swap(&mut $sub.$field, &mut $self.$field)
 		}
 	};
-	($sub:expr, $field:ident :Option, $self:expr) => {
-		if $sub.$field.is_some() {
-			$sub.$field.take()
-		} else {
-			$self.$field.take()
+	($sub:expr, $self:expr,$field:ident :Option,) => {
+		if $sub.$field.is_none() {
+			swap(&mut $sub.$field, &mut $self.$field)
 		}
 	};
-	($sub:expr, $field:ident :License, $self:expr) => {
-		if $sub.$field.is_some() {
-			$sub.$field.take()
-		} else {
-			$self.$field.take()
+	($sub:expr, $self:expr,$field:ident :License) => {
+		if $sub.$field.is_none() {
+			swap(&mut $sub.$field, &mut $self.$field)
 		}
 	};
 }
@@ -210,10 +184,6 @@ macro_rules! gen_context_for_self_action {
 			$self.c_flags.take(),
 			$self.derive_route_init_vector(),
 			$exe_path,
-			String::default(),
-			String::default(),
-			String::default(),
-			License::default(),
 		)
 	};
 	($self:expr, $raw_args:expr,$args:expr,$exe_path:expr, $inter_mediate_args:expr) => {
@@ -227,10 +197,6 @@ macro_rules! gen_context_for_self_action {
 			Vector::default(),
 			Some($inter_mediate_args),
 			Vector(None),
-			String::default(),
-			String::default(),
-			String::default(),
-			License::default(),
 		)
 	};
 }
@@ -261,10 +227,6 @@ macro_rules! gen_context_for_sub_run {
 			Vector::default(),
 			$inter_mediate_args,
 			Vector::default(),
-			check_sub_field!($sub, authors, $self),
-			check_sub_field!($sub, version, $self),
-			check_sub_field!($sub, copyright, $self),
-			check_sub_field!($sub, license: License, $self),
 		)
 	};
 }
@@ -607,7 +569,7 @@ impl Command {
 								}
 							}
 						}
-						Some(mut sub) => {
+						Some(sub) => {
 							// サブコマンドがヒットしたとき
 							let c = gen_context_for_sub_run!(self, sub, raw_args, args, exe_path);
 							let r = sub.run(c);
@@ -660,7 +622,7 @@ impl Command {
 					match self.take_sub(&arg) {
 						Some(mut sub) => {
 							context.common_flags.push(self.c_flags.take());
-							sub_check!(context, sub, self);
+							check_sub!(sub, self);
 							println!("{:?}", &context);
 							let r = sub.run(context);
 							self.handle_sub_result(r)
@@ -747,7 +709,7 @@ impl Command {
 					} else {
 						c.parsing_args = Some(inter_mediate_args);
 					}
-					sub_check!(c, sub, self);
+					check_sub!(sub, self);
 					let r = sub.run(c);
 					self.handle_sub_result(r)
 				}
@@ -776,7 +738,7 @@ impl Command {
 									} else {
 										c.parsing_args = Some(inter_mediate_args);
 									}
-									sub_check!(c, sub, self);
+									check_sub!(sub, self);
 									let r = sub.run(c);
 									self.handle_sub_result(r)
 								}
@@ -886,7 +848,7 @@ impl Command {
 		match next_non_flag {
 			Some(arg) => {
 				match self.take_sub(&arg) {
-					Some(mut sub) => {
+					Some(sub) => {
 						inter_mediate_args.push_back(last);
 						let c = gen_context_for_sub_run!(
 							self,
@@ -917,7 +879,7 @@ impl Command {
 										self.assign_run(args, inter_mediate_args, p, raw_args, exe_path, last)
 									}
 									Some(arg) => match self.take_sub(&arg) {
-										Some(mut sub) => {
+										Some(sub) => {
 											let c = gen_context_for_sub_run!(
 												self,
 												sub,
@@ -1093,7 +1055,7 @@ mod tests {
 		arg.insert(1, "--common=C_before".into());
 		arg.insert(1, "--local=L_before".into());
 		let root = Command::with_name("root")
-			.action(|c, _| {
+			.action(|c, cmd| {
 				println!("test_action: {:?}", c);
 				let raw_args: Vec<String> = vec![
 					"exe_path".to_string(),
@@ -1125,9 +1087,9 @@ mod tests {
 					("common".to_string(), FlagValue::String("C_after".into())),
 				]);
 				assert_eq!(c.common_flags_values, c_flag_values);
-				assert_eq!(c.cmd_version, "root_version".to_owned());
-				assert_eq!(c.cmd_copyright, "root_copyright".to_owned());
-				assert_eq!(c.cmd_license.unwrap().0, String::from("root_license"));
+				assert_eq!(cmd.version, "root_version".to_owned());
+				assert_eq!(cmd.copyright, "root_copyright".to_owned());
+				assert_eq!(cmd.license.unwrap().0, String::from("root_license"));
 				done!()
 			})
 			.common_flag(Flag::new(
@@ -1156,7 +1118,7 @@ mod tests {
 			"test".to_string(),
 		];
 		let root = Command::new()
-			.action(|mut c, now| {
+			.action(|c, mut cmd| {
 				println!("test_action: {:?}", c);
 				let raw_args = vec![
 					"exe_path".to_string(),
@@ -1170,21 +1132,21 @@ mod tests {
 				assert_eq!(c.args, expect_args);
 				assert_eq!(c.exe_path, String::from("exe_path"));
 				assert_eq!(
-					c.get_local_flag_value_of("local", &now),
+					c.get_local_flag_value_of("local", &cmd),
 					Some(FlagValue::String("test".into()))
 				);
 				assert_eq!(
-					c.get_flag_value_of("local", &now),
+					c.get_flag_value_of("local", &cmd),
 					Some(FlagValue::String("test".into()))
 				);
 				assert_eq!(
-					c.get_flag_value_of("common", &now),
+					c.get_flag_value_of("common", &cmd),
 					Some(FlagValue::String(String::default()))
 				);
 				assert_eq!(c.routes, Vector(None));
-				assert_eq!(c.cmd_version, "root_version".to_owned());
-				assert_eq!(c.cmd_copyright, "root_copyright".to_owned());
-				let License(inner) = c.cmd_license.take();
+				assert_eq!(cmd.version, "root_version".to_owned());
+				assert_eq!(cmd.copyright, "root_copyright".to_owned());
+				let License(inner) = cmd.license.take();
 				let inner = inner.unwrap();
 				assert_eq!(inner.0, String::from("root_license"));
 				assert_eq!(inner.1(&c), String::from("root_license_content"));
@@ -1226,15 +1188,15 @@ mod tests {
 	}
 
 	macro_rules! assert_attrs {
-		($prefix:expr, $context:expr) => {
+		($prefix:expr, $context:expr,$command:expr) => {
 			let prefix = String::from($prefix);
-			assert_eq!($context.cmd_authors, prefix.clone() + "authors");
-			assert_eq!($context.cmd_version, prefix.clone() + "version");
-			assert_eq!($context.cmd_copyright, prefix.clone() + "copyright");
+			assert_eq!($command.authors, prefix.clone() + "authors");
+			assert_eq!($command.version, prefix.clone() + "version");
+			assert_eq!($command.copyright, prefix.clone() + "copyright");
 			assert_eq!(
 				(
-					$context.cmd_license.expr_unwrap(),
-					$context.cmd_license.output_unwrap(&$context)
+					$command.license.expr_unwrap(),
+					$command.license.output_unwrap(&$context)
 				),
 				(prefix.clone() + "license", prefix + "license_content")
 			);
@@ -1249,40 +1211,40 @@ mod tests {
 		arg.push("test".into());
 		let _ = root
 			.clone()
-			.action(|c, now| {
+			.action(|c, cmd| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "test"]),
 					c.raw_args
 				);
 				assert_eq!(
-					c.get_flag_value_of("local", &now).unwrap(),
+					c.get_flag_value_of("local", &cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(c.routes, Vector(None));
-				assert_attrs!("root_", c);
+				assert_attrs!("root_", c, cmd);
 				done!()
 			})
 			.run(arg.clone());
 		arg[2] = "--common".into();
 		let _ = root
 			.clone()
-			.action(|c, cur| {
+			.action(|c, cur_cmd| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "--common"]),
 					c.raw_args
 				);
 				assert_eq!(
-					c.get_flag_value_of("local", &cur).unwrap(),
+					c.get_flag_value_of("local", &cur_cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common", &cur).unwrap(),
+					c.get_flag_value_of("common", &cur_cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				assert_attrs!("root_", c);
+				assert_attrs!("root_", c, cur_cmd);
 				done!()
 			})
 			.run(arg.clone());
@@ -1306,7 +1268,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				assert_attrs!("root_", c);
+				assert_attrs!("root_", c, cc);
 				done!()
 			})
 			.run(arg.clone());
@@ -1354,7 +1316,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				assert_attrs!("root_", c);
+				assert_attrs!("root_", c, cur);
 				done!()
 			})
 			.run(arg.clone());
@@ -1365,7 +1327,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.action(|c, cur| {
+			.action(|c, cur_cmd| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1381,23 +1343,23 @@ mod tests {
 				);
 				assert_eq!(VecDeque::from(cnv_arg(vec!["test", "arg"])), c.args);
 				assert_eq!(
-					c.get_flag_value_of("local", &cur).unwrap(),
+					c.get_flag_value_of("local", &cur_cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common", &cur).unwrap(),
+					c.get_flag_value_of("common", &cur_cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("cafter", &cur).unwrap(),
+					c.get_flag_value_of("cafter", &cur_cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lafter", &cur).unwrap(),
+					c.get_flag_value_of("lafter", &cur_cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				assert_attrs!("root_", c);
+				assert_attrs!("root_", c, cur_cmd);
 				done!()
 			})
 			.run(arg.clone());
@@ -1405,7 +1367,7 @@ mod tests {
 		arg.push("ex_arg".into());
 		let _ = root
 			.clone()
-			.action(|c, cur| {
+			.action(|c, cmd| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1425,30 +1387,30 @@ mod tests {
 					c.args
 				);
 				assert_eq!(
-					c.get_flag_value_of("local", &cur).unwrap(),
+					c.get_flag_value_of("local", &cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common", &cur).unwrap(),
+					c.get_flag_value_of("common", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("cafter", &cur).unwrap(),
+					c.get_flag_value_of("cafter", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lafter", &cur).unwrap(),
+					c.get_flag_value_of("lafter", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				assert_attrs!("root_", c);
+				assert_attrs!("root_", c, cmd);
 				done!()
 			})
 			.run(arg.clone());
 		arg[4] = "-a".into();
 		let _ = root
 			.clone()
-			.action(|c, cur| {
+			.action(|c, cmd| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1468,23 +1430,23 @@ mod tests {
 					c.args
 				);
 				assert_eq!(
-					c.get_flag_value_of("local", &cur).unwrap(),
+					c.get_flag_value_of("local", &cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common", &cur).unwrap(),
+					c.get_flag_value_of("common", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("cafter", &cur).unwrap(),
+					c.get_flag_value_of("cafter", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lafter", &cur).unwrap(),
+					c.get_flag_value_of("lafter", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(None));
-				assert_attrs!("root_", c);
+				assert_attrs!("root_", c, cmd);
 				done!()
 			})
 			.run(arg.clone());
@@ -1516,7 +1478,7 @@ mod tests {
 			));
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cur| {
+			.sub_command(sub.clone().action(|c, cmd| {
 				println!("{:?}", c);
 				let raw_args = cnv_arg(vec![
 					"exe_path", "sub", "test", "--common", "test", "--cstr", "strt", "-b", "--local",
@@ -1526,17 +1488,17 @@ mod tests {
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(
-					c.get_flag_value_of("common", &cur),
+					c.get_flag_value_of("common", &cmd),
 					Some(FlagValue::Bool(true))
 				);
 				assert_eq!(
-					c.get_flag_value_of("bool", &cur).unwrap(),
+					c.get_flag_value_of("bool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
-				assert_eq!(c.get_flag_value_of("commons", &cur), None);
-				assert_eq!(c.get_flag_value_of("local", &cur), None);
+				assert_eq!(c.get_flag_value_of("commons", &cmd), None);
+				assert_eq!(c.get_flag_value_of("local", &cmd), None);
 				assert_eq!(c.routes, "sub".to_owned().into());
-				assert_attrs!("sub_", c);
+				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
 			.run(arg.clone());
@@ -1546,25 +1508,25 @@ mod tests {
 		let _ = root
 			.clone()
 			.name("root")
-			.sub_command(sub.clone().action(|c, cur| {
+			.sub_command(sub.clone().action(|c, cmd| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec!["exe_path", "--cstr=test", "-b", "sub"])
 				);
 				assert_eq!(
-					c.get_flag_value_of("cstr", &cur).unwrap(),
+					c.get_flag_value_of("cstr", &cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("bool", &cur).unwrap(),
+					c.get_flag_value_of("bool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
 					c.routes,
 					Vector(Some(vec!["root".to_string(), "sub".to_string()]))
 				);
-				assert_attrs!("sub_", c);
+				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
 			.run(arg.clone());
@@ -1575,22 +1537,22 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cur| {
+			.sub_command(sub.clone().action(|c, cmd| {
 				println!("c:{:?}", c);
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec!["exe_path", "--cstr", "test", "-b", "sub"])
 				);
 				assert_eq!(
-					c.get_flag_value_of("cstr", &cur).unwrap(),
+					c.get_flag_value_of("cstr", &cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("bool", &cur).unwrap(),
+					c.get_flag_value_of("bool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				assert_attrs!("sub_", c);
+				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
 			.run(arg.clone());
@@ -1604,7 +1566,7 @@ mod tests {
 		arg.push("testStr".into());
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cur| {
+			.sub_command(sub.clone().action(|c, cmd| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1622,24 +1584,24 @@ mod tests {
 				);
 				assert_eq!(c.args, cnv_arg(vec!["test_arg", "test_arg2"]));
 				assert_eq!(
-					c.get_flag_value_of("cstr", &cur).unwrap(),
+					c.get_flag_value_of("cstr", &cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("bool", &cur).unwrap(),
+					c.get_flag_value_of("bool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("cafter", &cur).unwrap(),
+					c.get_flag_value_of("cafter", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
-				assert_eq!(c.get_local_flag_value_of("cafter", &cur), None);
+				assert_eq!(c.get_local_flag_value_of("cafter", &cmd), None);
 				assert_eq!(
-					c.get_flag_value_of("string", &cur).unwrap(),
+					c.get_flag_value_of("string", &cmd).unwrap(),
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				assert_attrs!("sub_", c);
+				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
 			.run(arg.clone());
@@ -1648,7 +1610,7 @@ mod tests {
 		arg.remove(4);
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cur| {
+			.sub_command(sub.clone().action(|c, cmd| {
 				println!("result_c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1669,7 +1631,7 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_local_flag_value_of("string", &cur).unwrap(),
+					c.get_local_flag_value_of("string", &cmd).unwrap(),
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(
@@ -1677,7 +1639,7 @@ mod tests {
 					FlagValue::None
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				assert_attrs!("sub_", c);
+				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
 			.run(arg.clone());
@@ -1687,7 +1649,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, _| {
+			.sub_command(sub.clone().action(|c, cmd| {
 				println!("C: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1705,7 +1667,7 @@ mod tests {
 				);
 				assert_eq!(c.args, cnv_arg(vec!["test_arg", "ex_arg"]));
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				assert_attrs!("sub_", c);
+				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
 			.run(arg.clone());
@@ -1718,7 +1680,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cur| {
+			.sub_command(sub.clone().action(|c, cmd| {
 				println!("C: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1750,7 +1712,7 @@ mod tests {
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_local_flag_value_of("bool", &cur).unwrap(),
+					c.get_local_flag_value_of("bool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
@@ -1758,11 +1720,11 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("string", &cur).unwrap(),
+					c.get_flag_value_of("string", &cmd).unwrap(),
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				assert_attrs!("sub_", c);
+				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
 			.run(arg.clone());
@@ -1774,7 +1736,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cur| {
+			.sub_command(sub.clone().action(|c, cmd| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1790,27 +1752,27 @@ mod tests {
 				);
 				assert_eq!(c.args.len(), 0);
 				assert_eq!(
-					c.get_flag_value_of("cstr", &cur).unwrap(),
+					c.get_flag_value_of("cstr", &cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("bool", &cur).unwrap(),
+					c.get_flag_value_of("bool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("cafter", &cur).unwrap(),
+					c.get_flag_value_of("cafter", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("string", &cur).unwrap(),
+					c.get_flag_value_of("string", &cmd).unwrap(),
 					FlagValue::String("testStr".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("common", &cur).unwrap(),
+					c.get_flag_value_of("common", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
-				assert_attrs!("sub_", c);
+				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
 			.run(arg.clone());
@@ -1850,7 +1812,7 @@ mod tests {
 					.authors("sub_authors")
 					.sub_command(
 						Command::with_name("leaf")
-							.action(|c, cur| {
+							.action(|c, cmd| {
 								println!("{:?}", c);
 								let raw_args = vec![
 									"exe_path".to_string(),
@@ -1868,7 +1830,7 @@ mod tests {
 								assert_eq!(c.raw_args, raw_args);
 								assert_eq!(c.args, expect_args);
 								assert_eq!(
-									c.get_flag_value_of("common", &cur),
+									c.get_flag_value_of("common", &cmd),
 									Some(FlagValue::String("test".into()))
 								);
 								assert_eq!(
@@ -1876,11 +1838,11 @@ mod tests {
 									FlagValue::None
 								);
 								assert_eq!(
-									c.get_flag_value_of("cshort", &cur).unwrap(),
+									c.get_flag_value_of("cshort", &cmd).unwrap(),
 									FlagValue::String("".into())
 								);
 								assert_eq!(
-									c.get_flag_value_of("local", &cur).unwrap(),
+									c.get_flag_value_of("local", &cmd).unwrap(),
 									FlagValue::Bool(true)
 								);
 								assert_eq!(c.get_common_flag_value_of("local"), None);
@@ -1888,7 +1850,7 @@ mod tests {
 									c.routes,
 									Vector(Some(vec!["sub".to_string(), "leaf".to_string()]))
 								);
-								assert_attrs!("leaf_", c);
+								assert_attrs!("leaf_", c, cmd);
 								done!()
 							})
 							.local_flag(Flag::new_bool("local").short_alias('l'))
@@ -1944,7 +1906,7 @@ mod tests {
 			root.clone().name("root"),
 			sub.clone(),
 			leaf.clone(),
-			|c, cur| {
+			|c, cmd| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1952,11 +1914,11 @@ mod tests {
 				);
 				assert_eq!(c.args, VecDeque::new());
 				assert_eq!(
-					c.get_flag_value_of("lbool", &cur).unwrap(),
+					c.get_flag_value_of("lbool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lsbefore", &cur).unwrap(),
+					c.get_flag_value_of("lsbefore", &cmd).unwrap(),
 					FlagValue::String("".into())
 				);
 				assert_eq!(
@@ -1967,7 +1929,7 @@ mod tests {
 						"leaf".to_owned()
 					]))
 				);
-				assert_attrs!("leaf_", c);
+				assert_attrs!("leaf_", c, cmd);
 				done!()
 			},
 			args.clone(),
@@ -1979,7 +1941,7 @@ mod tests {
 			root.clone(),
 			sub.clone(),
 			leaf.clone(),
-			|c, cur| {
+			|c, cmd| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1994,18 +1956,18 @@ mod tests {
 				);
 				assert_eq!(c.args, VecDeque::from(vec![String::from("arg")]));
 				assert_eq!(
-					c.get_flag_value_of("lbool", &cur).unwrap(),
+					c.get_flag_value_of("lbool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lsbefore", &cur).unwrap(),
+					c.get_flag_value_of("lsbefore", &cmd).unwrap(),
 					FlagValue::String("".into())
 				);
 				assert_eq!(
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
-				assert_attrs!("leaf_", c);
+				assert_attrs!("leaf_", c, cmd);
 				done!()
 			},
 			args.clone(),
@@ -2015,7 +1977,7 @@ mod tests {
 			root.clone(),
 			sub.clone(),
 			leaf.clone(),
-			|c, cur| {
+			|c, cmd| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -2030,23 +1992,23 @@ mod tests {
 					])
 				);
 				assert_eq!(
-					c.get_flag_value_of("lbool", &cur).unwrap(),
+					c.get_flag_value_of("lbool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(c.args, VecDeque::from(vec!["arg".to_string()]));
 				assert_eq!(
-					c.get_flag_value_of("lsbefore", &cur).unwrap(),
+					c.get_flag_value_of("lsbefore", &cmd).unwrap(),
 					FlagValue::String("".into())
 				);
 				assert_eq!(
-					c.get_flag_value_of("cbool", &cur).unwrap(),
+					c.get_flag_value_of("cbool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
-				assert_attrs!("leaf_", c);
+				assert_attrs!("leaf_", c, cmd);
 				done!()
 			},
 			args.clone(),
@@ -2058,7 +2020,7 @@ mod tests {
 			root.clone(),
 			sub.clone(),
 			leaf.clone(),
-			|c, cur| {
+			|c, cmd| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -2075,18 +2037,18 @@ mod tests {
 				assert_eq!(c.args, VecDeque::from(vec!["arg".to_string()]));
 				assert_eq!(c.args, VecDeque::from(vec![String::from("arg")]));
 				assert_eq!(
-					c.get_flag_value_of("lbool", &cur).unwrap(),
+					c.get_flag_value_of("lbool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_flag_value_of("lsbefore", &cur).unwrap(),
+					c.get_flag_value_of("lsbefore", &cmd).unwrap(),
 					FlagValue::String("before_arg".into())
 				);
 				assert_eq!(
 					c.routes,
 					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
 				);
-				assert_attrs!("leaf_", c);
+				assert_attrs!("leaf_", c, cmd);
 				done!()
 			},
 			args.clone(),
@@ -2112,7 +2074,7 @@ mod tests {
 		];
 
 		let leaf = Command::with_name("leaf")
-			.action(|c, cur| {
+			.action(|c, cmd| {
 				println!("sub_action: {:?}", c);
 				let raw_args = vec![
 					"exe_path".to_string(),
@@ -2134,7 +2096,7 @@ mod tests {
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(
-					c.get_flag_value_of("common", &cur),
+					c.get_flag_value_of("common", &cmd),
 					Some(FlagValue::String("test".into()))
 				);
 				assert_eq!(
@@ -2142,17 +2104,17 @@ mod tests {
 					Some(FlagValue::None)
 				);
 				assert_eq!(
-					c.get_flag_value_of("commons", &cur),
+					c.get_flag_value_of("commons", &cmd),
 					Some(FlagValue::String("".into()))
 				);
-				assert_eq!(c.get_flag_value_of("local", &cur), None);
+				assert_eq!(c.get_flag_value_of("local", &cmd), None);
 				assert_eq!(c.get_inputted_common_flag_value_of("yes"), None);
 				assert_eq!(
-					c.get_local_flag_value_of("yes", &cur),
+					c.get_local_flag_value_of("yes", &cmd),
 					Some(FlagValue::Bool(true))
 				);
 				assert_eq!(
-					c.get_flag_value_of("yes", &cur),
+					c.get_flag_value_of("yes", &cmd),
 					Some(FlagValue::Bool(true))
 				);
 				let expect_error_args = {
@@ -2160,9 +2122,9 @@ mod tests {
 					vd.push_back(MiddleArg::LongFlag("local".into(), FlagValue::None));
 					vd
 				};
-				assert_eq!(c.get_flag_value_of("int", &cur), Some(FlagValue::Int(111)));
+				assert_eq!(c.get_flag_value_of("int", &cmd), Some(FlagValue::Int(111)));
 				assert_eq!(
-					c.get_flag_value_of("float", &cur),
+					c.get_flag_value_of("float", &cmd),
 					Some(FlagValue::Float(10.into()))
 				);
 
@@ -2174,7 +2136,7 @@ mod tests {
 						ParseError::NoExistLong
 					)])
 				);
-				assert_attrs!("sub_", c);
+				assert_attrs!("sub_", c, cmd);
 				assert_eq!(c.parsing_args.unwrap(), expect_error_args);
 				done!()
 			})

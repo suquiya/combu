@@ -3268,10 +3268,6 @@ mod tests {
 			Vector::default(),
 			Vector::default(),
 			"exe_path".into(),
-			"now_cmd_authors".into(),
-			"now_cmd_version".into(),
-			"now_cmd_copyright".into(),
-			_r.clone(),
 		)
 	}
 
@@ -3391,8 +3387,8 @@ mod tests {
 			.local_flag(Flag::new_string("sub_lstr"))
 			.common_flag(Flag::new_bool("sub_common"))
 			.local_flag(Flag::new_string("sub_cstr"))
-			.action(|c, _| {
-				assert_eq!(c.cmd_authors, "now_cmd_authors".to_owned());
+			.action(|c, cmd| {
+				assert_eq!(cmd.authors, "now_cmd_authors".to_owned());
 				done!()
 			})
 			.sub_command(leaf)

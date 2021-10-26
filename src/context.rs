@@ -1,5 +1,4 @@
 use crate::{
-	command::License,
 	parser::{ErrorInfo, MiddleArg},
 	vector::flag::{FlagSearch, LongFound},
 	Command, Flag, FlagValue, Vector,
@@ -31,14 +30,6 @@ pub struct Context {
 	pub parsing_args: Option<VecDeque<MiddleArg>>,
 	/// error inforamation list of parsing
 	pub error_info_list: Vector<ErrorInfo>,
-	/// authors
-	pub cmd_authors: String,
-	/// version
-	pub cmd_version: String,
-	/// licence information
-	pub cmd_license: License,
-	/// copyright
-	pub cmd_copyright: String,
 }
 
 impl Context {
@@ -49,10 +40,6 @@ impl Context {
 		common_flags: Vector<Flag>,
 		routes: Vector<String>,
 		exe_path: String,
-		cmd_authors: String,
-		cmd_version: String,
-		cmd_copyright: String,
-		cmd_license: License,
 	) -> Context {
 		Context {
 			raw_args,
@@ -64,10 +51,6 @@ impl Context {
 			local_flags_values: Vector::default(),
 			parsing_args: None,
 			error_info_list: Vector::default(),
-			cmd_version,
-			cmd_authors,
-			cmd_copyright,
-			cmd_license,
 		}
 	}
 
@@ -82,10 +65,6 @@ impl Context {
 		local_flags_values: Vector<(String, FlagValue)>,
 		parsing_args: Option<VecDeque<MiddleArg>>,
 		error_info_list: Vector<ErrorInfo>,
-		cmd_authors: String,
-		cmd_version: String,
-		cmd_copyright: String,
-		cmd_license: License,
 	) -> Context {
 		Context {
 			raw_args,
@@ -97,10 +76,6 @@ impl Context {
 			local_flags_values,
 			parsing_args,
 			error_info_list,
-			cmd_authors,
-			cmd_version,
-			cmd_copyright,
-			cmd_license,
 		}
 	}
 
@@ -355,10 +330,6 @@ impl<'a> From<Vec<String>> for Context {
 			local_flags_values: Vector::default(),
 			parsing_args: None,
 			error_info_list: Vector::default(),
-			cmd_authors: String::default(),
-			cmd_version: String::default(),
-			cmd_license: License::default(),
-			cmd_copyright: String::default(),
 		}
 	}
 }

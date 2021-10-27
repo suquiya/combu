@@ -3387,14 +3387,14 @@ mod tests {
 			.local_flag(Flag::new_string("sub_lstr"))
 			.common_flag(Flag::new_bool("sub_common"))
 			.local_flag(Flag::new_string("sub_cstr"))
-			.action(|c, cmd| {
-				assert_eq!(cmd.authors, "now_cmd_authors".to_owned());
+			.action(|_, _| {
+				println!("sub");
 				done!()
 			})
 			.sub_command(leaf)
 			.license(_lsub.clone());
 		let sub2_act = |_, _| {
-			println!("sub");
+			println!("sub2");
 			done!()
 		};
 		let sub2 = Command::with_name("sub2").action(sub2_act);

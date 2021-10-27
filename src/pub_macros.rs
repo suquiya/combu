@@ -2561,7 +2561,7 @@ macro_rules! string_fn {
 		$crate::string_fn!($string.to_owned())
 	};
 	($string:expr) => {
-		|_ctx: &$crate::Context| -> String { $string }
+		|_: &$crate::Command, _: &$crate::Context| -> String { $string }
 	};
 	(file_path=>$file_path:expr) => {
 		$crate::string_fn!(include_str!($file_path))
@@ -3259,7 +3259,7 @@ mod tests {
 	}
 
 	fn get_context_for_test() -> Context {
-		let _r = License::new(Some(("test".into(), |_: &Context| -> String {
+		let _r = License::new(Some(("test".into(), |_, _| -> String {
 			"test_license_content".to_owned()
 		})));
 		Context::new(
@@ -3273,39 +3273,42 @@ mod tests {
 
 	#[test]
 	fn license_macro_test() {
-		let _r = License::new(Some(("test".into(), |_: &Context| -> String {
+		let _r = License::new(Some(("test".into(), |_, _| -> String {
 			"test_license_content".to_owned()
 		})));
 		let _c = get_context_for_test();
+		let _cmd = Command::with_name("test");
 
-		let comp = |left: &License, right: &License, c: &Context| {
+		let comp = |left: &License, right: &License, cmd: &Command, c: &Context| {
 			assert_eq!(left.expr(), right.expr());
-			assert_eq!(left.output(c), right.output(c));
+			assert_eq!(left.output(cmd, c), right.output(cmd, c));
 		};
-		comp(&_r, &license!("test",->"test_license_content"), &_c);
+		comp(&_r, &license!("test",->"test_license_content"), &_cmd, &_c);
 		comp(
 			&_r,
 			&license!("test",->"test_license_content".to_owned()),
+			&_cmd,
 			&_c,
 		);
-		comp(&_r, &license!("test", "test_license_content"), &_c);
+		comp(&_r, &license!("test", "test_license_content"), &_cmd, &_c);
 		comp(
 			&_r,
 			&license!("test", string_fn!("test_license_content".to_owned())),
+			&_cmd,
 			&_c,
 		);
 		comp(
 			&_r,
-			&license!("test", |_: &Context| -> String {
-				"test_license_content".into()
-			}),
+			&license!("test", |_, _| -> String { "test_license_content".into() }),
+			&_cmd,
 			&_c,
 		);
 		comp(
 			&_r,
-			&license!(expr=>"test", outputter=>|_: &Context| -> String {
+			&license!(expr=>"test", outputter=>|_,_| -> String {
 				"test_license_content".into()
 			}),
+			&_cmd,
 			&_c,
 		);
 	}
@@ -3330,7 +3333,10 @@ mod tests {
 		assert_eq!(left.authors, right.authors);
 		assert_eq!(left.copyright, right.copyright);
 		assert_eqs!(left.license.expr(), right.license.expr());
-		assert_eq!(left.license.output(&c), right.license.output(&c));
+		assert_eq!(
+			left.license.output(&left, &c),
+			right.license.output(&right, &c)
+		);
 		match (left.license.output_fn(), right.license.output_fn()) {
 			(Some(_loutput), Some(_routput)) => {
 				//assert_eq!(_loutput as usize, _routput as usize);

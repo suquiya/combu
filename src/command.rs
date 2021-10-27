@@ -82,12 +82,12 @@ macro_rules! check_sub_field {
 	};
 }
 
-/// HelpFunc shows type alias for help function
-pub type HelpFunc = fn(command: &Command, context: &Context) -> String;
+/// LicenseFunc shows type alias for license function
+pub type LicenseFunc = fn(command: &Command, context: &Context) -> String;
 
 #[derive(Clone)]
 /// License shows license information
-pub struct License(pub Option<(String, fn(ctx: &Context) -> String)>);
+pub struct License(pub Option<(String, LicenseFunc)>);
 
 impl Default for License {
 	fn default() -> Self {
@@ -107,7 +107,7 @@ impl Debug for License {
 
 impl License {
 	/// Creates new License information.
-	pub fn new(inner: Option<(String, fn(ctx: &Context) -> String)>) -> Self {
+	pub fn new(inner: Option<(String, LicenseFunc)>) -> Self {
 		License(inner)
 	}
 	/// Returns true if self has some license information.
@@ -137,35 +137,35 @@ impl License {
 		}
 	}
 	/// Returns (long) expression - detail of license.
-	pub fn output(&self, ctx: &Context) -> Option<String> {
+	pub fn output(&self, cmd: &Command, ctx: &Context) -> Option<String> {
 		match self {
-			License(Some((_, outputter))) => Some(outputter(ctx)),
+			License(Some((_, outputter))) => Some(outputter(cmd, ctx)),
 			License(None) => None,
 		}
 	}
 	/// Returns (long) expression - detail of license. If self is License(None), this function may panic.
-	pub fn output_unwrap(&self, ctx: &Context) -> String {
+	pub fn output_unwrap(&self, cmd: &Command, ctx: &Context) -> String {
 		match self {
-			License(Some((_, outputter))) => outputter(ctx),
+			License(Some((_, outputter))) => outputter(cmd, ctx),
 			_ => panic!("called `License::expr_unwrap()` on a `None`value"),
 		}
 	}
 	/// Returns function which outputs (long) expression (or detail of license) with wrapping Option.
-	pub fn output_fn(&self) -> Option<fn(&Context) -> String> {
+	pub fn output_fn(&self) -> Option<LicenseFunc> {
 		match self {
 			License(Some((_, outputter))) => Some(*outputter),
 			License(None) => None,
 		}
 	}
 	/// Returns function of (long) expression (or detail of license). If self is License(None), this will panic.
-	pub fn output_fn_unwrap(&self) -> fn(&Context) -> String {
+	pub fn output_fn_unwrap(&self) -> LicenseFunc {
 		match self {
 			License(Some((_, outputter))) => *outputter,
 			_ => panic!("called `License::output_fn_wrap` on a `None` value"),
 		}
 	}
 	/// Returns unwrap inner
-	pub fn unwrap(self) -> (String, fn(ctx: &Context) -> String) {
+	pub fn unwrap(self) -> (String, LicenseFunc) {
 		let License(inner) = self;
 		inner.unwrap()
 	}
@@ -1149,7 +1149,7 @@ mod tests {
 				let License(inner) = cmd.license.take();
 				let inner = inner.unwrap();
 				assert_eq!(inner.0, String::from("root_license"));
-				assert_eq!(inner.1(&c), String::from("root_license_content"));
+				assert_eq!(inner.1(&cmd, &c), String::from("root_license_content"));
 				done!()
 			})
 			.common_flag(Flag::new(
@@ -1196,7 +1196,7 @@ mod tests {
 			assert_eq!(
 				(
 					$command.license.expr_unwrap(),
-					$command.license.output_unwrap(&$context)
+					$command.license.output_unwrap(&$command, &$context)
 				),
 				(prefix.clone() + "license", prefix + "license_content")
 			);

@@ -596,52 +596,52 @@ macro_rules! cmd {
 		cmd!(->$name=>{$($t)+}[:$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[l_flag:$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[l#$($t2)*])
+		cmd!(->$name=>{$($t)+}[l #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[l_flag=$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[l#$($t2)*])
+		cmd!(->$name=>{$($t)+}[l #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[l_flags:$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[l#$($t2)*])
+		cmd!(->$name=>{$($t)+}[l #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[l_flags=$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[l#$($t2)*])
+		cmd!(->$name=>{$($t)+}[l #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[local_flag:$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[l#$($t2)*])
+		cmd!(->$name=>{$($t)+}[l #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[local_flag=$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[l#$($t2)*])
+		cmd!(->$name=>{$($t)+}[l #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[local_flags:$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[l#$($t2)*])
+		cmd!(->$name=>{$($t)+}[l #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[local_flags=$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[l#$($t2)*])
+		cmd!(->$name=>{$($t)+}[l #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[c_flag:$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[c#$($t2)*])
+		cmd!(->$name=>{$($t)+}[c #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[c_flag=$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[c#$($t2)*])
+		cmd!(->$name=>{$($t)+}[c #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[c_flags:$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[c#$($t2)*])
+		cmd!(->$name=>{$($t)+}[c #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[c_flags=$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[c#$($t2)*])
+		cmd!(->$name=>{$($t)+}[c #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[common_flag:$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[c#$($t2)*])
+		cmd!(->$name=>{$($t)+}[c #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[common_flag=$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[c#$($t2)*])
+		cmd!(->$name=>{$($t)+}[c #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[common_flags:$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[c#$($t2)*])
+		cmd!(->$name=>{$($t)+}[c #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[common_flags=$($t2:tt)*])=>{
-		cmd!(->$name=>{$($t)+}[c#$($t2)*])
+		cmd!(->$name=>{$($t)+}[c #$($t2)*])
 	};
 	(->$name:expr=>{$($t:tt)+}[alias:$($t2:tt)*])=>{
 		cmd!(->$name=>{$($t)+}[&$($t2)*])
@@ -689,426 +689,426 @@ macro_rules! cmd {
 		cmd!(->$name=>{$($t)+}[+$($t2)*])
 	};
 	(->$name:expr=>[>>$(>)*$action:expr$(,$($t:tt)*)?])=>{
-		$crate::cmd!(->$name=>{>,<,@,@,=,:,l#,c#,&,n,+}[>$action$(,$($t)*)?])
+		$crate::cmd!(->$name=>{>,<,@,@,=,:,l #,c #,&,n,+}[>$action$(,$($t)*)?])
 	};
 	(->$name:expr=>[->$action:expr$(,$($t:tt)*)?])=>{
-		$crate::cmd!(->$name=>{>,<,@,@,=,:,l#,c#,&,n,+}[>$action$(,$($t)*)?])
+		$crate::cmd!(->$name=>{>,<,@,@,=,:,l #,c #,&,n,+}[>$action$(,$($t)*)?])
 	};
 	(->$name:expr=>[=>$action:expr$(,$($t:tt)*)?])=>{
-		$crate::cmd!(->$name=>{>,<,@,@,=,:,l#,c#,&,n,+}[>$action$(,$($t)*)?])
+		$crate::cmd!(->$name=>{>,<,@,@,=,:,l #,c #,&,n,+}[>$action$(,$($t)*)?])
 	};
 	(->$name:expr=>[>$action:expr,<$authors:literal$(,$($t:tt)*)?])=>{
-		$crate::cmd!(->$name=>{>,<,@,@,=,:,l#,c#,&,n,+}[>$action,<$authors$(,$($t)*)?])
+		$crate::cmd!(->$name=>{>,<,@,@,=,:,l #,c #,&,n,+}[>$action,<$authors$(,$($t)*)?])
 	};
-	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[$(>)?|$c:ident$(:Context)?,$cmd:ident$(:Command)?|$(->$crate::action_result!())?$(->$r:ty)?{$($c2:tt)*}$($t:tt)*])=>{
-		cmd!(->$name=>{>[|$c:Context,$cmd:Command|->$crate::action_result!(){$($c2)*}],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>[|$c:Context,$cmd:Command|->$crate::action_result!(){$($c2)*}],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[$(>)?$action:ident$($t:tt)*])=>{
-		cmd!(->$name=>{>[$action],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>[$action],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[$(>)?$action:expr$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>[$action],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>[$action],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[$(>)?$action:expr$(;$($t:tt)*)?])=>{
-		cmd!(->$name=>{>[$action],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>[$action],<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[<$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[<fc$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[<from_crate$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[<$authors:literal$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<[$authors],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<[$authors],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[<[$($authors:tt)*]$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<[$($authors)*],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<[$($authors)*],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[<$authors:expr$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<[$authors],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<[$authors],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[@$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[(c)$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(c)$($copyright:literal),+$(;$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright),+],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright),+],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(c)$($year:literal)?$(,)?...$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($year,)?...],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($year,)?...],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(c)$($copyright:literal)+$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright),+],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright),+],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(c)$copyright:literal$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$copyright],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$copyright],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(c)[$($copyright:tt)*]$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[@$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[(l)$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)[$($license:tt)*]$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$($license)*],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$($license)*],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$lexpr:literal$(,)?$(->)?$lcontent:literal$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$lexpr:expr,$(->)?$lcontent:literal$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$lexpr:literal,->$lcontent:expr$(,$t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$lexpr:literal,->$lcontent:expr$(;$t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,->$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$lexpr:literal$(,)?$(fp)?:$lfile:expr$(,$t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,:$lfile],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,:$lfile],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$lexpr:literal,$lcontent:expr$(;$t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,:$lfile],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,:$lfile],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$lexpr:literal,$lcontent:expr$(,$t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$lexpr:literal,$lcontent:expr$(;$t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$lexpr:literal $lcontent:expr$(;$t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[$lexpr,$lcontent],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@[$($copyright:tt)*],@,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(l)$license:expr$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[->$license],=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($copyright)*],@[->$license],=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[=$description:literal$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=[$description],:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=[$description],:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[=[$($description:tt)*]$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=[$($description)*],:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=[$($description)*],:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[:$usage:ident$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:[$usage],l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:[$usage],l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[:$usage:literal$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:[$usage],l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:[$usage],l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[:[$($usage:tt)*]$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:[$($usage)*],l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:[$($usage)*],l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[:$usage:expr$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:[->$usage],l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:[->$usage],l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{$($args:tt)+}
-	[l#{$($lf:tt)*}$($t:tt)*])=>{
+	[l #{$($lf:tt)*}$($t:tt)*])=>{
 		cmd!(->$name=>{$($args)+}
-		[l#[$($lf)*]$($t)*])
+		[l #[$($lf)*]$($t)*])
 	};
 	(->$name:expr=>{$($args:tt)+}
-	[l#($($lf:tt)*)$($t:tt)*])=>{
+	[l #($($lf:tt)*)$($t:tt)*])=>{
 		cmd!(->$name=>{$($args)+}
-		[l#[$($lf)*]$($t)*])
+		[l #[$($lf)*]$($t)*])
 	};
 	(->$name:expr=>{>$($args:tt)+}
-	[l#,$($t:tt)*])=>{
-		cmd!(->$name=>{>$($args)+}[l#[],$($t)*])
+	[l #,$($t:tt)*])=>{
+		cmd!(->$name=>{>$($args)+}[l #[],$($t)*])
 	};
 	(->$name:expr=>{>$($args:tt)+}
-	[l#None$($t:tt)*])=>{
-		cmd!(->$name=>{>$($args)+}[l#[]$($t)*])
+	[l #None$($t:tt)*])=>{
+		cmd!(->$name=>{>$($args)+}[l #[]$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
-	[l#[$($lf:tt)*]$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[$($($l_flags)*)?$($lf)*],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[l #[$($lf:tt)*]$($t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #[$($($l_flags)*)?$($lf)*],c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
 	(->$name:expr=>{>$($args:tt)+}
-	[c#{$($cf:tt)*}$($t:tt)*])=>{
+	[c #{$($cf:tt)*}$($t:tt)*])=>{
 		cmd!(->$name=>{>$($args)+}
-		[c#[$($cf)*]$($t)*])
+		[c #[$($cf)*]$($t)*])
 	};
 	(->$name:expr=>{>$($args:tt)+}
-	[c#($($cf:tt)*)$($t:tt)*])=>{
+	[c #($($cf:tt)*)$($t:tt)*])=>{
 		cmd!(->$name=>{>$($args)+}
-		[c#[$($cf)*]$($t)*])
+		[c #[$($cf)*]$($t)*])
 	};
 	(->$name:expr=>{>$($args:tt)+}
-	[c#,$($t:tt)*])=>{
-		cmd!(->$name=>{>$($args)+}[c#[],$($t)*])
+	[c #,$($t:tt)*])=>{
+		cmd!(->$name=>{>$($args)+}[c #[],$($t)*])
 	};
 	(->$name:expr=>{>$($args:tt)+}
-	[c#None$($t:tt)*])=>{
-		cmd!(->$name=>{>$($args)+}[c#[]$($t)*])
+	[c #None$($t:tt)*])=>{
+		cmd!(->$name=>{>$($args)+}[c #[]$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
-	[c#[$($cf:tt)*]$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#[$($($c_flags)*)?$($cf)*],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[c #[$($cf:tt)*]$($t:tt)*])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #[$($($c_flags)*)?$($cf)*],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
-	[c#Vector$b:tt$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#[->Vector$b],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[c #Vector$b:tt$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #[->Vector$b],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
-	[c#$macro:ident!$b:tt$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#[->$macro!$b],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[c #$macro:ident!$b:tt$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #[->$macro!$b],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
 
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
-	[l#Vector$b:tt$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[->Vector$b],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[l #Vector$b:tt$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #[->Vector$b],c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
-	[l#$macro:ident!$b:tt$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[->$macro!$b],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[l #$macro:ident!$b:tt$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #[->$macro!$b],c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{$($args:tt)+}[l#$fn:tt$fa:tt$(;$($t:tt)*)?])=>{
-			cmd!(->$name=>{$($args)+}[l#[$fn$fa]$(,$($t)*)?])
+	(->$name:expr=>{$($args:tt)+}[l #$fn:tt$fa:tt$(;$($t:tt)*)?])=>{
+			cmd!(->$name=>{$($args)+}[l #[$fn$fa]$(,$($t)*)?])
 		};
-	(->$name:expr=>{$($args:tt)+}[l#$fn:tt$sep:tt$fa:tt$(;$($t:tt)*)?])=>{
-		cmd!(->$name=>{$($args)+}[l#[$fn$sep$fa]$(,$($t)*)?])
+	(->$name:expr=>{$($args:tt)+}[l #$fn:tt$sep:tt$fa:tt$(;$($t:tt)*)?])=>{
+		cmd!(->$name=>{$($args)+}[l #[$fn$sep$fa]$(,$($t)*)?])
 	};
-	(->$name:expr=>{$($args:tt)+}[l#$fn:tt$fa:tt$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{$($args)+}[l#[$fn$fa]$(,$($t)*)?])
+	(->$name:expr=>{$($args:tt)+}[l #$fn:tt$fa:tt$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{$($args)+}[l #[$fn$fa]$(,$($t)*)?])
 	};
-	(->$name:expr=>{$($args:tt)+}[l#$fn:tt$sep:tt$fa:tt$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{$($args)+}[l#[$fn$sep$fa]$(,$($t)*)?])
+	(->$name:expr=>{$($args:tt)+}[l #$fn:tt$sep:tt$fa:tt$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{$($args)+}[l #[$fn$sep$fa]$(,$($t)*)?])
 	};
-	(->$name:expr=>{$($args:tt)+}[c#$fn:tt$fa:tt$(;$($t:tt)*)?])=>{
-			cmd!(->$name=>{$($args)+}[c#[$fn$fa]$(,$($t)*)?])
+	(->$name:expr=>{$($args:tt)+}[c #$fn:tt$fa:tt$(;$($t:tt)*)?])=>{
+			cmd!(->$name=>{$($args)+}[c #[$fn$fa]$(,$($t)*)?])
 		};
-	(->$name:expr=>{$($args:tt)+}[c#$fn:tt$sep:tt$fa:tt$(;$($t:tt)*)?])=>{
-		cmd!(->$name=>{$($args)+}[c#[$fn$sep$fa]$(,$($t)*)?])
+	(->$name:expr=>{$($args:tt)+}[c #$fn:tt$sep:tt$fa:tt$(;$($t:tt)*)?])=>{
+		cmd!(->$name=>{$($args)+}[c #[$fn$sep$fa]$(,$($t)*)?])
 	};
-	(->$name:expr=>{$($args:tt)+}[c#$fn:tt$fa:tt$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{$($args)+}[c#[$fn$fa]$(,$($t)*)?])
+	(->$name:expr=>{$($args:tt)+}[c #$fn:tt$fa:tt$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{$($args)+}[c #[$fn$fa]$(,$($t)*)?])
 	};
-	(->$name:expr=>{$($args:tt)+}[c#$fn:tt$sep:tt$fa:tt$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{$($args)+}[c#[$fn$sep$fa]$(,$($t)*)?])
+	(->$name:expr=>{$($args:tt)+}[c #$fn:tt$sep:tt$fa:tt$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{$($args)+}[c #[$fn$sep$fa]$(,$($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
-	[c#$c_flags:expr$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#[->$c_flags],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[c #$c_flags:expr$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #[->$c_flags],&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
-	[l#$l_flags:expr$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#[->$l_flags],c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[l #$l_flags:expr$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #[->$l_flags],c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$(None)?$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?],n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&[$($alias:tt)*]$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$($alias)*],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$($alias)*],n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&Vector$vt:tt$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[->Vector$vt],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[->Vector$vt],n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&vector!$vt:tt$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[->vector!$vt],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[->vector!$vt],n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:ident$(,)?n $($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[n$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:ident$(,)?$i:ident:$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[$i:$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:ident$(,)?$i:ident=$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[$i=$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:ident$(,)?$next_alias:ident$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[&$next_alias$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:literal$(,)?n$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[n$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:literal$(,)?$next_alias:ident$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[&$next_alias$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:ident$(,)?$next_alias:literal$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[&$next_alias$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:literal$(,)?$next_alias:literal$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[&$next_alias$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:ident$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($at:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:literal$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[$($($at)*)?$alias,],n$([$($version)*])?,+$([$($sub)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[&$alias:expr$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&[->$alias],n$([$($version)*])?,+$([$($sub)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&[->$alias],n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
 	[n $(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n[from_crate],+$([$($sub:tt)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n[from_crate],+$([$($sub:tt)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
 	[n from_crate$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n[from_crate],+$([$($sub:tt)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n[from_crate],+$([$($sub:tt)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
 	[n ...$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n[...],+$([$($sub:tt)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n[...],+$([$($sub:tt)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
 	[n $major:literal$(,)?$minor:literal$(,)?$patch:literal $($vt:literal)*$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n[$major $minor $patch $($vt)*],+$([$($sub:tt)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n[$major $minor $patch $($vt)*],+$([$($sub:tt)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
 	[n $version:literal.$versionp:literal $($vt:literal)*$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n[$version.$versionp $($vt)*],+$([$($sub:tt)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n[$version.$versionp $($vt)*],+$([$($sub:tt)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
 	[n $version:literal$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n[$version],+$([$($sub:tt)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n[$version],+$([$($sub:tt)*])?}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n,+$([$($sub:tt)*])?}
 	[n [$($version:tt)*]$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n[$($version)*],+$([$($sub:tt)*])?}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n[$($version)*],+$([$($sub:tt)*])?}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($subt:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($subt:tt)*])?}
 	[+ [$($sub:tt)*] $(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[$($($subt)*)?$($sub)*,]}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[$($($subt)*)?$($sub)*,]}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+}
 	[+ Vector$sub:tt$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[->Vector$sub]}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[->Vector$sub]}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+}
 	[+ vector!$sub:tt$($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[->vector!$sub]}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[->vector!$sub]}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($subt:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($subt:tt)*])?}
 	[+ $macro:ident!$body:tt $($t:tt)*])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[$($($subt)*)?$macro!$body,]}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[$($($subt)*)?$macro!$body,]}
 		[$($t)*])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($subt:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($subt:tt)*])?}
 	[+ $sub:expr $(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l#$([$($l_flags)*])?,c#$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[$($($subt)*)?$sub,]}
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l #$([$($l_flags)*])?,c #$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+[$($($subt)*)?$sub,]}
 		[$($($t)*)?])
 	};
-	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l#$([$($l_flags:tt)*])?,c#$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l #$([$($l_flags:tt)*])?,c #$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[])=>{
-		cmd!(->$name=>[>$($($action)*)?,<[$($($authors)*)?],@[$($($copyright)*)?],@[$($($license)*)?],=[$($crate::string_from!{$($description)*})?],:[$($($usage)*)?],l#[$($($l_flags)*)?],c#[$($($c_flags)*)?],&[$($($alias)*)?],n[$($($version)*)?],+[$($($sub)*)?]])
+		cmd!(->$name=>[>$($($action)*)?,<[$($($authors)*)?],@[$($($copyright)*)?],@[$($($license)*)?],=[$($crate::string_from!{$($description)*})?],:[$($($usage)*)?],l #[$($($l_flags)*)?],c #[$($($c_flags)*)?],&[$($($alias)*)?],n[$($($version)*)?],+[$($($sub)*)?]])
 	};
 	(
 		->$name:expr=>
@@ -1119,8 +1119,8 @@ macro_rules! cmd {
 			@$license:tt,
 			$(=)+$desc:tt,
 			:$usage:tt,
-			l#$l_flags:tt,
-			c#$c_flags:tt,
+			l #$l_flags:tt,
+			c #$c_flags:tt,
 			&$alias:tt,
 			n $ver:tt,
 			+ $sub:tt$(,)?
@@ -1142,7 +1142,7 @@ macro_rules! cmd {
 		)
 	};
 	(->$name:expr=>[$($t:tt)*])=>{
-		cmd!(->$name=>{>,<,@,@,=,:,l#,c#,&,n,+}[$($t)*])
+		cmd!(->$name=>{>,<,@,@,=,:,l #,c #,&,n,+}[$($t)*])
 	};
 }
 
@@ -1478,8 +1478,8 @@ macro_rules! flag {
 macro_rules! _flag_basic_constructor {
 	(->$name:expr=>[
 		$(=)?$description:expr,
-		$(s#)?$short_alias:expr,
-		$(l#)?$long_alias:expr,
+		$(s #)?$short_alias:expr,
+		$(l #)?$long_alias:expr,
 		$(>)?$type:expr,
 		$(?)?$default:expr$(,)?]) => {
 		$crate::Flag::with_all_field(
@@ -1624,7 +1624,7 @@ macro_rules! _ftp{
 	(->$name:expr=>$t:tt$($t2:tt)+)=>{
 		{
 			println!("_ftp: {:?}",stringify!($t));
-			$crate::_ftp_s!(->$name=>{=,s#,l#,>,?}[$t$($t2)+])
+			$crate::_ftp_s!(->$name=>{=,s #,l #,>,?}[$t$($t2)+])
 		}
 	};
 	(->$name:expr=>)=>{
@@ -1637,7 +1637,7 @@ macro_rules! _ftp{
 		$crate::_ftp![->$name=>[$($t)*]]
 	};
 	(->$name:expr=>[]) => {
-		$crate::_ftp!(->$name=>[=String::default(),s#Vector::default(),l#Vector::default(),>FlagType::default(),?FlagValue::String(String::default())])
+		$crate::_ftp!(->$name=>[=String::default(),s #Vector::default(),l #Vector::default(),>FlagType::default(),?FlagValue::String(String::default())])
 	};
 	(->$name:expr=>[$i:ident])=>{
 		$crate::_fp_ident_ft_assigner!(->$name=>[$i],_ftp,=)
@@ -1651,7 +1651,7 @@ macro_rules! _ftp{
 	(->$name:expr=>[$(=)?$description:literal,$($t:tt)*])=>{
 		$crate::_ftp_s!(->$name=>[=$description,$($t)*])
 	};
-	(->$name:expr=>[$(=)?$description:expr,$(s#)?$(-)?[$($s:tt)*]$($t:tt)*])=>{
+	(->$name:expr=>[$(=)?$description:expr,$(s #)?$(-)?[$($s:tt)*]$($t:tt)*])=>{
 		$crate::_ftp_s!(->$name=>[=$description,-[$($s)*]$($t)*])
 	};
 	(->$name:expr=>[$(=)?$description:expr,
@@ -1663,7 +1663,7 @@ macro_rules! _ftp{
 			$crate::_flag_basic_constructor!(->$name=>[$description,$short_alias,$long_alias,$type,$default])
 	};
 	(->$name:expr=>[$(=)?$description:expr,
-		s#$short_alias:expr,
+		s #$short_alias:expr,
 		$long_alias:expr,
 		$(>)?$type:expr,
 		$(?)?$default:expr$(,)?
@@ -1672,15 +1672,15 @@ macro_rules! _ftp{
 	};
 	(->$name:expr=>[$(=)?$description:expr,
 		$short_alias:expr,
-		l#$long_alias:expr,
+		l #$long_alias:expr,
 		$(>)?$type:expr,
 		$(?)?$default:expr$(,)?
 		])=>{
 			$crate::_flag_basic_constructor!(->$name=>[$description,$short_alias,$long_alias,$type,$default])
 	};
 	(->$name:expr=>[$(=)?$description:expr,
-		s#$short_alias:expr,
-		l#$long_alias:expr,
+		s #$short_alias:expr,
+		l #$long_alias:expr,
 		$(>)?$type:expr,
 		$(?)?$default:expr$(,)?
 		])=>{
@@ -1698,7 +1698,7 @@ macro_rules! _ftp_s {
 		$crate::_ftp_t!(->$name=>{$($at)*}[$($t)*])
 	};
 	(->$name:expr=>[$($t:tt)+])=>{
-		$crate::_ftp_t!(->$name=>{=,s#,l#,>,?}[$($t)+])
+		$crate::_ftp_t!(->$name=>{=,s #,l #,>,?}[$($t)+])
 	};
 }
 
@@ -1707,268 +1707,268 @@ macro_rules! _ftp_s {
 // macro for innser flag
 macro_rules! _ftp_t {
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}[,$($t:tt)*])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}[,$($t:tt)*])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
 		};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?}
 		[$type:ident?$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?}[?$($t)*])
+		$crate::_ftp_t!(->$name=>{=,s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?}[?$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?$($default:expr)?}
 		[[>$type:ident$($t:tt)*]$($t2:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)*,$($t2)*])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$($default)?}[$($t)*,$($t2)*])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[[=$($dt:tt)*]$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=,s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[=$($dt)*,$($t)*])
+		$crate::_ftp_t!(->$name=>{=,s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[=$($dt)*,$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?$($default:expr)?}
 		[>$type:ident$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($($t)*)?])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?$($default:expr)?}
 		[>$type:ident$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?$($default:expr)?}
 		[[$i:ident]$($t:tt)*])=>{
-		$crate::_fp_ident_ft_assigner!(->$name=>{=,s#$([$($st)*])?,l#$([$($lt)*])?,>,?$($default)?}[$i,$($t)*],_ftp_t,=)
+		$crate::_fp_ident_ft_assigner!(->$name=>{=,s #$([$($st)*])?,l #$([$($lt)*])?,>,?$($default)?}[$i,$($t)*],_ftp_t,=)
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$type:ident,?}
 		[[@$($default:expr)?]$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$type:ident,?}
 		[[?$($default:expr)?]$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?--$l:ident$(,)?$la:ident$($t:tt)*])=>{
-		$crate::_fp_ident_ft_assigner!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $l ],>$($type)?,?$($default)?}[$la$($t)*],_ftp_t,--)
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[$(l #)?--$l:ident$(,)?$la:ident$($t:tt)*])=>{
+		$crate::_fp_ident_ft_assigner!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #[$($($lt)*)? $l ],>$($type)?,?$($default)?}[$la$($t)*],_ftp_t,--)
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?--$l:ident $($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($($lt)*)? $l],>$($type)?,?$($default)?}[$($t)*])
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[$(l #)?--$l:ident $($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #[$($($lt)*)? $l],>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?-$s:ident$(,)?$sa:ident$($t:tt)*])=>{
-			$crate::_fp_ident_s_assigner!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s],l#$([$($lt)*])?,>$($type)?,?}[$sa$($t)*],_ftp_t)
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[$(s #)?-$s:ident$(,)?$sa:ident$($t:tt)*])=>{
+			$crate::_fp_ident_s_assigner!(->$name=>{=$([$($dt)*])?,s #[$($($st)*)?$s],l #$([$($lt)*])?,>$($type)?,?}[$sa$($t)*],_ftp_t)
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?-$s:ident$(,$($t:tt)*)?])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[$(s #)?-$s:ident$(,$($t:tt)*)?])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #[$($($st)*)?$s],l #$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?-$s:ident$($t:tt)*])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($($st)*)?$s],l#$([$($lt)*])?,>$($type)?,?}[$($t)*])
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[$(s #)?-$s:ident$($t:tt)*])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #[$($($st)*)?$s],l #$([$($lt)*])?,>$($type)?,?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?$(-)?[$($(-)?$s:ident$(,)?)*]$(,$($t:tt)*)?])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($s)*],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+		{=$([$($dt:tt)*])?,s #,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[$(s #)?$(-)?[$($(-)?$s:ident$(,)?)*]$(,$($t:tt)*)?])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #[$($s)*],l #$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?$(-)?[$($(-)?$s:ident$(,)?)*]$($t:tt)*])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($s)*],l#$([$($lt)*])?,>$($type)?,?}[$($t)*])
+		{=$([$($dt:tt)*])?,s #,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[$(s #)?$(-)?[$($(-)?$s:ident$(,)?)*]$($t:tt)*])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #[$($s)*],l #$([$($lt)*])?,>$($type)?,?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=$([$($dt:tt)*])?,s #,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[[-$($s:tt)*]$($t:tt)*])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#,l#$([$($lt)*])?,>$($type)?,?}[-$($s)*,$($t)*])
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #,l #$([$($lt)*])?,>$($type)?,?}[-$($s)*,$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[$(s#)?$(-)?[$($s:tt)*]$($t:tt)*])=>{
-			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[$($s)*],l#$([$($lt)*])?,>$($type)?,?}[$($t)*])
+		{=$([$($dt:tt)*])?,s #,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[$(s #)?$(-)?[$($s:tt)*]$($t:tt)*])=>{
+			$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #[$($s)*],l #$([$($lt)*])?,>$($type)?,?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[s#$short_alias:ident$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[->$short_alias],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+		{=$([$($dt:tt)*])?,s #,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[s #$short_alias:ident$(,$($t:tt)*)?])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #[->$short_alias],l #$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
-		[s#$short_alias:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[->$short_alias],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+		{=$([$($dt:tt)*])?,s #,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[s #$short_alias:expr$(,$($t:tt)*)?])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #[->$short_alias],l #$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
-		[l#$long_alias:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[->$long_alias],>$($type)?,?$($default)?}[$($($t)*)?])
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #,>$($type:ident)?,?$($default:expr)?}
+		[l #$long_alias:expr$(,$($t:tt)*)?])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #[->$long_alias],>$($type)?,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?$(--)?[$($(--)?$l:ident$(,)?)*]$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($l)*],>$($type)?,?$($default)?}[$($t)*])
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #,>$($type:ident)?,?$($default:expr)?}
+		[$(l #)?$(--)?[$($(--)?$l:ident$(,)?)*]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #[$($l)*],>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #,>$($type:ident)?,?$($default:expr)?}
 		[[--$($lt:tt)*]$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#,>$($type)?,?$($default)?}[--$($lt)*,$($t)*])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #,>$($type)?,?$($default)?}[--$($lt)*,$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?$(--)?[$($lt:tt)*],$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($lt)*],>$($type)?,?$($default)?}[$($t)*])
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #,>$($type:ident)?,?$($default:expr)?}
+		[$(l #)?$(--)?[$($lt:tt)*],$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #[$($lt)*],>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
-		[$(l#)?$(--)?[$($lt:tt)*]])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[$($lt)*],>$($type)?,?$($default)?}[])
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #,>$($type:ident)?,?$($default:expr)?}
+		[$(l #)?$(--)?[$($lt:tt)*]])=>{
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #[$($lt)*],>$($type)?,?$($default)?}[])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[= -$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=[],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[-$($t)*])
+		$crate::_ftp_t!(->$name=>{=[],s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[-$($t)*])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[= ?$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=[],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[?$($t)*])
+		$crate::_ftp_t!(->$name=>{=[],s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[?$($t)*])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[= >$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=[],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[>$($t)*])
+		$crate::_ftp_t!(->$name=>{=[],s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[>$($t)*])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[=$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=[],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($($t)*)?])
+		$crate::_ftp_t!(->$name=>{=[],s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$(bool)?,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$(bool)?,?}
 		[$(?)?$(@)?false])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>bool,?false}[])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>bool,?false}[])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$(bool)?,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$(bool)?,?}
 		[$(?)?$(@)?true])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>bool,?true}[])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>bool,?true}[])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[=$description:ident$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=[$description],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
+		$crate::_ftp_t!(->$name=>{=[$description],s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[$(=)?$description:literal$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=[$description],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
+		$crate::_ftp_t!(->$name=>{=[$description],s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[[=$description:expr]$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=[$description],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
+		$crate::_ftp_t!(->$name=>{=[$description],s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[$(=)?$description:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=[$description],s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($($t)*)?])
+		$crate::_ftp_t!(->$name=>{=[$description],s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=[$($dt:tt)*],s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		{=[$($dt:tt)*],s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$type:ident,?}
 		[$(?)?$(@)?$default:literal])=>{
-		$crate::_ftp_t!(->$name=>{=[$($dt)*],s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$default}[])
+		$crate::_ftp_t!(->$name=>{=[$($dt)*],s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$default}[])
 	};
 	(->$name:expr=>
-		{=[$($dt:tt)*],s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		{=[$($dt:tt)*],s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$type:ident,?}
 		[[$(?)?$(@)?$default:expr]])=>{
-		$crate::_ftp_t!(->$name=>{=[$($dt)*],s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$default}[])
+		$crate::_ftp_t!(->$name=>{=[$($dt)*],s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$default}[])
 	};
 	(->$name:expr=>
-		{=[$($dt:tt)*],s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		{=[$($dt:tt)*],s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$type:ident,?}
 		[?$default:expr])=>{
-		$crate::_ftp_t!(->$name=>{=[$($dt)*],s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$default}[])
+		$crate::_ftp_t!(->$name=>{=[$($dt)*],s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$default}[])
 	};
 	(->$name:expr=>
-		{=[$($dt:tt)*],s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		{=[$($dt:tt)*],s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$type:ident,?}
 		[@$default:expr])=>{
-		$crate::_ftp_t!(->$name=>{=[$($dt)*],s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$default}[])
+		$crate::_ftp_t!(->$name=>{=[$($dt)*],s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$default}[])
 	};
 	(->$name:expr=>
-		{={$($dt:tt)*},s#[$($st:tt)*],l#[$($lt:tt)*],>$type:ident,?}
+		{={$($dt:tt)*},s #[$($st:tt)*],l #[$($lt:tt)*],>$type:ident,?}
 		[$(?)?$(@)?$default:expr])=>{
-		$crate::_ftp_t!(->$name=>{={$($dt)*},s#[$($st)*],l#[$($lt)*],>$type,?$default}[])
+		$crate::_ftp_t!(->$name=>{={$($dt)*},s #[$($st)*],l #[$($lt)*],>$type,?$default}[])
 	};
 	(->$name:expr=>
-		{=[$($dt:tt)*],s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		{=[$($dt:tt)*],s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?$($default:expr)?}
 		[$i:ident$($t:tt)*])=>{
-		$crate::_ftp_t!(->$name=>{=[$($dt)*],s#$([$($st)*])?,l#$([$($lt)*])?,>,?$($default)?}[>$i$($t)*])
+		$crate::_ftp_t!(->$name=>{=[$($dt)*],s #$([$($st)*])?,l #$([$($lt)*])?,>,?$($default)?}[>$i$($t)*])
 	};
 	(->$name:expr=>
-		{=,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?$($default:expr)?}
+		{=,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?$($default:expr)?}
 		[$i:ident$($t:tt)*])=>{
-		$crate::_fp_ident_ft_assigner!(->$name=>{=,s#$([$($st)*])?,l#$([$($lt)*])?,>,?$($default)?}[$i$($t)*],_ftp_t,=)
+		$crate::_fp_ident_ft_assigner!(->$name=>{=,s #$([$($st)*])?,l #$([$($lt)*])?,>,?$($default)?}[$i$($t)*],_ftp_t,=)
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#,l#$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		{=$([$($dt:tt)*])?,s #,l #$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[$short_alias:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#[->$short_alias],l#$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #[->$short_alias],l #$([$($lt)*])?,>$($type)?,?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#,>$($type:ident)?,?$($default:expr)?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #,>$($type:ident)?,?$($default:expr)?}
 		[$long_alias:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#[->$long_alias],>$($type)?,?$($default)?}[$($($t)*)?])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #[->$long_alias],>$($type)?,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$($type:ident)?,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$($type:ident)?,?}
 		[@$($default:expr)?$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$($type)?,?$($default)?}[$($($t)*)?])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>$($type)?,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$type:ident,?}
 		[?$($default:expr)?$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>$type,?$($default)?}[$($($t)*)?])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>$type,?$($default)?}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?}
 		[?false$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>,?false}[$($($t)*)?])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>,?false}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?}
 		[?$default:expr$(,$($t:tt)*)?])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>,?$default}[$($($t)*)?])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>,?$default}[$($($t)*)?])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?}
 		[])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>String,?}[])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>String,?}[])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?true}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?true}
 		[])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>bool,?true}[])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>bool,?true}[])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>,?false}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>,?false}
 		[])=>{
-		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s#$([$($st)*])?,l#$([$($lt)*])?,>bool,?false}[])
+		$crate::_ftp_t!(->$name=>{=$([$($dt)*])?,s #$([$($st)*])?,l #$([$($lt)*])?,>bool,?false}[])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$type:ident,?}
 		[])=>{
-		$crate::_ftp!(->$name=>[=$crate::string_from!($($($dt)*)?),s#$crate::short_alias![$($($st)*)?],l#$crate::long_alias![$($($lt)*)?],>$crate::flag_type!($type),?$crate::flag_value!($type)])
+		$crate::_ftp!(->$name=>[=$crate::string_from!($($($dt)*)?),s #$crate::short_alias![$($($st)*)?],l #$crate::long_alias![$($($lt)*)?],>$crate::flag_type!($type),?$crate::flag_value!($type)])
 	};
 	(->$name:expr=>
-		{=$([$($dt:tt)*])?,s#$([$($st:tt)*])?,l#$([$($lt:tt)*])?,>$type:ident,?$($default:expr)?}
+		{=$([$($dt:tt)*])?,s #$([$($st:tt)*])?,l #$([$($lt:tt)*])?,>$type:ident,?$($default:expr)?}
 		[])=>{
-		$crate::_ftp!(->$name=>[=$crate::string_from!($($($dt)*)?),s#$crate::short_alias![$($($st)*)?],l#$crate::long_alias![$($($lt)*)?],>$crate::flag_type!($type),?$crate::flag_value!($type$(,$default)?)])
+		$crate::_ftp!(->$name=>[=$crate::string_from!($($($dt)*)?),s #$crate::short_alias![$($($st)*)?],l #$crate::long_alias![$($($lt)*)?],>$crate::flag_type!($type),?$crate::flag_value!($type$(,$default)?)])
 	}
 }
 
@@ -2877,24 +2877,24 @@ mod tests {
 			flag!(test_flag=>[
 				>bool,
 				=_t,
-				s#Vector(Some(vec!['s', 'f'])),
-				l#Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				s #Vector(Some(vec!['s', 'f'])),
+				l #Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 				?false
 				]
 			),
 			flag!(test_flag=>[
 				>bool,
 				=_t,
-				l#Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
-				s#Vector(Some(vec!['s', 'f'])),
+				l #Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				s #Vector(Some(vec!['s', 'f'])),
 				?false
 				]
 			),
 			flag!(test_flag=>[
 				_t,
 				>bool,
-				l#Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
-				s#Vector(Some(vec!['s', 'f'])),
+				l #Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
+				s #Vector(Some(vec!['s', 'f'])),
 				?false
 				]
 			),
@@ -2910,7 +2910,7 @@ mod tests {
 			flag!(test_flag=>[
 			bool,
 			_t,
-			s#[s, f],
+			s #[s, f],
 			Vector(Some(vec!["long".to_owned(), "long2".to_owned()])),
 			?false]),
 			flag!(test_flag=>[
@@ -2964,13 +2964,13 @@ mod tests {
 			]),
 			flag!(test_flag=>[
 				=_t,
-				s#Vector(Some(vec!['s', 'f'])),
+				s #Vector(Some(vec!['s', 'f'])),
 				--[long, long2],
 				>bool?false
 			]),
 			flag!(test_flag[
 				=_t,
-				s#[s f],
+				s #[s f],
 				[long long2],
 				>bool?false
 			]),
@@ -3429,8 +3429,8 @@ mod tests {
 				@[->_l.clone()],
 				=["test_command"],
 				:["test_usage"],
-				l#{tlf[="test_local_flag" -l >bool?false]},
-				c#{tcf[="test_common_flag" -c >bool?false]},
+				l #{tlf[="test_local_flag" -l >bool?false]},
+				c #{tcf[="test_common_flag" -c >bool?false]},
 				&["alias", "alias2"],
 				n ["0.0.1"],
 				+ [sub.clone(),sub2.clone();:Command],
@@ -3447,8 +3447,8 @@ mod tests {
 				@[->_l.clone()],
 				=["test_command"],
 				:["test_usage"],
-				l#flags!({tlf[="test_local_flag" -l >bool?false]}),
-				c#flags!({tcf[="test_common_flag" -c >bool?false]}),
+				l #flags!({tlf[="test_local_flag" -l >bool?false]}),
+				c #flags!({tcf[="test_common_flag" -c >bool?false]}),
 				&Vector(Some(vec!["alias".into(), "alias2".into()])),
 				n ["0.0.1"],
 				+ vector![sub.clone(),sub2.clone();:Command],
@@ -3465,8 +3465,8 @@ mod tests {
 				@[->_l.clone()],
 				="test_command",
 				:"test_usage",
-				l#flags!({tlf[="test_local_flag" -l >bool?false]}),
-				c#flags!({tcf[="test_common_flag" -c >bool?false]}),
+				l #flags!({tlf[="test_local_flag" -l >bool?false]}),
+				c #flags!({tcf[="test_common_flag" -c >bool?false]}),
 				&Vector(Some(vec!["alias".into(), "alias2".into()])),
 				n "0.0.1",
 				+ vector![sub.clone(),sub2.clone();:Command],
@@ -3484,8 +3484,8 @@ mod tests {
 				@_l.clone(),
 				="test_command",
 				:"test_usage",
-				l#flags!({tlf[="test_local_flag" -l >bool?false]}),
-				c#flags!({tcf[="test_common_flag" -c >bool?false]}),
+				l #flags!({tlf[="test_local_flag" -l >bool?false]}),
+				c #flags!({tcf[="test_common_flag" -c >bool?false]}),
 				&Vector(Some(vec!["alias".into(), "alias2".into()])),
 				n "0.0.1",
 				+ vector![sub.clone(),sub2.clone();:Command],
@@ -3506,8 +3506,8 @@ mod tests {
 				@_l.clone(),
 				="test_command",
 				:"test_usage",
-				l#flags!({tlf[="test_local_flag" -l >bool?false]}),
-				c#flags!({tcf[="test_common_flag" -c >bool?false]}),
+				l #flags!({tlf[="test_local_flag" -l >bool?false]}),
+				c #flags!({tcf[="test_common_flag" -c >bool?false]}),
 				&vector!["alias".into(), "alias2".into()],
 				n "0.0.1",
 				+ vector![sub.clone(),sub2.clone();:Command],
@@ -3519,8 +3519,8 @@ mod tests {
 				@["test_license",->"test_license_fn"],
 				="test_command",
 				:"test_usage",
-				l#flags!({tlf[="test_local_flag" -l >bool?false]}),
-				c#flags!({tcf[="test_common_flag" -c >bool?false]}),
+				l #flags!({tlf[="test_local_flag" -l >bool?false]}),
+				c #flags!({tcf[="test_common_flag" -c >bool?false]}),
 				&[alias, alias2],
 				n "0.0.1",
 				+ [sub.clone(),sub2.clone();:Command],
@@ -3532,8 +3532,8 @@ mod tests {
 				@"test_license","test_license_fn",
 				="test_command",
 				:"test_usage",
-				l#({tlf[="test_local_flag" -l >bool?false]}),
-				c#({tcf[="test_common_flag" -c >bool?false]}),
+				l #({tlf[="test_local_flag" -l >bool?false]}),
+				c #({tcf[="test_common_flag" -c >bool?false]}),
 				&[alias, alias2],
 				n "0.0.1",
 				+ [sub.clone(),sub2.clone()],
@@ -3545,8 +3545,8 @@ mod tests {
 				@"test_license","test_license_fn",
 				="test_command",
 				:"test_usage",
-				l#({tlf[="test_local_flag" -l >bool?false]}),
-				c#({tcf[="test_common_flag" -c >bool?false]}),
+				l #({tlf[="test_local_flag" -l >bool?false]}),
+				c #({tcf[="test_common_flag" -c >bool?false]}),
 				&alias alias2,
 				n "0.0.1",
 				+ [sub.clone(),sub2.clone()],
@@ -3558,8 +3558,8 @@ mod tests {
 				@"test_license","test_license_fn",
 				="test_command",
 				:"test_usage",
-				l#{tlf[="test_local_flag" -l >bool?false]},
-				c#{tcf[="test_common_flag" -c >bool?false]},
+				l #{tlf[="test_local_flag" -l >bool?false]},
+				c #{tcf[="test_common_flag" -c >bool?false]},
 				&alias,
 				&alias2,
 				n "0.0.1",
@@ -3578,8 +3578,8 @@ mod tests {
 				(l)"test_license" "test_license_fn",
 				="test_command",
 				:"test_usage",
-				l#{tlf[="test_local_flag" -l >bool?false]},
-				c#{tcf[="test_common_flag" -c >bool?false]},
+				l #{tlf[="test_local_flag" -l >bool?false]},
+				c #{tcf[="test_common_flag" -c >bool?false]},
 				&alias,
 				&alias2,
 				n "0.0.1",
@@ -3598,8 +3598,8 @@ mod tests {
 				(l)"test_license" "test_license_fn",
 				="test_command",
 				:"test_usage",
-				l#{tlf[="test_local_flag" -l >bool?false]},
-				c#{tcf[="test_common_flag" -c >bool?false]},
+				l #{tlf[="test_local_flag" -l >bool?false]},
+				c #{tcf[="test_common_flag" -c >bool?false]},
 				&alias,
 				&alias2,
 				version= "0.0.1",
@@ -3618,13 +3618,13 @@ mod tests {
 				license:"test_license" "test_license_fn",
 				description="test_command",
 				usage:"test_usage",
-				l#tlf[="test_local_flag" -l >bool?false],
+				l #tlf[="test_local_flag" -l >bool?false],
 				l_flag:[],
-				l#None,
-				l#,
-				c#tcf[="test_common_flag" -c >bool?false],
+				l #None,
+				l #,
+				c #tcf[="test_common_flag" -c >bool?false],
 				c_flag:[],
-				c#None,
+				c #None,
 				alias:alias,
 				alias=alias2,
 				n 0 0 1,
@@ -3642,13 +3642,13 @@ mod tests {
 				license:"test_license" "test_license_fn",
 				description="test_command",
 				usage:"test_usage",
-				l#tlf[="test_local_flag" -l >bool?false],
+				l #tlf[="test_local_flag" -l >bool?false],
 				l_flag:[],
-				l#None,
-				l#,
-				c#tcf[="test_common_flag" -c >bool?false],
+				l #None,
+				l #,
+				c #tcf[="test_common_flag" -c >bool?false],
 				c_flag:[],
-				c#None,
+				c #None,
 				alias:alias,
 				alias=alias2,
 				n 0 0 1,

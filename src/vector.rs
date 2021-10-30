@@ -64,6 +64,14 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Returns true if has some(n>0) items.
+	pub fn has_at_least_one(&self) -> bool {
+		match self {
+			Vector(None) => false,
+			Vector(Some(inner)) => inner.len() > 0,
+		}
+	}
+
 	/// Returns this Vector.
 	pub fn len(&self) -> usize {
 		match self {
@@ -269,8 +277,8 @@ pub mod flag {
 		fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
 			match &self {
 				Vector(None) => LongFound::None,
-				Vector(Some(flags)) => match flags.iter().find(|flag| flag.is(name_or_alias)) {
-					None => match flags.iter().find(|flag| flag.is_long(name_or_alias)) {
+				Vector(Some(flags)) => match flags.iter().rfind(|flag| flag.is(name_or_alias)) {
+					None => match flags.iter().rfind(|flag| flag.is_long(name_or_alias)) {
 						None => LongFound::None,
 						Some(f) => LongFound::Long(f),
 					},

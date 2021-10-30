@@ -2180,6 +2180,191 @@ pub mod presets {
 
 	use super::{Action, Command, Context, Flag, License, Vector};
 
+	macro_rules! _add_help_with_flag_dudup {
+		($help:ident,$iter:expr,$nl_list:ident,$s_list:ident,$suffix:ident,$name_and_alias_min_width:ident,$sp:ident,$indent:ident) => {
+			for f in $iter {
+				let mut all_dup = true;
+				let first_help_width = $help.len();
+				if let Vector(Some(short_alias)) = &f.short_alias {
+					for s in short_alias.iter() {
+						if !$s_list.contains(&s) {
+							all_dup = false;
+							$help.push_str("-");
+							$help.push(*s);
+							$help.push(',');
+							$s_list.push(s);
+						}
+					}
+				} else {
+					$help.push_str(&$indent);
+				}
+				let mut name_dup = true;
+				if !$nl_list.contains(&&f.name) {
+					all_dup = false;
+					name_dup = false;
+					$help.push_str(" --");
+					$help.push_str(&f.name);
+					$nl_list.push(&f.name);
+				}
+				if let Vector(Some(long_alias)) = &f.long_alias {
+					for long in long_alias.iter() {
+						if !$nl_list.contains(&long) {
+							all_dup = false;
+							$nl_list.push(long);
+							if name_dup {
+								$help.push_str(" --");
+								$help.push_str(long);
+							} else {
+								$help.push_str(", --");
+								$help.push_str(long);
+							}
+						}
+					}
+				}
+				if all_dup {
+					$help.truncate(first_help_width);
+				} else {
+					let name_and_alias_width = $help.len() - first_help_width;
+					if name_and_alias_width < $name_and_alias_min_width {
+						$help.push_str(
+							$sp.repeat($name_and_alias_min_width - name_and_alias_width)
+								.as_str(),
+						);
+					}
+					$help.push('\t');
+					$help.push_str(&f.description);
+					$help.push_str(&$suffix);
+					$help.push('\n');
+				}
+			}
+		};
+	}
+	/// Preset of help function(compact version)
+	pub fn help_with_alias_dedup(ctx: &Context, cmd: &Command) -> String {
+		let mut help = String::new();
+		let indent_size: usize = 3;
+		let sp = String::from(" ");
+		let indent = sp.repeat(indent_size);
+		match &cmd.description {
+			Some(description) => {
+				help.push_str(description);
+				help.push_str("\n\n");
+			}
+			_ => {}
+		}
+		help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
+
+		let mut nl_list = Vec::<&String>::new();
+		let mut s_list = Vec::<&char>::new();
+		let name_and_alias_min_width = 12;
+		if let Vector(Some(l_flags)) = &cmd.l_flags {
+			let mut i = l_flags.iter().rev();
+			if let Some(f) = i.next() {
+				// ローカルフラグ出力
+				help = f.help(help, name_and_alias_min_width);
+				nl_list.push(&f.name);
+				if let Vector(Some(la)) = &f.long_alias {
+					let mut la = la.iter().collect();
+					nl_list.append(&mut la);
+				};
+				if let Vector(Some(sa)) = &f.short_alias {
+					let mut sa = sa.iter().collect();
+					s_list.append(&mut sa)
+				}
+				let emp_str = String::new();
+				_add_help_with_flag_dudup!(
+					help,
+					i,
+					nl_list,
+					s_list,
+					emp_str,
+					name_and_alias_min_width,
+					sp,
+					indent
+				)
+			}
+		}
+
+		// コモンフラグ出力(cmdに残っているフラグ)
+		let mut routes = ctx.routes.clone();
+		if let Vector(Some(c_flags)) = &cmd.c_flags {
+			let emp_str = String::new();
+			_add_help_with_flag_dudup!(
+				help,
+				c_flags.iter().rev(),
+				nl_list,
+				s_list,
+				emp_str,
+				name_and_alias_min_width,
+				sp,
+				indent
+			);
+			routes.pop();
+		}
+		if routes.len() < ctx.common_flags.len() {
+			routes.insert(
+				0,
+				std::path::Path::new(&ctx.exe_path)
+					.file_stem()
+					.unwrap_or(std::ffi::OsStr::new("root"))
+					.to_str()
+					.unwrap_or("root")
+					.to_owned(),
+			);
+		}
+		// コモンフラグ出力(contextに取り込まれているフラグ)
+		if let Vector(Some(cfs)) = &ctx.common_flags {
+			let self_common_index = cfs.len() - 1;
+			for (c_index, c_flags) in cfs.iter().enumerate().rev() {
+				if let Vector(Some(c_flags)) = c_flags {
+					let suffix = if c_index < self_common_index {
+						match routes.get(c_index) {
+							Some(cmd_name) => sp.clone() + "(inherited from " + cmd_name + ")",
+							None => String::new(),
+						}
+					} else {
+						String::new()
+					};
+					_add_help_with_flag_dudup!(
+						help,
+						c_flags.iter().rev(),
+						nl_list,
+						s_list,
+						suffix,
+						name_and_alias_min_width,
+						sp,
+						indent
+					);
+				}
+			}
+		}
+
+		// サブコマンド出力
+		if let Vector(Some(sub)) = &cmd.sub {
+			let mut iter = sub.iter();
+			if let Some(sub_command) = iter.next() {
+				help.push_str("Sub Command");
+				if sub.len() > 1 {
+					help.push('s');
+				}
+				help.push_str(": \n");
+				help = help + &indent + &sub_command.name;
+				let mut na_list = vec![&sub_command.name];
+				let mut name_and_alias_width = sub_command.name.len();
+				if let Vector(Some(alias)) = &sub_command.alias {
+					let mut a = alias.iter().collect();
+					na_list.append(&mut a);
+					for a in alias {
+						help = help + ", " + a;
+						name_and_alias_width += a.len() + 2;
+					}
+				}
+			}
+		}
+
+		return help;
+	}
+
 	/// Preset of help function
 	pub fn help<'a>(ctx: &Context, cmd: &Command) -> String {
 		let mut help = String::new();
@@ -2207,33 +2392,32 @@ pub mod presets {
 			vec_inner = Vector(Some(vec![cmd.c_flags.clone()]));
 			c_flags = &vec_inner;
 		}
-
 		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
 		let head: String;
-		let common_label;
+		let cl_label;
 		let name_and_alias_field_min_width: usize = 7;
-		if ctx.common_flags.sum_of_length() > 0 {
-			//コモンフラグが設定されている場合
+		if ctx.common_flags.sum_of_length() > 0 && cmd.l_flags.has_at_least_one() {
+			//コモンフラグとローカルフラグ両方が設定されている場合
 			head = indent.repeat(2);
-			common_label = true;
+			cl_label = true;
 		} else {
-			//設定されていない場合、ローカルフラグだけなのでラベルはいらない
+			//設定されていない場合、ローカルフラグもしくはコモンフラグだけなのでラベルはいらない
 			head = indent.clone();
-			common_label = false;
+			cl_label = false;
 		}
 
 		if let Vector(Some(l_flags)) = l_flags {
-			if !common_label {
+			if !cl_label {
 				help.push_str(&indent);
 				help.push_str("Local: \n");
 			}
-			help = l_flags.iter().fold(help, |help, l_flag| {
+			help = l_flags.iter().rfold(help, |help, l_flag| {
 				l_flag.help(help + &head, name_and_alias_field_min_width + 5)
 			});
 		}
 		let depth = c_flags.len();
 		if let Vector(Some(c_flags)) = c_flags {
-			if common_label {
+			if cl_label {
 				help = help + &indent + "Common";
 			}
 			let self_common_index = depth - 1;
@@ -2246,7 +2430,7 @@ pub mod presets {
 					//コモンフラグ書き出し
 					if let Vector(Some(c_flags)) = c_flags {
 						let mut help = help;
-						if common_label {
+						if cl_label {
 							if index < self_common_index {
 								let mut from_owned: String;
 								let from = if route_without_root {
@@ -2293,7 +2477,7 @@ pub mod presets {
 							}
 						}
 
-						help = c_flags.iter().fold(help, |help, c_flag| {
+						help = c_flags.iter().rfold(help, |help, c_flag| {
 							c_flag.help(help + &head, name_and_alias_field_min_width)
 						});
 						help

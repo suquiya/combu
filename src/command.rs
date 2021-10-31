@@ -2347,7 +2347,9 @@ pub mod presets {
 				if sub.len() > 1 {
 					help.push('s');
 				}
+
 				help.push_str(": \n");
+				// 最初のフラグ情報追加
 				help = help + &indent + &sub_command.name;
 				let mut na_list = vec![&sub_command.name];
 				let mut name_and_alias_width = sub_command.name.len();
@@ -2357,6 +2359,19 @@ pub mod presets {
 					for a in alias {
 						help = help + ", " + a;
 						name_and_alias_width += a.len() + 2;
+					}
+				}
+				if name_and_alias_width < name_and_alias_min_width {
+					help = help + &sp.repeat(name_and_alias_min_width - name_and_alias_width);
+				}
+				if let Some(description) = &sub_command.description {
+					help = help + "\t" + description
+				}
+				help += "\n";
+
+				for sub_cmd in iter {
+					if !na_list.contains(&&sub_cmd.name) {
+						na_list.push(&sub_cmd.name)
 					}
 				}
 			}

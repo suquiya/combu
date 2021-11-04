@@ -793,8 +793,13 @@ macro_rules! cmd {
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l~$([$($l_flags:tt)*])?,c~$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
-	[(c)$($year:literal)?$(,)?from_crate$(,$($t:tt)*)?])=>{
-		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($year,)?...],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l~$([$($l_flags)*])?,c~$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+	[(c)from_crate$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[from_crate],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l~$([$($l_flags)*])?,c~$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l~$([$($l_flags:tt)*])?,c~$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[(c)$year:literal$(,)?from_crate$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$year,from_crate],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l~$([$($l_flags)*])?,c~$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l~$([$($l_flags:tt)*])?,c~$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
@@ -1186,6 +1191,9 @@ macro_rules! cmd {
 #[macro_export]
 /// Macro for creating copyright
 macro_rules! copyright {
+	(from_crate) => {
+		$crate::copyright!("Copyright (c)", "", $crate::crate_authors!())
+	};
 	()=>{
 		$crate::string_from!()
 	};
@@ -1200,9 +1208,6 @@ macro_rules! copyright {
 	};
 	(->$raw:expr)=>{
 		$raw
-	};
-	(from_crate) => {
-		$crate::copyright!("Copyright (c)", "", $crate::crate_authors!())
 	};
 	(...)=>{
 		$crate::copyright!(from_crate)
@@ -3614,7 +3619,7 @@ mod tests {
 			]),
 		);
 
-		let _r = r.clone().copyright(copyright![2020, suquiya]);
+		let _r = r.clone().copyright(copyright![2020, "suquiya"]);
 		compare_cmd(
 			_r.clone(),
 			cmd!("test"[
@@ -3634,6 +3639,8 @@ mod tests {
 			]),
 			_c.clone(),
 		);
+		/*
+		rust-analyzerが警告を出すが通るテスト、一時的にコメントアウト
 		let _r = r.clone().copyright(copyright![from_crate]);
 		compare_cmd(
 			_r.clone(),
@@ -3703,5 +3710,6 @@ mod tests {
 			]),
 			_c.clone(),
 		);
+		*/
 	}
 }

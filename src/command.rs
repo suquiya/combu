@@ -2188,36 +2188,35 @@ pub mod presets {
 				if let Vector(Some(short_alias)) = &f.short_alias {
 					for s in short_alias.iter() {
 						if !$s_list.contains(&s) {
+							if (!all_dup) {
+								$help.push(',');
+							}
 							all_dup = false;
 							$help.push_str("-");
 							$help.push(*s);
-							$help.push(',');
 							$s_list.push(s);
 						}
 					}
 				} else {
 					$help.push_str(&$indent);
 				}
-				let mut name_dup = true;
 				if !$nl_list.contains(&&f.name) {
+					$help.push_str(if all_dup { " --" } else { ", --" });
 					all_dup = false;
-					name_dup = false;
-					$help.push_str(" --");
 					$help.push_str(&f.name);
 					$nl_list.push(&f.name);
 				}
 				if let Vector(Some(long_alias)) = &f.long_alias {
 					for long in long_alias.iter() {
 						if !$nl_list.contains(&long) {
-							all_dup = false;
 							$nl_list.push(long);
-							if name_dup {
+							if all_dup {
 								$help.push_str(" --");
-								$help.push_str(long);
+								all_dup = false;
 							} else {
 								$help.push_str(", --");
-								$help.push_str(long);
 							}
+							$help.push_str(long);
 						}
 					}
 				}
@@ -2285,7 +2284,7 @@ pub mod presets {
 			}
 		}
 
-		// コモンフラグ出力(cmdに残っているフラグ)
+		// コモンフラグ出力(cmdに残っているフラグを出力)
 		let mut routes = ctx.routes.clone();
 		if let Vector(Some(c_flags)) = &cmd.c_flags {
 			let emp_str = String::new();
@@ -2301,17 +2300,21 @@ pub mod presets {
 			);
 			routes.pop();
 		}
-		if routes.len() < ctx.common_flags.len() {
+		let mut routes: Vec<String> = if routes.len() < ctx.common_flags.len() {
+			let mut routes: Vec<String> = routes.into();
 			routes.insert(
 				0,
-				std::path::Path::new(&ctx.exe_path)
+				std::path::Path::new(ctx.exe_path())
 					.file_stem()
 					.unwrap_or(std::ffi::OsStr::new("root"))
 					.to_str()
 					.unwrap_or("root")
 					.to_owned(),
 			);
-		}
+			routes
+		} else {
+			routes.into()
+		};
 		// コモンフラグ出力(contextに取り込まれているフラグ)
 		if let Vector(Some(cfs)) = &ctx.common_flags {
 			let self_common_index = cfs.len() - 1;
@@ -2370,11 +2373,49 @@ pub mod presets {
 				help += "\n";
 
 				for sub_cmd in iter {
+					let mut all_dup = true;
+					let help_first_width = help.len();
 					if !na_list.contains(&&sub_cmd.name) {
-						na_list.push(&sub_cmd.name)
+						na_list.push(&sub_cmd.name);
+						help = help + &indent + &sub_cmd.name;
+						all_dup = false;
+					}
+					if let Vector(Some(alias)) = &sub_cmd.alias {
+						for a in alias {
+							if !na_list.contains(&a) {
+								na_list.push(a);
+								if all_dup {
+									help = help + &indent + a;
+								} else {
+									help = help + ", " + a;
+								}
+								all_dup = false;
+							}
+						}
+					}
+					if !all_dup {
+						let name_and_alias_width = help_first_width - help.len();
+						if name_and_alias_width < name_and_alias_min_width {
+							help += &sp.repeat(name_and_alias_min_width - name_and_alias_width);
+						}
+						if let Some(description) = &sub_cmd.description {
+							help = help + "\t" + description;
+						}
+						help += "\n"
 					}
 				}
 			}
+			if routes.len() < 2 && !cmd.name.is_empty() {
+				routes[0] = cmd.name.clone();
+			}
+			let exe_suffix = std::env::consts::EXE_SUFFIX;
+			if !exe_suffix.is_empty() {
+				routes[0].push_str("[");
+				routes[0].push_str(exe_suffix);
+				routes[0].push_str("]")
+			}
+			help = help + &routes.join(" ") + "<subcommand> --help for more information.";
+			help += "\n";
 		}
 
 		return help;
@@ -2450,7 +2491,7 @@ pub mod presets {
 								let mut from_owned: String;
 								let from = if route_without_root {
 									if index < 1 {
-										let cur_path = std::path::Path::new(ctx.current());
+										let cur_path = std::path::Path::new(ctx.exe_path());
 										from_owned = cur_path
 											.file_stem()
 											.unwrap_or(std::ffi::OsStr::new("root"))
@@ -2535,7 +2576,7 @@ pub mod presets {
 			let loc_owned: String;
 			let location: &str = {
 				if cmd.name.is_empty() {
-					let path = std::path::Path::new(ctx.current());
+					let path = std::path::Path::new(ctx.exe_path());
 					let mut l: String = path
 						.file_stem()
 						.unwrap_or(std::ffi::OsStr::new("root"))
@@ -2560,7 +2601,7 @@ pub mod presets {
 							routes.iter().rfold(
 								{
 									if depth > routes.len() {
-										let path = std::path::Path::new(ctx.current());
+										let path = std::path::Path::new(ctx.exe_path());
 										let mut l = path
 											.file_stem()
 											.unwrap_or(std::ffi::OsStr::new("root"))

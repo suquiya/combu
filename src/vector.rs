@@ -14,6 +14,15 @@ impl<T> From<Vec<T>> for Vector<T> {
 	}
 }
 
+impl<T> From<Vector<T>> for Vec<T> {
+	fn from(vec: Vector<T>) -> Vec<T> {
+		match vec {
+			Vector(Some(inner)) => inner,
+			Vector(None) => vec![],
+		}
+	}
+}
+
 impl<T> From<std::collections::VecDeque<T>> for Vector<T> {
 	fn from(vec_deque: std::collections::VecDeque<T>) -> Self {
 		let vec: Vec<T> = vec_deque.into();

@@ -748,6 +748,11 @@ macro_rules! cmd {
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l~$([$($l_flags:tt)*])?,c~$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[<...$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l~$([$($l_flags)*])?,c~$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<,@$([$($copyright:tt)*])?,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l~$([$($l_flags:tt)*])?,c~$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[<$(,$($t:tt)*)?])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<[$crate::crate_authors!()],@$([$($copyright)*])?,@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l~$([$($l_flags)*])?,c~$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
@@ -1191,14 +1196,23 @@ macro_rules! copyright {
 	(->$raw:expr)=>{
 		$raw
 	};
-	(...) => {
+	(from_crate) => {
 		$crate::copyright!("Copyright (c)", "", $crate::crate_authors!())
 	};
-	(...$(,)?$year:literal)=>{
+	(...)=>{
+		$crate::copyright!(from_crate)
+	};
+	(from_crate$(,)?$year:literal)=>{
 		$crate::copyright!("Copyright (c)", $year, $crate::crate_authors!())
 	};
-	($year:literal$(,)?...)=>{
+	($year:literal$(,)?from_crate)=>{
 		$crate::copyright!("Copyright (c)", $year, $crate::crate_authors!())
+	};
+	(...$(,)?$year:literal)=>{
+		$crate::copyright!(from_crate,$year)
+	};
+	($year:literal$(,)?...)=>{
+		$crate::copyright!($year,from_crate)
 	};
 	({$($t:tt)*})=>{
 		copyright!([$($t:tt)+])
@@ -1266,43 +1280,43 @@ macro_rules! flags {
 		$crate::vector![$($crate::flag!$flag_arg),*]
 	};
 	($($flag_name:ident$sep:tt$flag_arg:tt),* $(,)?)=>{
-		flags!($([$flag_name=>$flag_arg]),*);
+		$crate::flags!($([$flag_name=>$flag_arg]),*);
 	};
 	($($flag_name:ident$sep:tt$flag_arg:tt);* $(,)?)=>{
-		flags!($([$flag_name=>$flag_arg]),*);
+		$crate::flags!($([$flag_name=>$flag_arg]),*);
 	};
 	($ft:tt$(,$($t:tt)*)?)=>{
-		flags!(={$ft,},$($($t)*)?)
+		$crate::flags!(={$ft,},$($($t)*)?)
 	};
 	(={$($st:tt),+,},$ft:tt$(,$($t:tt)*)?)=>{
-		flags!(={$($st),+,$ft,},$($($t)*)?)
+		$crate::flags!(={$($st),+,$ft,},$($($t)*)?)
 	};
 	(={$($st:tt),+,},$ft:tt$(;$($t:tt)*)?)=>{
-		flags!(={$($st),+,$ft,},$($($t)*)?)
+		$crate::flags!(={$($st),+,$ft,},$($($t)*)?)
 	};
 	($(={$($st:tt),+,},)?$flag_name:ident$flag_arg:tt$(,$($t:tt)*)?)=>{
-		flags!(={$($($st),+,)?[$flag_name$flag_arg],},$($($t)*)?)
+		$crate::flags!(={$($($st),+,)?[$flag_name$flag_arg],},$($($t)*)?)
 	};
 	($(={$($st:tt),+,},)?$flag_name:ident$flag_arg:tt$(;$($t:tt)*)?)=>{
-		flags!(={$($($st),+,)?[$flag_name$flag_arg],},$($($t)*)?)
+		$crate::flags!(={$($($st),+,)?[$flag_name$flag_arg],},$($($t)*)?)
 	};
 	($(={$($st:tt),+,},)?$flag_name:ident$sep:tt$flag_arg:tt$(,$($t:tt)*)?)=>{
-		flags!(={$($($st),+,)?[$flag_name$sep$flag_arg],},$($($t)*)?)
+		$crate::flags!(={$($($st),+,)?[$flag_name$sep$flag_arg],},$($($t)*)?)
 	};
 	($(={$($st:tt),+,},)?$flag_name:ident$sep:tt$flag_arg:tt$(;$($t:tt)*)?)=>{
-		flags!(={$($($st),+,)?[$flag_name$sep$flag_arg],},$($($t)*)?)
+		$crate::flags!(={$($($st),+,)?[$flag_name$sep$flag_arg],},$($($t)*)?)
 	};
 	($(={$($st:tt),+,},)?[$($ft:tt)+]$($t:tt)*)=>{
-		flags!(={$($($st),+,)?[$($ft)+],},$($t)*);
+		$crate::flags!(={$($($st),+,)?[$($ft)+],},$($t)*);
 	};
 	($(={$($st:tt),+,},)?{$($ft:tt)+}$($t:tt)*)=>{
-		flags!(={$($($st),+,)?[$($ft)+],},$($t)*);
+		$crate::flags!(={$($($st),+,)?[$($ft)+],},$($t)*);
 	};
 	($(={$($st:tt),+,},)?($($ft:tt)+)$($t:tt)*)=>{
-		flags!(={$($($st),+,)?[$($ft)+],},$($t)*);
+		$crate::flags!(={$($($st),+,)?[$($ft)+],},$($t)*);
 	};
 	(={$($st:tt),+,},)=>{
-		flags!($($st),+,)
+		$crate::flags!($($st),+,)
 	};
 }
 
@@ -1322,7 +1336,7 @@ macro_rules! alias {
 		$crate::vector!($($at)*;:String)
 	};
 	(=[$($at:tt)*],$alias:ident,$($t:tt)*)=>{
-		alias!(=[$($at)*$crate::string_from!(stringify!($alias)),],$($t)*)
+		$crate::alias!(=[$($at)*$crate::string_from!(stringify!($alias)),],$($t)*)
 	};
 	(=[$($at:tt)*],$alias:literal,$($t:tt)*)=>{
 		alias!(=[$($at)*$crate::string_from!($alias),],$($t)*)
@@ -1343,7 +1357,7 @@ macro_rules! alias {
 		$raw
 	};
 	($($t:tt)+)=>{
-		alias!(=[],$($t)+)
+		$crate::alias!(=[],$($t)+)
 	};
 }
 
@@ -3615,7 +3629,7 @@ mod tests {
 			]),
 			_c.clone(),
 		);
-		let _r = r.clone().copyright(copyright![...]);
+		let _r = r.clone().copyright(copyright![from_crate]);
 		compare_cmd(
 			_r.clone(),
 			cmd!("test"[
@@ -3664,7 +3678,7 @@ mod tests {
 			_r.clone(),
 			cmd!("test"[
 				action=>act
-				authors=crate_authors!(),
+				authors=...,
 				copyright:2020,...,
 				license:"test_license" "test_license_fn",
 				description="test_command",

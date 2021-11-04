@@ -86,12 +86,12 @@ impl Context {
 	}
 
 	/// Get exe_path as &str
-	pub fn current(&self) -> &str {
+	pub fn exe_path(&self) -> &str {
 		&self.exe_path
 	}
 
 	/// Change exe_path's value
-	pub fn change_current(mut self, path: String) {
+	pub fn change_exe_path(mut self, path: String) {
 		self.exe_path = path;
 	}
 

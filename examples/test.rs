@@ -1,35 +1,33 @@
-use combu::command::*;
+use combu::command::presets::help_with_alias_dedup;
+use combu::{check_help, Action};
+use combu::{cmd, command::*};
 use combu::{done, Done, Flag};
 
 fn main() {
-	/*let action = |c| {
-		println!("root_action: {:?}", c);
-		Ok(ShowHelpRequest(c))
-	};*/
 	let _sub = sub();
-	/*let r = cmd!(root:
+	let act: Action = |c, cmd| {
+		check_help!(c, cmd, help_with_alias_dedup);
+		println!("root_action: {:?}", c);
+		done!()
+	};
+	let r = cmd!(root
 	[
-		|c| {
-			println!("root_action: {:?}", c);
-			Ok(ShowHelpRequest(c))
-		},
-		<...,
-		@[2021,suquiya],
-		+("license_name",content=>"license_content"),
-		="description",
-		:"usage",
-		l#flags!(local=>{bool, -l,--long,="test",false},),
-		c#Vector(None),
-		&vector!["alias".into()],
+		>act
+		<from_crate,
+		@"suquiya copyright",
+		@"test_license","test_license_fn",
+		="test_command",
+		:"test_usage",
+		l~{tlf[="test_local_flag" -l >bool?false]},
+		c~{tcf[="test_common_flag" -c >bool?false]},
+		&alias,
+		&alias2,
 		n "0.0.1",
-		|vector![sub],
-		?presets::help,
+		+ _sub.clone(),
 	]
-	);*/
+	);
 
-	//local2:{bool, -a,--long2,="test2",false}
-
-	//let _ = r.run_with_auto_arg_collect();
+	let _ = r.run_with_auto_arg_collect();
 }
 
 fn sub() -> Command {

@@ -793,6 +793,11 @@ macro_rules! cmd {
 		[$($($t)*)?])
 	};
 	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l~$([$($l_flags:tt)*])?,c~$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
+	[(c)$($year:literal)?$(,)?from_crate$(,$($t:tt)*)?])=>{
+		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($year,)?...],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l~$([$($l_flags)*])?,c~$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
+		[$($($t)*)?])
+	};
+	(->$name:expr=>{>$([$($action:tt)*])?,<$([$($authors:tt)*])?,@,@$([$($license:tt)*])?,=$([$($description:tt)*])?,:$([$($usage:tt)*])?,l~$([$($l_flags:tt)*])?,c~$([$($c_flags:tt)*])?,&$([$($alias:tt)*])?,n$([$($version:tt)*])?,+$([$($sub:tt)*])?}
 	[(c)$($year:literal)?$(,)?...$(,$($t:tt)*)?])=>{
 		cmd!(->$name=>{>$([$($action)*])?,<$([$($authors)*])?,@[$($year,)?...],@$([$($license)*])?,=$([$($description)*])?,:$([$($usage)*])?,l~$([$($l_flags)*])?,c~$([$($c_flags)*])?,&$([$($alias)*])?,n$([$($version)*])?,+$([$($sub)*])?}
 		[$($($t)*)?])
@@ -3635,7 +3640,7 @@ mod tests {
 			cmd!("test"[
 				action=>act
 				authors=crate_authors!(),
-				(c)...,
+				(c)from_crate,
 				(l)"test_license" "test_license_fn",
 				="test_command",
 				:"test_usage",
@@ -3649,13 +3654,13 @@ mod tests {
 			]),
 			_c.clone(),
 		);
-		let _r = r.clone().copyright(copyright![2020,...]);
+		let _r = r.clone().copyright(copyright![2020, from_crate]);
 		compare_cmd(
 			_r.clone(),
 			cmd!("test"[
 				action=>act
 				authors=crate_authors!(),
-				copyright:2020,...,
+				copyright:2020,from_crate,
 				license:"test_license" "test_license_fn",
 				description="test_command",
 				usage:"test_usage",
@@ -3679,7 +3684,7 @@ mod tests {
 			cmd!("test"[
 				action=>act
 				authors=...,
-				copyright:2020,...,
+				copyright:2020,from_crate,
 				license:"test_license" "test_license_fn",
 				description="test_command",
 				usage:"test_usage",

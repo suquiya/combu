@@ -1,6 +1,6 @@
 use crate::{
 	parser::{ErrorInfo, MiddleArg},
-	vector::flag::{FlagSearch, LongFound},
+	vector::flag::FlagSearch,
 	Command, Flag, FlagValue, Vector,
 };
 use std::collections::VecDeque;
@@ -95,20 +95,6 @@ impl Context {
 		self.exe_path = path;
 	}
 
-	/// Find long form of common flag matches name_or_alias
-	/// ロングフォームがname_or_aliasと一致するコモンフラグを検索してその結果を返す
-	#[inline]
-	pub fn find_common_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
-		self.common_flags.find_long_flag(name_or_alias)
-	}
-
-	/// Find short form of common flag matches name_or_alias
-	/// ショートフォームがname_or_aliasと一致するコモンフラグを検索してその結果を返す
-	#[inline]
-	pub fn find_common_short_flag(&self, short_alias: &char) -> Option<&Flag> {
-		self.common_flags.find_short_flag(short_alias)
-	}
-
 	/// Add(Push back) middle_arg to this context's parsing_args
 	pub fn push_back_to_parsing_args(&mut self, middle_arg: MiddleArg) {
 		match self.parsing_args {
@@ -141,11 +127,12 @@ impl Context {
 	/// contextからフラグ値を取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はデフォルト値のコピー）そのものを返す
 	pub fn take_flag_value_of(
 		&mut self,
-		current_command: &Command,
+
 		flag_name: &str,
+		current_command: &Command,
 	) -> Option<FlagValue> {
 		match self.take_local_flag_value_of(flag_name, current_command) {
-			None => self.take_common_flag_value_of(flag_name),
+			None => self.take_common_flag_value_of(flag_name, current_command),
 			val => val,
 		}
 	}
@@ -177,9 +164,13 @@ impl Context {
 
 	/// Takes inputted flag value from context. Different from get, returns flag_value instance own (not reference) that has context.
 	/// contextからコモンフラグの値を取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はデフォルト値のコピー）そのものを返す
-	pub fn take_common_flag_value_of(&mut self, flag_name: &str) -> Option<FlagValue> {
+	pub fn take_common_flag_value_of(
+		&mut self,
+		flag_name: &str,
+		current_command: &Command,
+	) -> Option<FlagValue> {
 		match self.take_inputted_common_flag_value_of(flag_name) {
-			None => match self.common_flags.find(flag_name) {
+			None => match (&current_command.c_flags, &self.common_flags).find(flag_name) {
 				None => None,
 				Some(f) => Some(f.default_value.clone()),
 			},
@@ -230,7 +221,7 @@ impl Context {
 		current_command: &Command,
 	) -> Option<FlagValue> {
 		match self.get_local_flag_value_of(flag_name, current_command) {
-			None => self.get_common_flag_value_of(flag_name),
+			None => self.get_common_flag_value_of(flag_name, current_command),
 			flag_val => flag_val,
 		}
 	}
@@ -248,16 +239,22 @@ impl Context {
 	/// Gets FlagValue's clone of the common flag matches flag_name from context. If it is not defined, Returns None.
 	/// contextからユーザから指定された場合のコモンフラグ値のcloneを取得する。ユーザから入力されていないが定義されている場合はデフォルト値のクローンを返す。定義もされていない場合はNoneを返す。
 	/// なお明示的に値が指定されない場合、Bool型のフラグであればFlagValue::Bool(true)とし、String型のフラグであればFlagValue::String(String::new())、それ以外の型のフラグではFlagValue::NoneをSomeで包んで返す
-	pub fn get_common_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
+	pub fn get_common_flag_value_of(
+		&self,
+		flag_name: &str,
+		current_command: &Command,
+	) -> Option<FlagValue> {
 		match self.get_inputted_common_flag_value_of(flag_name) {
-			None => match self.common_flags.find(flag_name) {
+			None => match (&current_command.c_flags, &self.common_flags).find(flag_name) {
 				Some(f) => Some(f.default_value.clone()),
 				None => None,
 			},
-			Some(FlagValue::None) => match self.common_flags.find(flag_name) {
-				Some(f) => Some(f.derive_flag_value_if_no_value()),
-				None => None,
-			},
+			Some(FlagValue::None) => {
+				match (&current_command.c_flags, &self.common_flags).find(flag_name) {
+					Some(f) => Some(f.derive_flag_value_if_no_value()),
+					None => None,
+				}
+			}
 			val => val,
 		}
 	}

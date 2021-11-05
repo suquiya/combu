@@ -359,7 +359,7 @@ pub mod flag {
 			}
 		}
 
-		fn find(&self, name_or_alias: &str) -> Option<&Flag> {
+		fn find(&self, name: &str) -> Option<&Flag> {
 			match &self {
 				Vector(None) => None,
 				Vector(Some(flags_list)) => {
@@ -367,7 +367,7 @@ pub mod flag {
 					return loop {
 						let flags = iter.next_back();
 						if let Some(flags) = flags {
-							match flags.find(name_or_alias) {
+							match flags.find(name) {
 								None => {}
 								val => {
 									break val;
@@ -378,6 +378,29 @@ pub mod flag {
 						}
 					};
 				}
+			}
+		}
+	}
+
+	impl<T: FlagSearch, S: FlagSearch> FlagSearch for (&T, &S) {
+		fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag> {
+			match self.0.find_long_flag(name_or_alias) {
+				LongFound::None => self.1.find_long_flag(name_or_alias),
+				val => val,
+			}
+		}
+
+		fn find_short_flag(&self, short_alias: &char) -> Option<&Flag> {
+			match self.0.find_short_flag(short_alias) {
+				None => self.1.find_short_flag(short_alias),
+				val => val,
+			}
+		}
+
+		fn find(&self, name: &str) -> Option<&Flag> {
+			match self.0.find(name) {
+				None => self.1.find(name),
+				val => val,
 			}
 		}
 	}

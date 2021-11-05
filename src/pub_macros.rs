@@ -3639,6 +3639,7 @@ mod tests {
 			]),
 			_c.clone(),
 		);
+
 		/*
 		rust-analyzerが警告を出すが通るテスト、一時的にコメントアウト
 		let _r = r.clone().copyright(copyright![from_crate]);

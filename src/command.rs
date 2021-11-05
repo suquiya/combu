@@ -181,7 +181,7 @@ macro_rules! gen_context_for_self_action {
 		Context::new(
 			$raw_args,
 			$args,
-			$self.c_flags.take(),
+			Vector(None),
 			$self.derive_route_init_vector(),
 			$exe_path,
 		)
@@ -190,7 +190,7 @@ macro_rules! gen_context_for_self_action {
 		Context::with_all_field(
 			$raw_args,
 			$args,
-			$self.c_flags.take().into(),
+			Vector(None),
 			$exe_path,
 			$self.derive_route_init_vector(),
 			Vector::default(),
@@ -202,21 +202,20 @@ macro_rules! gen_context_for_self_action {
 }
 
 macro_rules! gen_context_for_sub_run {
-	($self:expr,$sub:expr, $raw_args:expr,$args:expr,$exe_path:expr) => {
-		gen_context_for_sub_run!(inner, $self, $sub, $raw_args, $args, $exe_path, None)
+	($self:expr,$raw_args:expr,$args:expr,$exe_path:expr) => {
+		gen_context_for_sub_run!(inner, $self, $raw_args, $args, $exe_path, None)
 	};
-	($self:expr,$sub:expr, $raw_args:expr,$args:expr,$exe_path:expr, $inter_mediate_args: expr) => {
+	($self:expr,$raw_args:expr,$args:expr,$exe_path:expr, $inter_mediate_args: expr) => {
 		gen_context_for_sub_run!(
 			inner,
 			$self,
-			$sub,
 			$raw_args,
 			$args,
 			$exe_path,
 			Some($inter_mediate_args)
 		)
 	};
-	(inner,$self:expr, $sub:expr, $raw_args:expr,$args:expr,$exe_path:expr,$inter_mediate_args:expr) => {
+	(inner,$self:expr, $raw_args:expr,$args:expr,$exe_path:expr,$inter_mediate_args:expr) => {
 		Context::with_all_field(
 			$raw_args,
 			$args,
@@ -333,7 +332,8 @@ impl Command {
 				} else {
 					let mut context = gen_context_for_self_action!(self, raw_args);
 					//println!("single_run_context: {:?}", context);
-					context = Parser::default().parse_args_until_end(&self.l_flags, context);
+					context =
+						Parser::default().parse_args_until_end(&self.l_flags, &self.c_flags, context);
 					action(context, self)
 				}
 			}
@@ -564,14 +564,14 @@ impl Command {
 							match self.action {
 								None => no_registered_error!(c),
 								Some(action) => {
-									c = p.parse_args_until_end(&self.l_flags, c);
+									c = p.parse_args_until_end(&self.l_flags, &self.c_flags, c);
 									action(c, self)
 								}
 							}
 						}
 						Some(sub) => {
 							// サブコマンドがヒットしたとき
-							let c = gen_context_for_sub_run!(self, sub, raw_args, args, exe_path);
+							let c = gen_context_for_sub_run!(self, raw_args, args, exe_path);
 							let r = sub.run(c);
 							// サブコマンドの結果をハンドリング
 							self.handle_sub_result(r)
@@ -590,15 +590,14 @@ impl Command {
 	pub fn run_with_context(mut self, mut context: Context) -> run_result!() {
 		if self.sub.is_none() {
 			// サブコマンドがない場合
-			context.common_flags.push(self.c_flags.take());
 			let p = Parser::default();
 			let (mut context, non_flag_args) =
-				p.parse_inter_mediate_args(&self.l_flags, context, true);
+				p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, context, true);
 			if let Some(mut non_flag_args) = non_flag_args {
 				non_flag_args.append(&mut context.args);
 				context.args = non_flag_args;
 			}
-			context = p.parse_args_until_end(&self.l_flags, context);
+			context = p.parse_args_until_end(&self.l_flags, &self.c_flags, context);
 			context.routes.push(self.name.clone());
 			match self.action {
 				Some(action) => action(context, self),
@@ -623,43 +622,44 @@ impl Command {
 						Some(mut sub) => {
 							context.common_flags.push(self.c_flags.take());
 							check_sub!(sub, self);
-							println!("{:?}", &context);
 							let r = sub.run(context);
 							self.handle_sub_result(r)
 						}
-						None => {
-							context.common_flags.push(self.c_flags.take());
-							match self.action {
-								None => no_registered_error!(context),
-								Some(action) => {
-									let c = match p.parse_inter_mediate_args(&self.l_flags, context, true) {
-										(mut context, None) => {
-											context = p.parse_args_until_end(&self.l_flags, context);
-											context.args.push_front(arg);
-											context
-										}
-										(mut context, Some(mut non_flag_args)) => {
-											context = p.parse_args_until_end(&self.l_flags, context);
-											context.args.push_front(arg);
-											non_flag_args.append(&mut context.args);
-											context.args = non_flag_args;
-											context
-										}
-									};
-									action(c, self)
-								}
+						None => match self.action {
+							None => no_registered_error!(context),
+							Some(action) => {
+								let c = match p.parse_inter_mediate_args(
+									&self.l_flags,
+									&self.c_flags,
+									context,
+									true,
+								) {
+									(mut context, None) => {
+										context =
+											p.parse_args_until_end(&self.l_flags, &self.c_flags, context);
+										context.args.push_front(arg);
+										context
+									}
+									(mut context, Some(mut non_flag_args)) => {
+										context =
+											p.parse_args_until_end(&self.l_flags, &self.c_flags, context);
+										context.args.push_front(arg);
+										non_flag_args.append(&mut context.args);
+										context.args = non_flag_args;
+										context
+									}
+								};
+								action(c, self)
 							}
-						}
+						},
 					}
 				}
 				None => {
 					//サブコマンド等の処理の必要がないのでこのまま叩き込む
 					match self.action {
 						Some(action) => {
-							context.common_flags.push(self.c_flags.take());
-
 							let (mut context, non_flag_args) =
-								p.parse_inter_mediate_args(&self.l_flags, context, true);
+								p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, context, true);
 							if let Some(mut non_flag_args) = non_flag_args {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
@@ -667,10 +667,8 @@ impl Command {
 							action(context, self)
 						}
 						None => {
-							context.common_flags.push(self.c_flags.take());
-
 							let (mut context, non_flag_args) =
-								p.parse_inter_mediate_args(&self.l_flags, context, true);
+								p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, context, true);
 							if let Some(mut non_flag_args) = non_flag_args {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
@@ -749,10 +747,9 @@ impl Command {
 									} else {
 										c.parsing_args = Some(inter_mediate_args);
 									}
-									c.common_flags.push(self.c_flags.take());
 									let (mut c, non_flag_args) =
-										p.parse_inter_mediate_args(&self.l_flags, c, false);
-									c = p.parse_args_until_end(&self.l_flags, c);
+										p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, c, false);
+									c = p.parse_args_until_end(&self.l_flags, &self.c_flags, c);
 									c.args.push_front(arg);
 									if let Some(mut non_flag_args) = non_flag_args {
 										non_flag_args.append(&mut c.args);
@@ -771,7 +768,8 @@ impl Command {
 								} else {
 									c.parsing_args = Some(inter_mediate_args);
 								}
-								let (mut c, args) = p.parse_inter_mediate_args(&self.l_flags, c, false);
+								let (mut c, args) =
+									p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, c, false);
 
 								if let Some(mut args) = args {
 									args.append(&mut c.args);
@@ -787,13 +785,13 @@ impl Command {
 					_ => {
 						inter_mediate_args.push_back(last);
 						c.args = args;
-						c.common_flags.push(self.c_flags.take());
 						if let Some(mut parsing_args) = c.parsing_args {
 							parsing_args.append(&mut inter_mediate_args);
 							c.parsing_args = Some(parsing_args);
 						}
-						let (mut c, non_flag_args) = p.parse_inter_mediate_args(&self.l_flags, c, false);
-						c = p.parse_args_until_end(&self.l_flags, c);
+						let (mut c, non_flag_args) =
+							p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, c, false);
+						c = p.parse_args_until_end(&self.l_flags, &self.c_flags, c);
 						c.args.push_front(arg);
 						if let Some(mut non_flag_args) = non_flag_args {
 							non_flag_args.append(&mut c.args);
@@ -815,8 +813,8 @@ impl Command {
 				} else {
 					c.parsing_args = Some(inter_mediate_args);
 				}
-				c.common_flags.push(self.c_flags.take());
-				let (mut c, non_flag_args) = p.parse_inter_mediate_args(&self.l_flags, c, false);
+				let (mut c, non_flag_args) =
+					p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, c, false);
 				//println!("after_parse_ima:{:?}", c);
 				if let Some(non_flag_args) = non_flag_args {
 					//non_flag_args.append(&mut c.args);
@@ -850,14 +848,8 @@ impl Command {
 				match self.take_sub(&arg) {
 					Some(sub) => {
 						inter_mediate_args.push_back(last);
-						let c = gen_context_for_sub_run!(
-							self,
-							sub,
-							raw_args,
-							args,
-							exe_path,
-							inter_mediate_args
-						);
+						let c =
+							gen_context_for_sub_run!(self, raw_args, args, exe_path, inter_mediate_args);
 						let r = sub.run(c);
 						r
 					}
@@ -882,7 +874,6 @@ impl Command {
 										Some(sub) => {
 											let c = gen_context_for_sub_run!(
 												self,
-												sub,
 												raw_args,
 												args,
 												exe_path,
@@ -900,9 +891,13 @@ impl Command {
 												exe_path,
 												inter_mediate_args
 											);
-											let (mut c, non_flag_args) =
-												p.parse_inter_mediate_args(&self.l_flags, c, false);
-											c = p.parse_args_until_end(&self.l_flags, c);
+											let (mut c, non_flag_args) = p.parse_inter_mediate_args(
+												&self.l_flags,
+												&self.c_flags,
+												c,
+												false,
+											);
+											c = p.parse_args_until_end(&self.l_flags, &self.c_flags, c);
 											c.args.push_front(arg);
 											if let Some(mut non_flag_args) = non_flag_args {
 												non_flag_args.append(&mut c.args);
@@ -924,7 +919,7 @@ impl Command {
 											inter_mediate_args
 										);
 										let (mut c, non_flag_args) =
-											p.parse_inter_mediate_args(&self.l_flags, c, false);
+											p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, c, false);
 										if let Some(mut non_flag_args) = non_flag_args {
 											non_flag_args.append(&mut c.args);
 											c.args = non_flag_args;
@@ -949,8 +944,8 @@ impl Command {
 									inter_mediate_args
 								);
 								let (mut c, non_flag_args) =
-									p.parse_inter_mediate_args(&self.l_flags, c, false);
-								c = p.parse_args_until_end(&self.l_flags, c);
+									p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, c, false);
+								c = p.parse_args_until_end(&self.l_flags, &self.c_flags, c);
 								c.args.push_front(arg);
 								if let Some(mut non_flag_args) = non_flag_args {
 									non_flag_args.append(&mut c.args);
@@ -971,7 +966,8 @@ impl Command {
 				inter_mediate_args.push_back(last);
 				let context =
 					gen_context_for_self_action!(self, raw_args, args, exe_path, inter_mediate_args);
-				let (mut c, non_flag_args) = p.parse_inter_mediate_args(&self.l_flags, context, false);
+				let (mut c, non_flag_args) =
+					p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, context, false);
 				if let Some(mut non_flag_args) = non_flag_args {
 					non_flag_args.append(&mut c.args);
 					c.args = non_flag_args;
@@ -1627,7 +1623,7 @@ mod tests {
 				);
 				assert_eq!(c.args, vec!["test_arg2".to_string()]);
 				assert_eq!(
-					c.get_common_flag_value_of("cstr").unwrap(),
+					c.get_common_flag_value_of("cstr", &cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
@@ -1708,7 +1704,7 @@ mod tests {
 					]
 				);
 				assert_eq!(
-					c.get_common_flag_value_of("cstr").unwrap(),
+					c.get_common_flag_value_of("cstr", &cmd).unwrap(),
 					FlagValue::String("test".into())
 				);
 				assert_eq!(
@@ -1716,7 +1712,7 @@ mod tests {
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
-					c.get_common_flag_value_of("cafter").unwrap(),
+					c.get_common_flag_value_of("cafter", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
 				assert_eq!(
@@ -1845,7 +1841,7 @@ mod tests {
 									c.get_flag_value_of("local", &cmd).unwrap(),
 									FlagValue::Bool(true)
 								);
-								assert_eq!(c.get_common_flag_value_of("local"), None);
+								assert_eq!(c.get_common_flag_value_of("local", &cmd), None);
 								assert_eq!(
 									c.routes,
 									Vector(Some(vec!["sub".to_string(), "leaf".to_string()]))

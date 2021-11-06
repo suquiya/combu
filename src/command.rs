@@ -172,27 +172,21 @@ impl License {
 }
 
 macro_rules! gen_context_for_self_action {
-	($self:expr, $raw_args:expr) => {{
+	($raw_args:expr) => {{
 		let mut args = VecDeque::from($raw_args.clone());
 		let exe_path = args.pop_front().unwrap();
-		gen_context_for_self_action!($self, $raw_args, args, exe_path)
+		gen_context_for_self_action!($raw_args, args, exe_path)
 	}};
-	($self:expr,$raw_args:expr,$args:expr,$exe_path:expr) => {
-		Context::new(
-			$raw_args,
-			$args,
-			Vector(None),
-			$self.derive_route_init_vector(),
-			$exe_path,
-		)
+	($raw_args:expr,$args:expr,$exe_path:expr) => {
+		Context::new($raw_args, $args, Vector(None), Vector(None), $exe_path)
 	};
-	($self:expr, $raw_args:expr,$args:expr,$exe_path:expr, $inter_mediate_args:expr) => {
+	($raw_args:expr,$args:expr,$exe_path:expr, $inter_mediate_args:expr) => {
 		Context::with_all_field(
 			$raw_args,
 			$args,
 			Vector(None),
 			$exe_path,
-			$self.derive_route_init_vector(),
+			Vector(None),
 			Vector::default(),
 			Vector::default(),
 			Some($inter_mediate_args),
@@ -328,9 +322,9 @@ impl Command {
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
-					action(gen_context_for_self_action!(self, raw_args), self)
+					action(gen_context_for_self_action!(raw_args), self)
 				} else {
-					let mut context = gen_context_for_self_action!(self, raw_args);
+					let mut context = gen_context_for_self_action!(raw_args);
 					//println!("single_run_context: {:?}", context);
 					context =
 						Parser::default().parse_args_until_end(&self.l_flags, &self.c_flags, context);
@@ -339,7 +333,7 @@ impl Command {
 			}
 			None => match self.sub {
 				Vector(None) => {
-					let c = gen_context_for_self_action!(self, raw_args);
+					let c = gen_context_for_self_action!(raw_args);
 					no_registered_error!(c)
 				}
 				_ => self.run(raw_args),
@@ -536,7 +530,7 @@ impl Command {
 		let head = args.pop_front();
 		if head.is_none() {
 			//引数がない場合
-			let c = gen_context_for_self_action!(self, raw_args, args, exe_path);
+			let c = gen_context_for_self_action!(raw_args, args, exe_path);
 			match self.action {
 				Some(action) => action(c, self),
 				None => no_registered_error!(c),
@@ -560,7 +554,7 @@ impl Command {
 						None => {
 							// ルートコマンド実行のとき
 							args.push_front(arg);
-							let mut c = gen_context_for_self_action!(self, raw_args, args, exe_path);
+							let mut c = gen_context_for_self_action!(raw_args, args, exe_path);
 							match self.action {
 								None => no_registered_error!(c),
 								Some(action) => {
@@ -598,18 +592,17 @@ impl Command {
 				context.args = non_flag_args;
 			}
 			context = p.parse_args_until_end(&self.l_flags, &self.c_flags, context);
-			context.routes.push(self.name.clone());
 			match self.action {
 				Some(action) => action(context, self),
 				None => no_registered_error!(context),
 			}
 		} else {
 			//サブコマンドと一致するかを捜査
-			context.routes.push(self.name.clone());
 			let p = Parser::default();
 			match context.args.pop_front() {
 				Some(long_flag) if p.long_flag(&long_flag) => {
 					let last = p.long_middle(long_flag);
+					println!("test1 assign_context");
 					self.assign_context(context, p, VecDeque::new(), last)
 				}
 				Some(short_flag) if p.flag(&short_flag) => {
@@ -622,6 +615,7 @@ impl Command {
 						Some(mut sub) => {
 							context.common_flags.push(self.c_flags.take());
 							check_sub!(sub, self);
+							context.routes.push(self.name.clone());
 							let r = sub.run(context);
 							self.handle_sub_result(r)
 						}
@@ -708,6 +702,7 @@ impl Command {
 						c.parsing_args = Some(inter_mediate_args);
 					}
 					check_sub!(sub, self);
+					c.routes.push(self.name.clone());
 					let r = sub.run(c);
 					self.handle_sub_result(r)
 				}
@@ -736,6 +731,7 @@ impl Command {
 									} else {
 										c.parsing_args = Some(inter_mediate_args);
 									}
+									c.routes.push(self.name.clone());
 									check_sub!(sub, self);
 									let r = sub.run(c);
 									self.handle_sub_result(r)
@@ -850,6 +846,7 @@ impl Command {
 						inter_mediate_args.push_back(last);
 						let c =
 							gen_context_for_sub_run!(self, raw_args, args, exe_path, inter_mediate_args);
+						println!("test0 {:?}", &c);
 						let r = sub.run(c);
 						r
 					}
@@ -885,7 +882,6 @@ impl Command {
 										None => {
 											//サブコマンドはないのでそのままselfでaction
 											let c = gen_context_for_self_action!(
-												self,
 												raw_args,
 												args,
 												exe_path,
@@ -912,7 +908,6 @@ impl Command {
 									None => {
 										//残りのargはなし、そのままaction
 										let c = gen_context_for_self_action!(
-											self,
 											raw_args,
 											args,
 											exe_path,
@@ -937,7 +932,6 @@ impl Command {
 								//inter_mediate_args.push_back(MiddleArg::Normal(arg));
 
 								let c = gen_context_for_self_action!(
-									self,
 									raw_args,
 									args,
 									exe_path,
@@ -965,7 +959,7 @@ impl Command {
 				//self.actionに放り込む
 				inter_mediate_args.push_back(last);
 				let context =
-					gen_context_for_self_action!(self, raw_args, args, exe_path, inter_mediate_args);
+					gen_context_for_self_action!(raw_args, args, exe_path, inter_mediate_args);
 				let (mut c, non_flag_args) =
 					p.parse_inter_mediate_args(&self.l_flags, &self.c_flags, context, false);
 				if let Some(mut non_flag_args) = non_flag_args {
@@ -1066,7 +1060,7 @@ mod tests {
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(c.exe_path, String::from("exe_path"));
-				assert_eq!(c.routes, Vector(Some(vec!["root".to_string()])));
+				assert_eq!(c.routes, Vector(None));
 				let l_flag_values = Vector::from(vec![
 					(
 						"local".to_string(),
@@ -1493,7 +1487,7 @@ mod tests {
 				);
 				assert_eq!(c.get_flag_value_of("commons", &cmd), None);
 				assert_eq!(c.get_flag_value_of("local", &cmd), None);
-				assert_eq!(c.routes, "sub".to_owned().into());
+				assert_eq!(c.routes, Vector(None));
 				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
@@ -1518,10 +1512,7 @@ mod tests {
 					c.get_flag_value_of("bool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
-				assert_eq!(
-					c.routes,
-					Vector(Some(vec!["root".to_string(), "sub".to_string()]))
-				);
+				assert_eq!(c.routes, Vector(Some(vec!["root".to_string()])));
 				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
@@ -1547,7 +1538,7 @@ mod tests {
 					c.get_flag_value_of("bool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
-				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_eq!(c.routes, Vector(None));
 				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
@@ -1596,7 +1587,7 @@ mod tests {
 					c.get_flag_value_of("string", &cmd).unwrap(),
 					FlagValue::String("testStr".into())
 				);
-				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_eq!(c.routes, Vector(None));
 				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
@@ -1634,7 +1625,7 @@ mod tests {
 					c.get_inputted_common_flag_value_of("cafter").unwrap(),
 					FlagValue::None
 				);
-				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_eq!(c.routes, Vector(None));
 				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
@@ -1662,7 +1653,7 @@ mod tests {
 					])
 				);
 				assert_eq!(c.args, cnv_arg(vec!["test_arg", "ex_arg"]));
-				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_eq!(c.routes, Vector(None));
 				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
@@ -1719,7 +1710,7 @@ mod tests {
 					c.get_flag_value_of("string", &cmd).unwrap(),
 					FlagValue::String("testStr".into())
 				);
-				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_eq!(c.routes, Vector(None));
 				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
@@ -1767,7 +1758,7 @@ mod tests {
 					c.get_flag_value_of("common", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
-				assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
+				assert_eq!(c.routes, Vector(None));
 				assert_attrs!("sub_", c, cmd);
 				done!()
 			}))
@@ -1842,10 +1833,7 @@ mod tests {
 									FlagValue::Bool(true)
 								);
 								assert_eq!(c.get_common_flag_value_of("local", &cmd), None);
-								assert_eq!(
-									c.routes,
-									Vector(Some(vec!["sub".to_string(), "leaf".to_string()]))
-								);
+								assert_eq!(c.routes, Vector(Some(vec!["sub".to_string()])));
 								assert_attrs!("leaf_", c, cmd);
 								done!()
 							})
@@ -1919,11 +1907,7 @@ mod tests {
 				);
 				assert_eq!(
 					c.routes,
-					Vector(Some(vec![
-						"root".to_string(),
-						"sub".to_owned(),
-						"leaf".to_owned()
-					]))
+					Vector(Some(vec!["root".to_string(), "sub".to_owned(),]))
 				);
 				assert_attrs!("leaf_", c, cmd);
 				done!()
@@ -1959,10 +1943,7 @@ mod tests {
 					c.get_flag_value_of("lsbefore", &cmd).unwrap(),
 					FlagValue::String("".into())
 				);
-				assert_eq!(
-					c.routes,
-					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
-				);
+				assert_eq!(c.routes, Vector(Some(vec!["sub".to_owned()])));
 				assert_attrs!("leaf_", c, cmd);
 				done!()
 			},
@@ -2000,10 +1981,7 @@ mod tests {
 					c.get_flag_value_of("cbool", &cmd).unwrap(),
 					FlagValue::Bool(true)
 				);
-				assert_eq!(
-					c.routes,
-					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
-				);
+				assert_eq!(c.routes, Vector(Some(vec!["sub".to_owned()])));
 				assert_attrs!("leaf_", c, cmd);
 				done!()
 			},
@@ -2040,10 +2018,7 @@ mod tests {
 					c.get_flag_value_of("lsbefore", &cmd).unwrap(),
 					FlagValue::String("before_arg".into())
 				);
-				assert_eq!(
-					c.routes,
-					Vector(Some(vec!["sub".to_owned(), "leaf".to_owned()]))
-				);
+				assert_eq!(c.routes, Vector(Some(vec!["sub".to_owned()])));
 				assert_attrs!("leaf_", c, cmd);
 				done!()
 			},

@@ -308,6 +308,11 @@ impl Context {
 	pub fn is_flag_true(&self, name: &str, current_command: &Command) -> bool {
 		Some(FlagValue::Bool(true)) == self.get_flag_value_of(name, current_command)
 	}
+
+	/// Returns depth of command - root:0
+	pub fn depth(&self) -> usize {
+		self.common_flags.len()
+	}
 }
 
 impl<'a> From<Vec<String>> for Context {

@@ -196,11 +196,27 @@ impl<T> Vector<T> {
 		}
 	}
 
+	/// Removes and returns element at index. If index is out of bounds, will panic.
+	pub fn remove(&mut self, index: usize) -> T {
+		match self {
+			Vector(Some(vec)) => vec.remove(index),
+			Vector(None) => panic!("This vector's inner is None."),
+		}
+	}
+
 	/// Removes last element of inner vec and returns it. If inner vec is empty or None, returns None.
 	pub fn pop(&mut self) -> Option<T> {
 		match self {
+			Vector(Some(inner)) => inner.pop(),
 			Vector(None) => None,
-			Vector(Some(ref mut inner)) => inner.pop(),
+		}
+	}
+
+	/// Removes last element of inner vec. If inner vec is empty of None, will panic.
+	pub fn remove_last(&mut self) -> T {
+		match self {
+			Vector(Some(inner)) => inner.remove(inner.len() - 1),
+			Vector(None) => panic!("This vector's inner is None."),
 		}
 	}
 }

@@ -430,30 +430,54 @@ impl From<&str> for Flag {
 
 /// Flag's presets
 pub mod presets {
+
 	use super::Flag;
 
 	/// Creates preset help flag
 	pub fn help_flag() -> Flag {
-		Flag::new_bool("help").short_alias('h')
+		help_flag_with_description("Prints help information")
+	}
+	/// Creates preset help flag with arg descripton.
+	pub fn help_flag_with_description(description: &str) -> Flag {
+		Flag::with_all_field(
+			"help".to_owned(),
+			description.to_owned(),
+			crate::vector!['h';:char],
+			crate::vector![None;:String],
+			crate::FlagType::Bool,
+			crate::FlagValue::Bool(false),
+		)
 	}
 
 	/// Creates preset version flag
 	pub fn version_flag() -> Flag {
-		Flag::new_bool("version").short_alias('v')
+		Flag::with_all_field(
+			"version".to_owned(),
+			"Prints version information".to_owned(),
+			crate::vector!['v';:char],
+			crate::vector![None;:String],
+			crate::FlagType::Bool,
+			crate::FlagValue::Bool(false),
+		)
 	}
 
 	/// Creates preset authors flag
 	pub fn authors_flag() -> Flag {
-		Flag::new_bool("authors").short_alias('a')
+		crate::flag!(authors[="Prints authors' information" -a >bool?false])
 	}
 
 	/// Creates preset license flag
 	pub fn license_flag() -> Flag {
-		Flag::new_bool("license").short_alias('l')
+		crate::flag!(license[="Prints license information" -l >bool?false])
 	}
 
 	/// Creates yes flag
 	pub fn yes_flag() -> Flag {
-		Flag::new_bool("yes").short_alias('y')
+		crate::flag!([yes][="Process as yes choosed in all prompts" -y >bool?false ])
+	}
+
+	/// Creates no flag
+	pub fn no_flag() -> Flag {
+		crate::flag!([no][="Process as no choosed in all prompts" -n >bool?false ])
 	}
 }

@@ -127,7 +127,6 @@ impl Context {
 	/// contextからフラグ値を取得する。Getとは違い、参照ではなくcontextに格納されているもの（格納されていない場合はデフォルト値のコピー）そのものを返す
 	pub fn take_flag_value_of(
 		&mut self,
-
 		flag_name: &str,
 		current_command: &Command,
 	) -> Option<FlagValue> {
@@ -228,7 +227,6 @@ impl Context {
 
 	/// Gets FlagValue's clone of the inputted flag matches flag_name from context.
 	/// contextからユーザから指定された場合のフラグ値のcloneを取得する。ユーザから入力されていない場合はNoneを返す。
-
 	pub fn get_inputted_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match self.get_inputted_local_flag_value_of(flag_name) {
 			None => self.get_inputted_common_flag_value_of(flag_name),

@@ -11,7 +11,7 @@ use std::{collections::VecDeque, fmt::Debug};
 ///The struct for command information store and command execution
 ///This can be root and edge
 ///コマンドの情報格納＆実行用構造体
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct Command {
 	///Command name
 	pub name: String,
@@ -46,10 +46,11 @@ macro_rules! run_result{
 	}
 }
 macro_rules! no_registered_error {
-	($context:expr) => {
+	($command:expr,$context:expr) => {
 		Err(ActionError::without_related_error(
 			"no action is registered.".into(),
 			NoActionRegistered,
+			$command,
 			$context,
 		))
 	};
@@ -334,7 +335,7 @@ impl Command {
 			None => match self.sub {
 				Vector(None) => {
 					let c = gen_context_for_self_action!(raw_args);
-					no_registered_error!(c)
+					no_registered_error!(self, c)
 				}
 				_ => self.run(raw_args),
 			},
@@ -449,7 +450,7 @@ impl Command {
 	pub fn take_sub(&mut self, name_or_alias: &str) -> Option<Command> {
 		match self.sub {
 			Vector(None) => None,
-			Vector(Some(ref mut inner)) => match inner.into_iter().position(|c| c.is(name_or_alias)) {
+			Vector(Some(ref mut inner)) => match inner.iter().position(|c| c.is(name_or_alias)) {
 				None => None,
 				Some(index) => Some(inner.swap_remove(index)),
 			},
@@ -460,7 +461,7 @@ impl Command {
 	pub fn get_mut_sub(&mut self, name_or_alias: &str) -> Option<&mut Command> {
 		match self.sub {
 			Vector(None) => None,
-			Vector(Some(ref mut inner)) => match inner.into_iter().position(|c| c.is(name_or_alias)) {
+			Vector(Some(ref mut inner)) => match inner.iter().position(|c| c.is(name_or_alias)) {
 				None => None,
 				Some(index) => Some(inner.get_mut(index).unwrap()),
 			},
@@ -533,7 +534,7 @@ impl Command {
 			let c = gen_context_for_self_action!(raw_args, args, exe_path);
 			match self.action {
 				Some(action) => action(c, self),
-				None => no_registered_error!(c),
+				None => no_registered_error!(self, c),
 			}
 		} else {
 			//get before first non-flag arg with parsing flags
@@ -556,7 +557,7 @@ impl Command {
 							args.push_front(arg);
 							let mut c = gen_context_for_self_action!(raw_args, args, exe_path);
 							match self.action {
-								None => no_registered_error!(c),
+								None => no_registered_error!(self, c),
 								Some(action) => {
 									c = p.parse_args_until_end(&self.l_flags, &self.c_flags, c);
 									action(c, self)
@@ -594,7 +595,7 @@ impl Command {
 			context = p.parse_args_until_end(&self.l_flags, &self.c_flags, context);
 			match self.action {
 				Some(action) => action(context, self),
-				None => no_registered_error!(context),
+				None => no_registered_error!(self, context),
 			}
 		} else {
 			//サブコマンドと一致するかを捜査
@@ -620,7 +621,7 @@ impl Command {
 							self.handle_sub_result(r)
 						}
 						None => match self.action {
-							None => no_registered_error!(context),
+							None => no_registered_error!(self, context),
 							Some(action) => {
 								let c = match p.parse_inter_mediate_args(
 									&self.l_flags,
@@ -667,7 +668,7 @@ impl Command {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
 							}
-							no_registered_error!(context)
+							no_registered_error!(self, context)
 						}
 					}
 				}
@@ -753,7 +754,7 @@ impl Command {
 									}
 									match self.action {
 										Some(action) => action(c, self),
-										None => self.handle_sub_result(no_registered_error!(c)),
+										None => no_registered_error!(self, c),
 									}
 								}
 							},
@@ -773,7 +774,7 @@ impl Command {
 								}
 								match self.action {
 									Some(action) => action(c, self),
-									None => self.handle_sub_result(no_registered_error!(c)),
+									None => no_registered_error!(self, c),
 								}
 							}
 						}
@@ -795,7 +796,7 @@ impl Command {
 						}
 						match self.action {
 							Some(action) => action(c, self),
-							None => no_registered_error!(c),
+							None => no_registered_error!(self, c),
 						}
 					}
 				},
@@ -818,7 +819,7 @@ impl Command {
 				}
 				match self.action {
 					Some(action) => action(c, self),
-					None => no_registered_error!(c),
+					None => no_registered_error!(self, c),
 				}
 			}
 		}
@@ -901,7 +902,7 @@ impl Command {
 											};
 											match self.action {
 												Some(action) => action(c, self),
-												None => no_registered_error!(c),
+												None => no_registered_error!(self, c),
 											}
 										}
 									},
@@ -921,7 +922,7 @@ impl Command {
 										}
 										match self.action {
 											Some(action) => action(c, self),
-											None => no_registered_error!(c),
+											None => no_registered_error!(self, c),
 										}
 									}
 								}
@@ -947,7 +948,7 @@ impl Command {
 								}
 								match self.action {
 									Some(action) => action(c, self),
-									_ => self.handle_sub_result(no_registered_error!(c)),
+									_ => no_registered_error!(self, c),
 								}
 							}
 						}
@@ -969,7 +970,7 @@ impl Command {
 
 				match self.action {
 					Some(action) => action(c, self),
-					None => self.handle_sub_result(no_registered_error!(c)),
+					None => no_registered_error!(self, c),
 				}
 			}
 		}
@@ -984,9 +985,12 @@ impl Command {
 				// Doneなら何もしないでreqを上にあげる
 				req
 			}
-			Ok(ActionResult::ParentActionRequest(c, cmd, action)) => {
+			Ok(ActionResult::ParentActionRequest(mut c, mut sub, action)) => {
 				// サブコマンドからリクエストが飛んでいた時はselfを与えてリクエストされたアクションを実行
-				self.sub.push(cmd);
+				c.routes.pop(); //ルートをさかのぼる
+				self.c_flags = c.common_flags.remove_last(); //コモンフラグを戻す
+				check_sub!(self, sub); // authors, version, copyright, licenseを戻す
+				self.sub.push(sub); //サブコマンドを親コマンドの末尾に戻す
 				action(c, self)
 			}
 			Err(ref mut err) => {
@@ -2255,23 +2259,31 @@ pub mod presets {
 			}
 		}
 
-		// コモンフラグ出力(cmdに残っているフラグを出力)
-		let mut routes = ctx.routes.clone();
+		// コモンフラグ出力
+		// まず現在のコマンドのコモンフラグ出力
 		if let Vector(Some(c_flags)) = &cmd.c_flags {
-			let emp_str = String::new();
+			let suffix = if cmd.sub.len() > 0 {
+				format!(
+					"[also available in sub command{} under here]",
+					(if cmd.sub.len() < 2 { "" } else { "s" })
+				)
+			} else {
+				String::new()
+			};
 			_add_help_with_flag_dudup!(
 				help,
 				c_flags.iter().rev(),
 				nl_list,
 				s_list,
-				emp_str,
+				suffix,
 				name_and_alias_min_width,
 				sp,
 				indent
 			);
-			routes.pop();
 		}
-		let mut routes: Vec<String> = if routes.len() < ctx.common_flags.len() {
+		// Context内のコモンフラグ
+		let routes = ctx.routes.clone();
+		let mut routes: Vec<String> = if routes.len() < ctx.depth() {
 			let mut routes: Vec<String> = routes.into();
 			routes.insert(
 				0,
@@ -2288,17 +2300,13 @@ pub mod presets {
 		};
 		// コモンフラグ出力(contextに取り込まれているフラグ)
 		if let Vector(Some(cfs)) = &ctx.common_flags {
-			let self_common_index = cfs.len() - 1;
 			for (c_index, c_flags) in cfs.iter().enumerate().rev() {
 				if let Vector(Some(c_flags)) = c_flags {
-					let suffix = if c_index < self_common_index {
-						match routes.get(c_index) {
-							Some(cmd_name) => sp.clone() + "(inherited from " + cmd_name + ")",
-							None => String::new(),
-						}
-					} else {
-						String::new()
+					let suffix = match routes.get(c_index) {
+						Some(cmd_name) => sp.clone() + "(inherited from " + cmd_name + ")",
+						None => String::new(),
 					};
+
 					_add_help_with_flag_dudup!(
 						help,
 						c_flags.iter().rev(),
@@ -2321,7 +2329,6 @@ pub mod presets {
 				if sub.len() > 1 {
 					help.push('s');
 				}
-
 				help.push_str(": \n");
 				// 最初のフラグ情報追加
 				help = help + &indent + &sub_command.name;
@@ -2388,7 +2395,6 @@ pub mod presets {
 			help = help + &routes.join(" ") + "<subcommand> --help for more information.";
 			help += "\n";
 		}
-
 		return help;
 	}
 
@@ -2409,21 +2415,13 @@ pub mod presets {
 
 		//フラグ処理
 		let l_flags: &Vector<Flag> = &cmd.l_flags;
-		let c_flags: &Vector<Vector<Flag>>;
-		let vec_inner: Vector<Vector<Flag>>;
+		let ctx_c_flags: &Vector<Vector<Flag>> = &ctx.common_flags;
 
-		//コモンフラグが残っていた場合
-		if cmd.c_flags.is_none() {
-			c_flags = &ctx.common_flags;
-		} else {
-			vec_inner = Vector(Some(vec![cmd.c_flags.clone()]));
-			c_flags = &vec_inner;
-		}
 		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
 		let head: String;
 		let cl_label;
 		let name_and_alias_field_min_width: usize = 7;
-		if ctx.common_flags.sum_of_length() > 0 && cmd.l_flags.has_at_least_one() {
+		if (ctx_c_flags.sum_of_length() + cmd.c_flags.len()) > 0 && cmd.l_flags.has_at_least_one() {
 			//コモンフラグとローカルフラグ両方が設定されている場合
 			head = indent.repeat(2);
 			cl_label = true;
@@ -2442,14 +2440,24 @@ pub mod presets {
 				l_flag.help(help + &head, name_and_alias_field_min_width + 5)
 			});
 		}
-		let depth = c_flags.len();
-		if let Vector(Some(c_flags)) = c_flags {
+		let depth = ctx.depth();
+		let mut common_head = true;
+		if let Vector(Some(c_flags)) = &cmd.c_flags {
 			if cl_label {
-				help = help + &indent + "Common";
+				help = help + &indent + "Common" + &format!("(common flags are available in this command and sub command{} under this command): \n", (if cmd.sub.len()<2{""}else{"s"}));
 			}
-			let self_common_index = depth - 1;
+
+			for cf in c_flags {
+				help = cf.help(help + &head, name_and_alias_field_min_width)
+			}
+
+			common_head = false;
+		}
+		if let Vector(Some(c_flags)) = ctx_c_flags {
 			let route_without_root = depth > ctx.routes.len();
-			let mut common_head = true;
+			if cl_label && common_head {
+				help = help + &indent + "Common: ";
+			}
 			help = c_flags
 				.iter()
 				.enumerate()
@@ -2458,49 +2466,35 @@ pub mod presets {
 					if let Vector(Some(c_flags)) = c_flags {
 						let mut help = help;
 						if cl_label {
-							if index < self_common_index {
-								let mut from_owned: String;
-								let from = if route_without_root {
-									if index < 1 {
-										let cur_path = std::path::Path::new(ctx.exe_path());
-										from_owned = cur_path
-											.file_stem()
-											.unwrap_or(std::ffi::OsStr::new("root"))
-											.to_str()
-											.unwrap_or("root")
-											.to_owned();
-										match cur_path.extension() {
-											None => {}
-											Some(val) => {
-												from_owned += &format!("[.{}]", val.to_str().unwrap_or("exe"))
-											}
+							let mut from_owned: String;
+							let from = if route_without_root {
+								if index < 1 {
+									let cur_path = std::path::Path::new(ctx.exe_path());
+									from_owned = cur_path
+										.file_stem()
+										.unwrap_or(std::ffi::OsStr::new("root"))
+										.to_str()
+										.unwrap_or("root")
+										.to_owned();
+									match cur_path.extension() {
+										None => {}
+										Some(val) => {
+											from_owned += &format!("[.{}]", val.to_str().unwrap_or("exe"))
 										}
-
-										&from_owned
-									} else {
-										ctx.routes.get(index - 1).unwrap()
 									}
+
+									&from_owned
 								} else {
-									ctx.routes.get(index).unwrap()
-								};
-								if common_head {
-									help += &format!("[inherited from {}]: \n", from)
-								} else {
-									common_head = false;
-									help += &format!("{}[inherited from {}]: \n", &indent, from)
+									ctx.routes.get(index - 1).unwrap()
 								}
 							} else {
-								help += &format!(
-								"(common flags are available in this command and sub command{} under this): \n",
-								{
-									if cmd.sub.len() < 2 {
-										""
-									} else {
-										"s"
-									}
-								}
-								);
+								ctx.routes.get(index).unwrap()
+							};
+							if common_head {
+								help += &format!("[inherited from {}]: \n", from)
+							} else {
 								common_head = false;
+								help += &format!("{}[inherited from {}]: \n", &indent, from)
 							}
 						}
 

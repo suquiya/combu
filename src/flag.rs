@@ -435,49 +435,59 @@ pub mod presets {
 
 	/// Creates preset help flag
 	pub fn help_flag() -> Flag {
-		help_flag_with_description("Prints help information")
+		crate::help_flag!()
 	}
 	/// Creates preset help flag with arg descripton.
-	pub fn help_flag_with_description(description: &str) -> Flag {
-		Flag::with_all_field(
-			"help".to_owned(),
-			description.to_owned(),
-			crate::vector!['h';:char],
-			crate::vector![None;:String],
-			crate::FlagType::Bool,
-			crate::FlagValue::Bool(false),
-		)
+	pub fn help_flag_with_description<T: Into<String>>(description: T) -> Flag {
+		crate::help_flag!(->description.into())
 	}
 
 	/// Creates preset version flag
 	pub fn version_flag() -> Flag {
-		Flag::with_all_field(
-			"version".to_owned(),
-			"Prints version information".to_owned(),
-			crate::vector!['v';:char],
-			crate::vector![None;:String],
-			crate::FlagType::Bool,
-			crate::FlagValue::Bool(false),
-		)
+		crate::version_flag!()
+	}
+	/// Creates preset version flag with description specified.
+	pub fn version_flag_with_description<T: Into<String>>(description: T) -> Flag {
+		crate::version_flag!(->description.into())
 	}
 
 	/// Creates preset authors flag
 	pub fn authors_flag() -> Flag {
-		crate::flag!(authors[="Prints authors' information" -a >bool?false])
+		crate::authors_flag!()
+	}
+
+	/// Creates preset authors flag with description specified.
+	pub fn authors_flag_with_description<T: Into<String>>(description: T) -> Flag {
+		crate::authors_flag!(->description.into())
 	}
 
 	/// Creates preset license flag
 	pub fn license_flag() -> Flag {
-		crate::flag!(license[="Prints license information" -l >bool?false])
+		crate::license_flag!()
+	}
+
+	/// Creates preset license flag with description specified.
+	pub fn license_flag_with_description<T: Into<String>>(description: T) -> Flag {
+		crate::license_flag!(description.into())
 	}
 
 	/// Creates yes flag
 	pub fn yes_flag() -> Flag {
-		crate::flag!([yes][="Process as yes choosed in all prompts" -y >bool?false ])
+		crate::yes_flag!()
+	}
+
+	/// Creates yes flag flag with description specified.
+	pub fn yes_flag_with_description<T: Into<String>>(description: T) -> Flag {
+		crate::yes_flag!(->description.into())
 	}
 
 	/// Creates no flag
 	pub fn no_flag() -> Flag {
-		crate::flag!([no][="Process as no choosed in all prompts" -n >bool?false ])
+		crate::no_flag!()
+	}
+
+	/// Creates no flag
+	pub fn no_flag_with_description<T: Into<String>>(description: T) -> Flag {
+		crate::no_flag!(->description.into())
 	}
 }

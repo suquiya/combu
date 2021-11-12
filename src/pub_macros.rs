@@ -13,10 +13,10 @@ macro_rules! v {
 /// Creates new Vector.
 macro_rules! vector {
 	(::<$ptype:ty>,$(,)*$($t:tt)*)=>{
-		vector!($($t)*;:$ptype)
+		$crate::vector!($($t)*;:$ptype)
 	};
 	(=>$ptype:ty,$(,)*$($t:tt)*)=>{
-		vector!($($t)*;=>$ptype)
+		$crate::vector!($($t)*;=>$ptype)
 	};
 	(None$($(;)?$(::)?<$type:ty>)?) => {
 		$crate::Vector$(::<$type>)?(None)
@@ -497,6 +497,181 @@ macro_rules! preset_root {
 			$crate::crate_version!(),
 			$crate::crate_description!(),
 			Some($action))
+	}
+}
+
+#[macro_export]
+/// Default text for presets.
+macro_rules! default_text {
+	($ident:ident.description) => {
+		$crate::default_description!($ident)
+	};
+}
+
+#[macro_export]
+/// Default description for presets.
+macro_rules! default_description {
+	(help_flag) => {
+		"Prints help information"
+	};
+	(version_flag) => {
+		"Prints version information"
+	};
+	(authors_flag) => {
+		"Prints authors' information"
+	};
+	(license_flag) => {
+		"Prints license information"
+	};
+	(yes_flag) => {
+		"Process as yes choosed in all prompts"
+	};
+	(no_flag) => {
+		"Process as no choosed in all prompts"
+	};
+}
+
+#[macro_export]
+/// Macro for preset help flag.
+macro_rules! help_flag {
+	()=>{
+		$crate::help_flag!($crate::default_text!(help_flag.description))
+	};
+	($description:literal)=>{
+		$crate::help_flag!(->String::from($description))
+	};
+	($description:expr)=>{
+		$crate::help_flag!(->$description.into())
+	};
+	(->$description:expr)=>{
+		Flag::with_all_field(
+			"help".to_owned(),
+			$description,
+			$crate::vector!['h','?';:char],
+			$crate::vector![None;:String],
+			crate::FlagType::Bool,
+			crate::FlagValue::Bool(false)
+		)
+	};
+}
+
+#[macro_export]
+/// Macro for preset version flag.
+macro_rules! version_flag {
+	()=>{
+		$crate::version_flag!($crate::default_text!(version_flag.description))
+	};
+	($description:literal)=>{
+		$crate::version_flag!(->$description.to_owned())
+	};
+	($description:expr)=>{
+		$crate::version_flag!(->$description.into())
+	};
+	(->$description:expr)=>{
+		Flag::with_all_field(
+			"version".to_owned(),
+			$description,
+			$crate::vector!['v';:char],
+			$crate::vector![None;:String],
+			crate::FlagType::Bool,
+			crate::FlagValue::Bool(false)
+		)
+	}
+}
+
+#[macro_export]
+/// Macro for preset authors flag.
+macro_rules! authors_flag {
+	()=>{
+		$crate::authors_flag!($crate::default_text!(authors_flag.description))
+	};
+	($description:literal)=>{
+		$crate::authors_flag!(->String::from($description))
+	};
+	($description:expr)=>{
+		$crate::authors_flag!(->$description.into())
+	};
+	(->$description:expr)=>{
+		Flag::with_all_field(
+			"authors".to_owned(),
+			$description,
+			$crate::vector!['a';:char],
+			$crate::vector![None;:String],
+			crate::FlagType::Bool,
+			crate::FlagValue::Bool(false)
+		)
+	}
+}
+
+#[macro_export]
+/// Macro for preset license flag.
+macro_rules! license_flag {
+	()=>{
+		$crate::license_flag!($crate::default_text!(license_flag.description))
+	};
+	($description:literal)=>{
+		$crate::license_flag!(->String::from($description))
+	};
+	($description:expr)=>{
+		$crate::license_flag!(->$description.into())
+	};
+	(->$description:expr)=>{
+		Flag::with_all_field(
+			"license".to_owned(),
+			$description,
+			$crate::vector!['l';:char],
+			$crate::vector![None;:String],
+			crate::FlagType::Bool,
+			crate::FlagValue::Bool(false)
+		)
+	}
+}
+
+#[macro_export]
+/// Macro for preset yes flag.
+macro_rules! yes_flag {
+	()=>{
+		$crate::yes_flag!($crate::default_text!(yes_flag.description))
+	};
+	($description:literal)=>{
+		$crate::yes_flag!(->String::from($description))
+	};
+	($description:expr)=>{
+		$crate::yes_flag!(->$description.into())
+	};
+	(->$description:expr)=>{
+		Flag::with_all_field(
+			"yes".to_owned(),
+			$description,
+			$crate::vector!['y';:char],
+			$crate::vector![None;:String],
+			crate::FlagType::Bool,
+			crate::FlagValue::Bool(false)
+		)
+	}
+}
+
+#[macro_export]
+/// Macro for preset no flag.
+macro_rules! no_flag {
+	()=>{
+		$crate::no_flag!($crate::default_text!(no_flag.description))
+	};
+	($description:literal)=>{
+		$crate::no_flag!(->String::from($description))
+	};
+	($description:expr)=>{
+		$crate::no_flag!(->$description.into())
+	};
+	(->$description:expr)=>{
+		Flag::with_all_field(
+			"no".to_owned(),
+			$description,
+			$crate::vector!['n';:char],
+			$crate::vector![None;:String],
+			crate::FlagType::Bool,
+			crate::FlagValue::Bool(false)
+		)
 	}
 }
 
@@ -1191,9 +1366,6 @@ macro_rules! cmd {
 #[macro_export]
 /// Macro for creating copyright
 macro_rules! copyright {
-	(from_crate) => {
-		$crate::copyright!("Copyright (c)", "", $crate::crate_authors!())
-	};
 	()=>{
 		$crate::string_from!()
 	};
@@ -1212,11 +1384,29 @@ macro_rules! copyright {
 	(...)=>{
 		$crate::copyright!(from_crate)
 	};
-	(from_crate$(,)?$year:literal)=>{
-		$crate::copyright!("Copyright (c)", $year, $crate::crate_authors!())
+	(from_crate) => {
+		concat!("Copyright (c) ", $crate::crate_authors!()).to_owned()
 	};
-	($year:literal$(,)?from_crate)=>{
-		$crate::copyright!("Copyright (c)", $year, $crate::crate_authors!())
+	($prefix:literal$(,)? $year:literal$(,)?$holder:ident) => {
+		$crate::copyright!($prefix, $year, stringify!($holder))
+	};
+	($prefix:literal, $year:literal,$holder:expr) => {
+		concat!($prefix," ", $year," ", $holder).to_owned()
+	};
+	($prefix:literal $year:literal $holder:expr) => {
+		copyright!($prefix, $year, $holder)
+	};
+	(from_crate,$year:literal)=>{
+		concat!("Copyright (c) ", $year," ", $crate::crate_authors!()).to_owned()
+	};
+	($year:literal,from_crate)=>{
+		copyright!(from_crate,$year)
+	};
+	($prefix:literal, $year:literal,$holder:literal) => {
+		concat!($prefix," ", $year," ", $holder).to_owned()
+	};
+	($prefix:literal $year:literal $holder:literal) => {
+		copyright!($prefix, $year, $holder)
 	};
 	(...$(,)?$year:literal)=>{
 		$crate::copyright!(from_crate,$year)
@@ -1225,46 +1415,19 @@ macro_rules! copyright {
 		$crate::copyright!($year,from_crate)
 	};
 	({$($t:tt)*})=>{
-		copyright!([$($t:tt)+])
+		$crate::copyright!([$($t:tt)+])
 	};
 	(($($t:tt)*))=>{
-		copyright!([$($t:tt)+])
-	};
-	([$year:literal]) => {
-		$crate::copyright!($year, $crate::crate_authors!())
-	};
-	([$year:literal$(,)?$holder:ident]) => {
-		$crate::copyright!($year, stringify!($holder))
-	};
-	([$year:literal$(,)?$holder:expr]) => {
-		copyright!($year, $holder)
+		$crate::copyright!([$($t:tt)+])
 	};
 	($year:literal$(,)?$holder:ident) => {
-		copyright!($year, stringify!($holder))
+		$crate::copyright!($year, stringify!($holder))
 	};
 	($year:literal$(,)?$holder:expr) => {
 		$crate::copyright!("Copyright (c)", $year, $holder)
 	};
-	([$prefix:literal$(,)?$year:literal$(,)?$holder:ident]) => {
-		$crate::copyright!($prefix, $year, stringify!($holder))
-	};
-	([$prefix:literal$(,)?$year:literal$(,)?$holder:expr]) => {
-		$crate::copyright!($prefix, $year, $holder)
-	};
-	([$prefix:expr, $year:literal$(,)?$holder:ident]) => {
-		$crate::copyright!($prefix, $year, stringify!($holder))
-	};
-	([$prefix:expr, $year:literal$(,)?$holder:expr]) => {
-		$crate::copyright!($prefix, $year, $holder)
-	};
-	($prefix:literal$(,)? $year:literal$(,)?$holder:literal) => {
-		concat!($prefix," ", $year," ", $holder).to_owned()
-	};
-	($prefix:literal$(,)? $year:literal$(,)?$holder:ident) => {
-		copyright!($prefix, $year, stringify!($holder))
-	};
 	($prefix:expr, $year:expr,$holder:ident) => {
-		copyright!($prefix, $year, stringify!($holder))
+		$crate::copyright!($prefix, $year, stringify!($holder))
 	};
 	($prefix:expr, $year:expr,$holder:expr) => {
 		concat!($prefix, " ", $year, " ", $holder).to_owned()
@@ -1465,6 +1628,9 @@ macro_rules! string_from {
 	};
 	(&$from:expr)=>{
 		$from
+	};
+	(String::from($from:expr))=>{
+		String::from($from)
 	};
 	($from:expr)=>{
 		String::from($from)
@@ -1702,6 +1868,9 @@ macro_rules! _ftp{
 	(->$name:expr=>[$(=)?$description:literal,$($t:tt)*])=>{
 		$crate::_ftp_s!(->$name=>[=$description,$($t)*])
 	};
+	(->$name:expr=>[=[$($dt:tt)*]$($t:tt)*])=>{
+		$crate::_ftp_s!(->$name=>[=[$($dt)*]$($t)*])
+	};
 	(->$name:expr=>[$(=)?$description:expr,$(s~)?$(-)?[$($s:tt)*]$($t:tt)*])=>{
 		$crate::_ftp_s!(->$name=>[=$description,-[$($s)*]$($t)*])
 	};
@@ -1775,6 +1944,11 @@ macro_rules! _ftp_t {
 		{=,s~$([$($st:tt)*])?,l~$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[[=$($dt:tt)*]$($t:tt)*])=>{
 		$crate::_ftp_t!(->$name=>{=,s~$([$($st)*])?,l~$([$($lt)*])?,>$($type)?,?$($default)?}[=$($dt)*,$($t)*])
+	};
+	(->$name:expr=>
+		{=,s~$([$($st:tt)*])?,l~$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[[=->$description:expr]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[->$description],s~$([$($st)*])?,l~$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
 		{=$([$($dt:tt)*])?,s~$([$($st:tt)*])?,l~$([$($lt:tt)*])?,>,?$($default:expr)?}
@@ -1920,6 +2094,16 @@ macro_rules! _ftp_t {
 		{=,s~$([$($st:tt)*])?,l~$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
 		[$(=)?$description:literal$($t:tt)*])=>{
 		$crate::_ftp_t!(->$name=>{=[$description],s~$([$($st)*])?,l~$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=,s~$([$($st:tt)*])?,l~$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[=[->$description:expr]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[->$description],s~$([$($st)*])?,l~$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
+	};
+	(->$name:expr=>
+		{=,s~$([$($st:tt)*])?,l~$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
+		[[=[$($dt:tt)*]]$($t:tt)*])=>{
+		$crate::_ftp_t!(->$name=>{=[$($dt)*],s~$([$($st)*])?,l~$([$($lt)*])?,>$($type)?,?$($default)?}[$($t)*])
 	};
 	(->$name:expr=>
 		{=,s~$([$($st:tt)*])?,l~$([$($lt:tt)*])?,>$($type:ident)?,?$($default:expr)?}
@@ -2996,12 +3180,12 @@ mod tests {
 				?false]),
 			flag!(test_flag=>[
 				>bool,
-				=_t,
+				=[->String::from(_t)],
 				-s,f,
 				--long long2]),
 			flag!(test_flag=>[
 				bool,
-				=_t,
+				=[->_t.into()],
 				-s -f,
 				--long long2,]),
 		);
@@ -3640,15 +3824,16 @@ mod tests {
 			_c.clone(),
 		);
 
-		/*
-		rust-analyzerが警告を出すが通るテスト、一時的にコメントアウト
-		let _r = r.clone().copyright(copyright![from_crate]);
+		//rust-analyzerが警告を出すが通るテスト、一時的にコメントアウト
+		let _r = r
+			.clone()
+			.copyright("Copyright (c) ".to_owned() + crate_authors!());
 		compare_cmd(
 			_r.clone(),
 			cmd!("test"[
 				action=>act
 				authors=crate_authors!(),
-				(c)from_crate,
+				(c)...,
 				(l)"test_license" "test_license_fn",
 				="test_command",
 				:"test_usage",
@@ -3692,7 +3877,7 @@ mod tests {
 			cmd!("test"[
 				action=>act
 				authors=...,
-				copyright:2020,from_crate,
+				copyright:2020,...,
 				license:"test_license" "test_license_fn",
 				description="test_command",
 				usage:"test_usage",
@@ -3711,6 +3896,5 @@ mod tests {
 			]),
 			_c.clone(),
 		);
-		*/
 	}
 }

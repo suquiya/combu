@@ -123,7 +123,7 @@ pub mod bundle {
 
 	impl From<Bundle> for (Context, Command) {
 		fn from(val: Bundle) -> Self {
-			val.unwind()
+			val.unpack()
 		}
 	}
 
@@ -133,7 +133,7 @@ pub mod bundle {
 			Bundle(ctx, cmd)
 		}
 		/// Returns inner tuple (Context,Command)
-		pub fn unwind(self) -> (Context, Command) {
+		pub fn unpack(self) -> (Context, Command) {
 			let Bundle(ctx, cmd) = self;
 			(ctx, cmd)
 		}

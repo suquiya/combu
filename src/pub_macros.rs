@@ -501,33 +501,78 @@ macro_rules! preset_root {
 }
 
 #[macro_export]
-/// Default text for presets.
-macro_rules! default_text {
-	($ident:ident.description) => {
-		$crate::default_description!($ident)
+/// Default value for presets. (Alias)
+macro_rules! default_value {
+	($($t:tt)*) => {
+		$crate::default_val!($($t)*)
+	};
+}
+
+#[macro_export]
+/// Default value for presets.
+macro_rules! default_val {
+	(description$(.$ident:ident)+) => {
+		$crate::default_description!($($ident).+)
+	};
+	(name$(.$ident:ident)+) => {
+		$crate::default_name!($($ident).+)
+	};
+	($ident:ident$(.$ident2:ident)+)=>{
+		$crate::default_val!([$ident]$(.$ident2)+)
+	};
+	([$($ident:ident).+].description) => {
+		$crate::default_description!($($ident).+)
+	};
+	([$($ident:ident).+].name) => {
+		$crate::default_name!($($ident).+)
+	};
+	([$($ident:ident).+].$ident2:ident$(.$ident3:ident)*)=>{
+		$crate::default_val!([$($ident).+.$ident2]$(.$ident3)*)
+	}
+}
+
+#[macro_export]
+/// Default name for presets
+macro_rules! default_name {
+	(flag.$ident:ident) => {
+		$crate::default_flag_name!($ident)
+	};
+	($ident:ident.flag) => {
+		$crate::default_flag_name!($ident)
+	};
+}
+
+#[macro_export]
+/// Default name for preset flags
+macro_rules! default_flag_name {
+	($ident:ident) => {
+		stringify!($ident)
 	};
 }
 
 #[macro_export]
 /// Default description for presets.
 macro_rules! default_description {
-	(help_flag) => {
+	(flag.help) => {
 		"Prints help information"
 	};
-	(version_flag) => {
+	(flag.version) => {
 		"Prints version information"
 	};
-	(authors_flag) => {
+	(flag.authors) => {
 		"Prints authors' information"
 	};
-	(license_flag) => {
+	(flag.license) => {
 		"Prints license information"
 	};
-	(yes_flag) => {
-		"Process as yes choosed in all prompts"
+	(flag.yes) => {
+		"Assumes as yes choosed in all prompts"
 	};
-	(no_flag) => {
-		"Process as no choosed in all prompts"
+	(flag.no) => {
+		"Assumes as no choosed in all prompts"
+	};
+	($ident:ident.flag) => {
+		$crate::default_description!(flag.$ident)
 	};
 }
 
@@ -535,7 +580,7 @@ macro_rules! default_description {
 /// Macro for preset help flag.
 macro_rules! help_flag {
 	()=>{
-		$crate::help_flag!($crate::default_text!(help_flag.description))
+		$crate::help_flag!($crate::default_value!(flag.help.description))
 	};
 	($description:literal)=>{
 		$crate::help_flag!(->String::from($description))
@@ -545,7 +590,7 @@ macro_rules! help_flag {
 	};
 	(->$description:expr)=>{
 		Flag::with_all_field(
-			"help".to_owned(),
+			$crate::default_name!(flag.help).to_owned(),
 			$description,
 			$crate::vector!['h','?';:char],
 			$crate::vector![None;:String],
@@ -559,7 +604,7 @@ macro_rules! help_flag {
 /// Macro for preset version flag.
 macro_rules! version_flag {
 	()=>{
-		$crate::version_flag!($crate::default_text!(version_flag.description))
+		$crate::version_flag!($crate::default_value!(flag.version.description))
 	};
 	($description:literal)=>{
 		$crate::version_flag!(->$description.to_owned())
@@ -569,7 +614,7 @@ macro_rules! version_flag {
 	};
 	(->$description:expr)=>{
 		Flag::with_all_field(
-			"version".to_owned(),
+			$crate::default_name!(flag.version).to_owned(),
 			$description,
 			$crate::vector!['v';:char],
 			$crate::vector![None;:String],
@@ -583,7 +628,7 @@ macro_rules! version_flag {
 /// Macro for preset authors flag.
 macro_rules! authors_flag {
 	()=>{
-		$crate::authors_flag!($crate::default_text!(authors_flag.description))
+		$crate::authors_flag!($crate::default_value!(flag.authors.description))
 	};
 	($description:literal)=>{
 		$crate::authors_flag!(->String::from($description))
@@ -593,7 +638,7 @@ macro_rules! authors_flag {
 	};
 	(->$description:expr)=>{
 		Flag::with_all_field(
-			"authors".to_owned(),
+			$crate::default_name!(flag.authors).to_owned(),
 			$description,
 			$crate::vector!['a';:char],
 			$crate::vector![None;:String],
@@ -607,7 +652,7 @@ macro_rules! authors_flag {
 /// Macro for preset license flag.
 macro_rules! license_flag {
 	()=>{
-		$crate::license_flag!($crate::default_text!(license_flag.description))
+		$crate::license_flag!($crate::default_value!(flag.license.description))
 	};
 	($description:literal)=>{
 		$crate::license_flag!(->String::from($description))
@@ -617,7 +662,7 @@ macro_rules! license_flag {
 	};
 	(->$description:expr)=>{
 		Flag::with_all_field(
-			"license".to_owned(),
+			$crate::default_name!(flag.license).to_owned(),
 			$description,
 			$crate::vector!['l';:char],
 			$crate::vector![None;:String],
@@ -631,7 +676,7 @@ macro_rules! license_flag {
 /// Macro for preset yes flag.
 macro_rules! yes_flag {
 	()=>{
-		$crate::yes_flag!($crate::default_text!(yes_flag.description))
+		$crate::yes_flag!($crate::default_value!(flag.yes.description))
 	};
 	($description:literal)=>{
 		$crate::yes_flag!(->String::from($description))
@@ -641,7 +686,7 @@ macro_rules! yes_flag {
 	};
 	(->$description:expr)=>{
 		Flag::with_all_field(
-			"yes".to_owned(),
+			$crate::default_name!(flag.yes).to_owned(),
 			$description,
 			$crate::vector!['y';:char],
 			$crate::vector![None;:String],
@@ -655,7 +700,7 @@ macro_rules! yes_flag {
 /// Macro for preset no flag.
 macro_rules! no_flag {
 	()=>{
-		$crate::no_flag!($crate::default_text!(no_flag.description))
+		$crate::no_flag!($crate::default_value!(flag.no.description))
 	};
 	($description:literal)=>{
 		$crate::no_flag!(->String::from($description))
@@ -665,7 +710,7 @@ macro_rules! no_flag {
 	};
 	(->$description:expr)=>{
 		Flag::with_all_field(
-			"no".to_owned(),
+			$crate::default_name!(flag.no).to_owned(),
 			$description,
 			$crate::vector!['n';:char],
 			$crate::vector![None;:String],
@@ -2709,7 +2754,7 @@ macro_rules! flag_value {
 		flag_value!(str, $val)
 	};
 	($i:ident$(,)?) => {
-		$crate::flag_value!($i, $crate::default_value!($i))
+		$crate::flag_value!($i, $crate::type_default_value!($i))
 	};
 }
 
@@ -2717,72 +2762,72 @@ macro_rules! flag_value {
 /// Creates default_flag_value
 macro_rules! default_flag_value {
 	($type:ident) => {
-		$crate::flag_value!($type, $crate::default_value!($type))
+		$crate::flag_value!($type, $crate::type_default_value!($type))
 	};
 }
 
 #[macro_export]
 /// get Default falue from type
-macro_rules! default_value {
+macro_rules! type_default_value {
 	(b) => {
-		$crate::default_value!(bool)
+		$crate::type_default_value!(bool)
 	};
 	(Bool) => {
-		$crate::default_value!(bool)
+		$crate::type_default_value!(bool)
 	};
 	(bool) => {
 		bool::default()
 	};
 	(true) => {
-		default_value!(bool)
+		type_default_value!(bool)
 	};
 	(false) => {
-		default_value!(bool)
+		type_default_value!(bool)
 	};
 	(i) => {
-		default_value!(int)
+		type_default_value!(int)
 	};
 	(I) => {
-		default_value!(int)
+		type_default_value!(int)
 	};
 	(Int) => {
-		default_value!(int)
+		type_default_value!(int)
 	};
 	(Integer) => {
-		default_value!(int)
+		type_default_value!(int)
 	};
 	(integer) => {
-		default_value!(int)
+		type_default_value!(int)
 	};
 	(int) => {
 		isize::default()
 	};
 	(f) => {
-		default_value!(float)
+		type_default_value!(float)
 	};
 	(F) => {
-		default_value!(float)
+		type_default_value!(float)
 	};
 	(Float) => {
-		default_value!(float)
+		type_default_value!(float)
 	};
 	(float) => {
 		f64::default()
 	};
 	(s) => {
-		default_value!(str)
+		type_default_value!(str)
 	};
 	(S) => {
-		default_value!(str)
+		type_default_value!(str)
 	};
 	(Str) => {
-		default_value!(str)
+		type_default_value!(str)
 	};
 	(String) => {
-		default_value!(str)
+		type_default_value!(str)
 	};
 	(string) => {
-		default_value!(str)
+		type_default_value!(str)
 	};
 	(str) => {
 		String::default()
@@ -3895,6 +3940,22 @@ mod tests {
 				| cmd!(sub2[>sub2_act]),
 			]),
 			_c.clone(),
+		);
+	}
+
+	#[test]
+	fn default_val_macro_test() {
+		assert_eqs!(
+			default_value!(flag.help.description),
+			default_value!(help.flag.description),
+			default_value!(description.flag.help),
+			default_description!(flag.help)
+		);
+		assert_eqs!(
+			default_value!(flag.help.name),
+			default_value!(help.flag.name),
+			default_value!(name.flag.help),
+			default_name!(flag.help)
 		);
 	}
 }

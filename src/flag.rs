@@ -371,35 +371,6 @@ impl Flag {
 	pub fn derive_flag_value_if_no_value(&self) -> FlagValue {
 		self.flag_type.get_value_if_no_value()
 	}
-
-	/// Add help for this flag to append_to. name_and_alias_min_width means min width of name and alias' field.  
-	/// Flagに対するヘルプをappend_toに追加する。nameとalias表示部分のずれをある程度吸収できるようにその部分の最小幅をname_and_alias_min_widthで指定する
-	pub fn help(&self, append_to: String, name_and_alias_min_width: usize) -> String {
-		let mut help = append_to;
-		let first_help_width = help.len();
-
-		if let Vector(Some(short_alias)) = &self.short_alias {
-			help = short_alias
-				.iter()
-				.fold(help, |help, s| format!("{}-{},", help, s));
-		} else {
-			help += "   ";
-		}
-		help = help + " --" + &self.name;
-		if let Vector(Some(long_alias)) = &self.long_alias {
-			help = long_alias.iter().fold(help, |help, l| {
-				//ロングフラグ出力
-				format!("{}, --{}", help, l)
-			})
-		};
-		let name_and_alias_width = help.len() - first_help_width;
-
-		if name_and_alias_width < name_and_alias_min_width {
-			help += &" ".repeat(name_and_alias_min_width - name_and_alias_width);
-		}
-
-		help + "\t" + &self.description + "\n"
-	}
 }
 
 impl From<String> for Flag {

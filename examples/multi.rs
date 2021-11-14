@@ -6,9 +6,15 @@ fn main() {
 
 fn root_command() -> Command {
 	Command::with_name("multi")
+		.desctiption("root command sample: arg printer")
+		.usage(presets::usage("multi"))
 		.common_flag(Flag::new_bool("help").short_alias('h'))
 		.common_flag(Flag::new_bool("reverse").short_alias('r'))
-		.local_flag(Flag::new_bool("by-char").short_alias('c'))
+		.local_flag(
+			Flag::new_bool("by-char")
+				.short_alias('c')
+				.description("process at char units"),
+		)
 		.action(print_args)
 		.sub_command(add_command())
 		.sub_command(sub_command())

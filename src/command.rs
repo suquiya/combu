@@ -603,7 +603,6 @@ impl Command {
 			match context.args.pop_front() {
 				Some(long_flag) if p.long_flag(&long_flag) => {
 					let last = p.long_middle(long_flag);
-					println!("test1 assign_context");
 					self.assign_context(context, p, VecDeque::new(), last)
 				}
 				Some(short_flag) if p.flag(&short_flag) => {
@@ -847,7 +846,6 @@ impl Command {
 						inter_mediate_args.push_back(last);
 						let c =
 							gen_context_for_sub_run!(self, raw_args, args, exe_path, inter_mediate_args);
-						println!("test0 {:?}", &c);
 						let r = sub.run(c);
 						r
 					}
@@ -1868,7 +1866,7 @@ mod tests {
 				panic!("sub action: {:?} - not leaf", c);
 			});
 		let leaf = Command::with_name("leaf")
-			.common_flag(Flag::new_bool("cbool"))
+			.common_flag(Flag::new_bool("cbool").short_alias('o'))
 			.common_flag(Flag::new_string("cs"))
 			.local_flag(Flag::new_bool("lbool").short_alias('b'))
 			.local_flag(Flag::new_string("lsafter").short_alias('a'))
@@ -1953,7 +1951,7 @@ mod tests {
 			},
 			args.clone(),
 		);
-		args.push("--cbool".into());
+		args.push("-o".into());
 		run_leaf(
 			root.clone(),
 			sub.clone(),
@@ -1969,7 +1967,7 @@ mod tests {
 						"--lsbefore",
 						"leaf",
 						"arg",
-						"--cbool"
+						"-o"
 					])
 				);
 				assert_eq!(
@@ -2153,6 +2151,8 @@ mod tests {
 /// Presets of Command
 pub mod presets {
 
+	use crate::FlagType;
+
 	use super::{Action, Command, Context, Flag, License, Vector};
 
 	macro_rules! _add_help_with_flag_dudup {
@@ -2213,6 +2213,36 @@ pub mod presets {
 			}
 		};
 	}
+
+	// Add help for this flag to append_to. name_and_alias_min_width means min width of name and alias' field.
+	// Flagに対するヘルプをappend_toに追加する。nameとalias表示部分のずれをある程度吸収できるようにその部分の最小幅をname_and_alias_min_widthで指定する
+	fn flag_help_simple(flag: &Flag, append_to: String, name_and_alias_min_width: usize) -> String {
+		let mut help = append_to;
+		let first_help_width = help.len();
+
+		if let Vector(Some(short_alias)) = &flag.short_alias {
+			help = short_alias
+				.iter()
+				.fold(help, |help, s| format!("{}-{},", help, s));
+		} else {
+			help += "   ";
+		}
+		help = help + " --" + &flag.name;
+		if let Vector(Some(long_alias)) = &flag.long_alias {
+			help = long_alias.iter().fold(help, |help, l| {
+				//ロングフラグ出力
+				format!("{}, --{}", help, l)
+			})
+		};
+		help = add_type_suffix(help, &flag.flag_type);
+		let name_and_alias_width = help.len() - first_help_width;
+
+		if name_and_alias_width < name_and_alias_min_width {
+			help += &" ".repeat(name_and_alias_min_width - name_and_alias_width);
+		}
+
+		help + "\t" + &flag.description + "\n"
+	}
 	/// Preset of help function(compact version)
 	pub fn help_with_alias_dedup(ctx: &Context, cmd: &Command) -> String {
 		let mut help = String::new();
@@ -2235,7 +2265,7 @@ pub mod presets {
 			let mut i = l_flags.iter().rev();
 			if let Some(f) = i.next() {
 				// ローカルフラグ出力
-				help = f.help(help, name_and_alias_min_width);
+				help = flag_help_simple(f, help, name_and_alias_min_width);
 				nl_list.push(&f.name);
 				if let Vector(Some(la)) = &f.long_alias {
 					let mut la = la.iter().collect();
@@ -2398,8 +2428,18 @@ pub mod presets {
 		return help;
 	}
 
+	/// Add type suffix for flag help
+	pub fn add_type_suffix(to: String, ft: &FlagType) -> String {
+		match &ft {
+			FlagType::Bool => to,
+			FlagType::String => to + " <string>",
+			FlagType::Int => to + " <int>",
+			FlagType::Float => to + " <float>",
+		}
+	}
+
 	/// Preset of help function
-	pub fn help<'a>(ctx: &Context, cmd: &Command) -> String {
+	pub fn help(ctx: &Context, cmd: &Command) -> String {
 		let mut help = String::new();
 		let indent_size: usize = 3;
 		let sp = String::from(" ");
@@ -2432,12 +2472,12 @@ pub mod presets {
 		}
 
 		if let Vector(Some(l_flags)) = l_flags {
-			if !cl_label {
+			if cl_label {
 				help.push_str(&indent);
 				help.push_str("Local: \n");
 			}
 			help = l_flags.iter().rfold(help, |help, l_flag| {
-				l_flag.help(help + &head, name_and_alias_field_min_width + 5)
+				flag_help_simple(l_flag, help + &head, name_and_alias_field_min_width + 10)
 			});
 		}
 		let depth = ctx.depth();
@@ -2448,7 +2488,7 @@ pub mod presets {
 			}
 
 			for cf in c_flags {
-				help = cf.help(help + &head, name_and_alias_field_min_width)
+				help = flag_help_simple(cf, help + &head, name_and_alias_field_min_width)
 			}
 
 			common_head = false;
@@ -2456,7 +2496,7 @@ pub mod presets {
 		if let Vector(Some(c_flags)) = ctx_c_flags {
 			let route_without_root = depth > ctx.routes.len();
 			if cl_label && common_head {
-				help = help + &indent + "Common: ";
+				help = help + &indent + "Common ";
 			}
 			help = c_flags
 				.iter()
@@ -2499,7 +2539,7 @@ pub mod presets {
 						}
 
 						help = c_flags.iter().rfold(help, |help, c_flag| {
-							c_flag.help(help + &head, name_and_alias_field_min_width)
+							flag_help_simple(c_flag, help + &head, name_and_alias_field_min_width)
 						});
 						help
 					} else {
@@ -2606,6 +2646,157 @@ pub mod presets {
 		}
 
 		return help;
+	}
+
+	/// Preset of flag help function (tablize)
+	pub fn flag_help_tablize(
+		append_to: String,
+		f: &Flag,
+		sp: &String,
+		s_max_num: usize, //最大ショートエイリアス数
+		nl_width: usize,
+		pre_d_space: &String,
+	) -> String {
+		let mut help = append_to;
+		// short_alias出力
+		help = help + &sp.repeat((s_max_num - f.short_alias.len()) * 4);
+		if let Vector(Some(short_alias)) = &f.short_alias {
+			for s in short_alias {
+				help.push_str("-");
+				help.push(*s);
+				help.push_str(", ");
+			}
+		}
+		let prev_help_len = help.len();
+		help.push_str("--");
+		help.push_str(&f.name);
+		if let Vector(Some(long_alias)) = &f.long_alias {
+			for l in long_alias {
+				help.push_str(", --");
+				help.push_str(l);
+			}
+		}
+		help = add_type_suffix(help, &f.flag_type);
+		let _nl_width = help.len() - prev_help_len;
+		if _nl_width < nl_width {
+			help.push_str(&sp.repeat(nl_width - _nl_width));
+		}
+		help.push_str(&pre_d_space);
+		help.push_str(&f.description);
+
+		help
+	}
+
+	/// Preset of help function (tablize)
+	pub fn help_tablize(ctx: &Context, cmd: &Command) -> String {
+		let mut help = String::new();
+		let indent_size: usize = 3;
+		let sp = String::from(" ");
+		let indent: String = sp.repeat(indent_size);
+		match &cmd.description {
+			Some(description) => {
+				help.push_str(description);
+				help.push_str("\n\n");
+			}
+			_ => {}
+		}
+		help = help + "Usage:\n" + &indent + &cmd.usage + "\n\n";
+
+		if &cmd.l_flags.len() + &cmd.c_flags.len() + &ctx.common_flags.sum_of_length() > 0 {
+			// フラグが存在するとき
+			help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
+
+			let nl_width = |flag: &Flag| {
+				match &flag.long_alias {
+					Vector(None) => {
+						flag.name.len()
+							+ match &flag.flag_type {
+								crate::FlagType::Bool => 2,
+								crate::FlagType::String => 11, // 2 + " <string>"
+								crate::FlagType::Int => 8,     // 2 + " <int>"
+								crate::FlagType::Float => 10,  //2 + " <float>"
+							}
+					}
+					Vector(Some(long_aliases)) => {
+						long_aliases.iter().fold(
+							flag.name.len()
+								+ match &flag.flag_type {
+									crate::FlagType::Bool => 2,
+									crate::FlagType::String => 11, // 2 + " <string>"
+									crate::FlagType::Int => 8,     // 2 + " <int>"
+									crate::FlagType::Float => 10,  //2 + " <float>"
+								},
+							|width, long_alias| width + long_alias.len(),
+						) + long_aliases.len() * 4
+					}
+				}
+			};
+
+			let max_calc =
+				|flags: &Vector<Flag>, s_width_max: &mut usize, nl_width_max: &mut usize| {
+					if let Vector(Some(flags)) = flags {
+						for f in flags {
+							*s_width_max = std::cmp::max(*s_width_max, f.short_alias.len());
+							*nl_width_max = std::cmp::max(*nl_width_max, nl_width(f));
+						}
+					}
+				};
+			// フラグ出力
+			let l_flags = &cmd.l_flags;
+			let c_flags = &cmd.c_flags;
+			let ctx_c_flags = &ctx.common_flags;
+			// short_aliasの幅とlong_aliasの幅計算
+			// short_aliasとlong_aliasを調べてmax_widthを出す
+			let mut s_width_max: usize = 1; //文字幅が決まっているので文字数を記録
+			let mut nl_width_max: usize = 8;
+			max_calc(l_flags, &mut s_width_max, &mut nl_width_max);
+			max_calc(c_flags, &mut s_width_max, &mut nl_width_max);
+			if let Vector(Some(ctx_c_flags)) = ctx_c_flags {
+				for ccf in ctx_c_flags {
+					max_calc(ccf, &mut s_width_max, &mut nl_width_max);
+				}
+			}
+
+			let head: String;
+			let cl_label: bool;
+			if (ctx_c_flags.sum_of_length() + cmd.c_flags.len()) > 0 && cmd.l_flags.has_at_least_one()
+			{
+				// コモンもローカルもある場合、コモンかローカルかの区別をするためのラベルを表示する
+				head = indent.repeat(2);
+				cl_label = true;
+			} else {
+				head = indent.clone();
+				cl_label = false;
+			}
+
+			if let Vector(Some(l_flags)) = l_flags {
+				if cl_label {
+					help.push_str(&indent);
+					help.push_str("Local: \n");
+				}
+				for l in l_flags.iter().rev() {
+					help.push_str(&head);
+					help = flag_help_tablize(help, l, &sp, s_width_max, nl_width_max, &indent);
+				}
+			}
+
+			if let Vector(Some(c_flags)) = c_flags {
+				if cl_label {
+					help.push_str(&indent);
+					help.push_str("Common (common flags are available in this command and sub command");
+					if cmd.sub.len() > 1 {
+						help.push('s');
+					}
+					help.push_str(" under this command): \n");
+				}
+				for c in c_flags.iter().rev() {
+					help.push_str(&head);
+					help = flag_help_tablize(help, c, &sp, s_width_max, nl_width_max, &indent)
+				}
+			}
+		}
+
+		help
 	}
 
 	/// Create usage preset

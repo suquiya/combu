@@ -172,7 +172,6 @@ impl Parser {
 		mut c: Context,
 		flag_only: bool,
 	) -> (Context, Option<VecDeque<String>>) {
-		//println!("parse_inter_mediate_args:{:?}", c.parsing_args);
 		match c.parsing_args {
 			None => (c, None),
 			Some(inter_middle_args) => {
@@ -862,7 +861,6 @@ impl Parser {
 	) -> Context {
 		let mut non_flag_args = VecDeque::<String>::new();
 		loop {
-			//println!("{:?}", c);
 			match c.args.pop_front() {
 				None => {
 					break;
@@ -1353,7 +1351,7 @@ impl Parser {
 									(next_none, c)
 								}
 							},
-							_ => match c.common_flags.find_short_flag(&last) {
+							_ => match (current_common_flags, &c.common_flags).find_short_flag(&last) {
 								Some(c_flag) => match c.args.pop_front() {
 									Some(next_long_flag) if self.long_flag(&next_long_flag) => {
 										c.common_flags_values

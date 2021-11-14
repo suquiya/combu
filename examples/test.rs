@@ -17,7 +17,7 @@ fn main() {
 		@"suquiya copyright",
 		@"test_license","test_license_fn",
 		="test_command",
-		:"test_usage",
+		usage:"test_usage",
 		l~{tlf[="test_local_flag" -l >bool?false]},
 		c~{tcf[="test_common_flag" -c >bool?false]},
 		&alias,

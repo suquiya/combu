@@ -1743,7 +1743,7 @@ macro_rules! _ffp {
  		$crate::_fsp!(->$name=>$t)
  	};
 	(->[$name:expr]$t:tt)=>{
-	 	$crate::_fsp!(->[$name]=>$t)?
+	 	$crate::_fsp!(->[$name]=>$t)
 	};
 	(->[$name:expr]$sep:tt$($t:tt)+)=>{
 	 	$crate::_fsp!(->[$name]=>$($t)+)
@@ -1869,7 +1869,7 @@ macro_rules! _ftp{
 		$crate::_ftp![->$name=>[$($t)*]]
 	};
 	(->$name:expr=>[]) => {
-		$crate::_ftp!(->$name=>[=String::default(),s~Vector::default(),l~Vector::default(),>FlagType::default(),?FlagValue::String(String::default())])
+		$crate::_ftp!(->$name=>[=String::default(),s~Vector::default(),l~Vector::default(),>FlagType::default(),?$crate::flag_value!(bool)])
 	};
 	(->$name:expr=>[$i:ident])=>{
 		$crate::_fp_ident_ft_assigner!(->$name=>[$i],_ftp,=)
@@ -2749,55 +2749,55 @@ macro_rules! type_default_value {
 		bool::default()
 	};
 	(true) => {
-		type_default_value!(bool)
+		$crate::type_default_value!(bool)
 	};
 	(false) => {
-		type_default_value!(bool)
+		$crate::type_default_value!(bool)
 	};
 	(i) => {
-		type_default_value!(int)
+		$crate::type_default_value!(int)
 	};
 	(I) => {
-		type_default_value!(int)
+		$crate::type_default_value!(int)
 	};
 	(Int) => {
-		type_default_value!(int)
+		$crate::type_default_value!(int)
 	};
 	(Integer) => {
-		type_default_value!(int)
+		$crate::type_default_value!(int)
 	};
 	(integer) => {
-		type_default_value!(int)
+		$crate::type_default_value!(int)
 	};
 	(int) => {
 		isize::default()
 	};
 	(f) => {
-		type_default_value!(float)
+		$crate::type_default_value!(float)
 	};
 	(F) => {
-		type_default_value!(float)
+		$crate::type_default_value!(float)
 	};
 	(Float) => {
-		type_default_value!(float)
+		$crate::type_default_value!(float)
 	};
 	(float) => {
 		f64::default()
 	};
 	(s) => {
-		type_default_value!(str)
+		$crate::type_default_value!(str)
 	};
 	(S) => {
-		type_default_value!(str)
+		$crate::type_default_value!(str)
 	};
 	(Str) => {
-		type_default_value!(str)
+		$crate::type_default_value!(str)
 	};
 	(String) => {
-		type_default_value!(str)
+		$crate::type_default_value!(str)
 	};
 	(string) => {
-		type_default_value!(str)
+		$crate::type_default_value!(str)
 	};
 	(str) => {
 		String::default()

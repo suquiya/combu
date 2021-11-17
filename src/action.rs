@@ -22,10 +22,7 @@ pub enum ActionResult {
 impl ActionResult {
 	/// Returns true if self is done.
 	pub fn is_done(&self) -> bool {
-		match self {
-			ActionResult::Done => true,
-			_ => false,
-		}
+		matches!(self, ActionResult::Done)
 	}
 }
 

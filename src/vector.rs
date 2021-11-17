@@ -75,10 +75,7 @@ impl<T> Vector<T> {
 
 	/// Returns true if has some(n>0) items.
 	pub fn has_at_least_one(&self) -> bool {
-		match self {
-			Vector(None) => false,
-			Vector(Some(inner)) => inner.len() > 0,
-		}
+		matches!(self, Vector(Some(inner)) if inner.len()>0)
 	}
 
 	/// Returns this Vector.
@@ -133,18 +130,12 @@ impl<T> Vector<T> {
 
 	/// Returns true if this inner is None.
 	pub fn is_none(&self) -> bool {
-		match self {
-			Vector(None) => true,
-			_ => false,
-		}
+		matches!(self, Vector(None))
 	}
 
 	/// Returns true if this has inner vec(as Some(Vec<T>)).
 	pub fn has_inner_vec(&self) -> bool {
-		match self {
-			Vector(None) => false,
-			_ => true,
-		}
+		matches!(self, Vector(Some(_)))
 	}
 
 	/// Sets None as inner.
@@ -161,11 +152,9 @@ impl<T> Vector<T> {
 	}
 
 	/// Gets inner.
-	pub fn inner(&self) -> Option<&Vec<T>> {
-		match &self {
-			Vector(None) => None,
-			Vector(Some(inner)) => Some(inner),
-		}
+	pub fn inner(&self) -> &Option<Vec<T>> {
+		let Vector(inner) = &self;
+		inner
 	}
 
 	/// Gets inner as mutable form.
@@ -178,6 +167,12 @@ impl<T> Vector<T> {
 	pub fn take(&mut self) -> Vector<T> {
 		let Vector(inner) = self;
 		Vector(inner.take())
+	}
+
+	/// Takes inner
+	pub fn take_inner(&mut self) -> Option<Vec<T>> {
+		let Vector(inner) = self;
+		inner.take()
 	}
 
 	/// Gets inner reference.

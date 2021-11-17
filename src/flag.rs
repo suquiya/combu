@@ -1,4 +1,4 @@
-use crate::Vector;
+use crate::{flag_type, flag_value, Vector};
 
 /// Struct for Flag setting's information
 #[derive(Clone, Debug, PartialEq)]
@@ -97,7 +97,7 @@ impl FlagType {
 
 impl Default for FlagType {
 	fn default() -> Self {
-		FlagType::String
+		FlagType::Bool
 	}
 }
 
@@ -177,7 +177,7 @@ impl FlagValue {
 
 	/// Returns true if self is FlagValue::Bool(true)
 	pub fn is_bool_true(&self) -> bool {
-		self == &FlagValue::Bool(true)
+		matches!(self, FlagValue::Bool(true))
 	}
 
 	/// Returns inner bool value. If self is not FlagValue::Bool(val), panic will occur.
@@ -202,15 +202,23 @@ impl Default for Flag {
 	}
 }
 
+macro_rules! new_typed_flag {
+	($name:expr, $type:ident) => {
+		Flag::with_all_field(
+			$name.into(),
+			String::default(),
+			Vector::default(),
+			Vector::default(),
+			flag_type!($type),
+			flag_value!($type),
+		)
+	};
+}
+
 impl Flag {
 	/// Creates a new instance of Flag
 	pub fn new<T: Into<String>>(name: T, flag_type: FlagType, description: T) -> Flag {
-		let default_value: FlagValue = match flag_type {
-			FlagType::Bool => FlagValue::Bool(bool::default()),
-			FlagType::String => FlagValue::String(String::default()),
-			FlagType::Int => FlagValue::Int(isize::default()),
-			FlagType::Float => FlagValue::Float(f64::default()),
-		};
+		let default_value: FlagValue = flag_type.default_flag_value();
 		Flag {
 			name: name.into(),
 			description: description.into(),
@@ -248,7 +256,7 @@ impl Flag {
 			short_alias: Vector::default(),
 			long_alias: Vector::default(),
 			flag_type: FlagType::default(),
-			default_value: FlagValue::String(String::default()),
+			default_value: FlagValue::Bool(bool::default()),
 		}
 	}
 
@@ -267,22 +275,22 @@ impl Flag {
 
 	/// Creates a new instance of bool Flag
 	pub fn new_bool<T: Into<String>>(name: T) -> Self {
-		Flag::with_name_and_type(name, FlagType::Bool)
+		new_typed_flag!(name, bool)
 	}
 
 	/// Creates a new instance of string Flag
 	pub fn new_string<T: Into<String>>(name: T) -> Self {
-		Flag::with_name_and_type(name, FlagType::String)
+		new_typed_flag!(name, String)
 	}
 
 	/// Creates a new instance of int Flag
 	pub fn new_int<T: Into<String>>(name: T) -> Self {
-		Flag::with_name_and_type(name, FlagType::Int)
+		new_typed_flag!(name, Int)
 	}
 
 	/// Creates a new instance of float Flag
 	pub fn new_float<T: Into<String>>(name: T) -> Self {
-		Flag::with_name_and_type(name, FlagType::Float)
+		new_typed_flag!(name, Float)
 	}
 
 	/// Add an short alias to this Flag

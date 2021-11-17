@@ -1015,7 +1015,7 @@ mod tests {
 	}
 
 	#[test]
-	fn single_run() {
+	fn test_single_run() {
 		let mut arg = vec![
 			"exe_path".to_string(),
 			"test".to_string(),
@@ -1084,12 +1084,8 @@ mod tests {
 				assert_eq!(cmd.license.unwrap().0, String::from("root_license"));
 				done!()
 			})
-			.common_flag(Flag::new(
-				"common",
-				FlagType::default(),
-				"sample common flag",
-			))
-			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
+			.common_flag(Flag::new("common", FlagType::String, "sample common flag"))
+			.local_flag(Flag::new("local", FlagType::String, "sample local flag"))
 			.version("root_version")
 			.copyright("root_copyright")
 			.license(license!(
@@ -1144,12 +1140,8 @@ mod tests {
 				assert_eq!(inner.1(&cmd, &c), String::from("root_license_content"));
 				done!()
 			})
-			.common_flag(Flag::new(
-				"common",
-				FlagType::default(),
-				"sample common flag",
-			))
-			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
+			.common_flag(Flag::new("common", FlagType::String, "sample common flag"))
+			.local_flag(Flag::new("local", FlagType::String, "sample local flag"))
 			.sub_command(Command::with_name("sub").action(|_, _| {
 				println!("sub");
 				done!()
@@ -1773,7 +1765,6 @@ mod tests {
 			"exe_path".to_string(),
 			"sub".to_string(),
 			"leaf".to_string(),
-			//"test".to_string(),
 			"--common".to_string(),
 			"test".to_string(),
 			"-c".to_string(),
@@ -1785,7 +1776,7 @@ mod tests {
 				panic!("not sub");
 			})
 			.common_flag(Flag::new("common", FlagType::String, "sample common flag"))
-			.common_flag(Flag::with_name("cshort").short_alias('c'))
+			.common_flag(Flag::new_string("cshort").short_alias('c'))
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.sub_command(
 				Command::with_name("sub")
@@ -2064,13 +2055,13 @@ mod tests {
 					"--float".to_string(),
 					"10.0".to_string(),
 				];
-				let expect_args = VecDeque::from(vec!["test".to_string()]);
+				let expect_args = VecDeque::from(vec!["test".to_string(), "test".to_owned()]);
 				assert_eq!(c.exe_path, String::from("exe_path"));
 				assert_eq!(c.raw_args, raw_args);
 				assert_eq!(c.args, expect_args);
 				assert_eq!(
 					c.get_flag_value_of("common", &cmd),
-					Some(FlagValue::String("test".into()))
+					Some(FlagValue::Bool(true))
 				);
 				assert_eq!(
 					c.get_inputted_flag_value_of("commons"),
@@ -2133,7 +2124,7 @@ mod tests {
 				FlagType::default(),
 				"sample common flag",
 			))
-			.common_flag(Flag::with_name("commons").short_alias('c'))
+			.common_flag(Flag::new_string("commons").short_alias('c'))
 			.common_flag(Flag::new_string("yes").short_alias('y'))
 			.local_flag(Flag::new("local", FlagType::default(), "sample local flag"))
 			.sub_command(
@@ -2598,7 +2589,7 @@ pub mod presets {
 					&loc_owned
 				} else {
 					//セルフネームがある
-					if depth < 2 {
+					if depth < 1 {
 						//コモンフラグが1コマンド分しかない→現在はルートコマンド
 						&cmd.name
 					} else {
@@ -2759,9 +2750,8 @@ pub mod presets {
 
 			let head: String;
 			let cl_label: bool;
-			if (ctx_c_flags.sum_of_length() + cmd.c_flags.len()) > 0 && cmd.l_flags.has_at_least_one()
-			{
-				// コモンもローカルもある場合、コモンかローカルかの区別をするためのラベルを表示する
+			if cmd.l_flags.has_at_least_one() {
+				// ローカルがある場合、区別用のラベル表示する
 				head = indent.repeat(2);
 				cl_label = true;
 			} else {
@@ -2769,6 +2759,7 @@ pub mod presets {
 				cl_label = false;
 			}
 
+			let gap = sp.repeat(2);
 			if let Vector(Some(l_flags)) = l_flags {
 				if cl_label {
 					help.push_str(&indent);
@@ -2776,14 +2767,14 @@ pub mod presets {
 				}
 				for l in l_flags.iter().rev() {
 					help.push_str(&head);
-					help = flag_help_tablize(help, l, &sp, s_width_max, nl_width_max, &indent);
+					help = flag_help_tablize(help, l, &sp, s_width_max, nl_width_max, &gap);
 				}
 			}
 
 			if let Vector(Some(c_flags)) = c_flags {
 				if cl_label {
 					help.push_str(&indent);
-					help.push_str("Common (common flags are available in this command and sub command");
+					help.push_str("Common (available in this command and sub command");
 					if cmd.sub.len() > 1 {
 						help.push('s');
 					}
@@ -2791,12 +2782,113 @@ pub mod presets {
 				}
 				for c in c_flags.iter().rev() {
 					help.push_str(&head);
-					help = flag_help_tablize(help, c, &sp, s_width_max, nl_width_max, &indent)
+					help = flag_help_tablize(help, c, &sp, s_width_max, nl_width_max, &gap)
+				}
+			}
+
+			if let Vector(Some(ctx_c_flags)) = ctx_c_flags {
+				let route_without_root = ctx.depth() > ctx.routes.len();
+				for (index, cc_flags) in ctx_c_flags.iter().enumerate().rev() {
+					if let Vector(Some(cc_flags)) = cc_flags {
+						help.push_str("Common [inherited from ");
+						if route_without_root {
+							if index < 1 {
+								help.push_str(&root_str(ctx.exe_path()))
+							} else {
+								match ctx.routes.get(index - 1) {
+									Some(val) => help.push_str(val),
+									None => help.push_str("unknown"),
+								}
+							}
+						} else {
+							match ctx.routes.get(index) {
+								Some(val) => help.push_str(val),
+								None => help.push_str("unknown"),
+							}
+						}
+						help.push_str("]: \n");
+						for c in cc_flags {
+							help.push_str(&head);
+							help = flag_help_tablize(help, c, &sp, s_width_max, nl_width_max, &gap);
+						}
+					}
 				}
 			}
 		}
 
+		if let Vector(Some(sub_commands)) = &cmd.sub {
+			help = help + "Sub Command";
+			if sub_commands.len() > 1 {
+				help.push('s');
+			}
+			help = help + ": \n";
+			let mut na_max_width: usize = 10;
+			for sc in sub_commands {
+				match &sc.alias {
+					Vector(None) => na_max_width = std::cmp::max(na_max_width, sc.name.len()),
+					Vector(Some(alias)) => {
+						na_max_width = std::cmp::max(
+							na_max_width,
+							alias
+								.iter()
+								.fold(sc.name.len() + 2 * alias.len(), |sum, a| sum + a.len()),
+						);
+					}
+				}
+			}
+
+			na_max_width += 3;
+
+			for sc in sub_commands {
+				let help_pref_len = help.len();
+				help = help + &sc.name;
+				if let Vector(Some(alias)) = &sc.alias {
+					help = alias.iter().fold(help, |help, a| help + ", " + a)
+				}
+				let sp_num = na_max_width - help.len() + help_pref_len;
+				help = help + &sp.repeat(sp_num);
+				if let Some(description) = &sc.description {
+					help.push_str(description);
+				}
+				help.push('\n');
+			}
+
+			if ctx.depth() > 0 {
+			} else {
+				let root = if cmd.name.is_empty() {
+					root_str(&ctx.exe_path())
+				} else {
+					cmd.name.clone()
+				};
+				help.push_str("See '");
+				help.push_str(&root);
+				help.push_str("<subcommand> --help' for more information.")
+			}
+		}
+
 		help
+	}
+
+	/// Get root path as string for help
+	pub fn root_str(exe_path: &str) -> String {
+		let exe_path = std::path::Path::new(exe_path);
+		let mut root_string = exe_path
+			.file_stem()
+			.unwrap_or(std::ffi::OsStr::new("root"))
+			.to_str()
+			.unwrap_or("root")
+			.to_owned();
+		if let Some(val) = exe_path.extension() {
+			match val.to_str() {
+				Some(val) => root_string = root_string + "[." + val + "]",
+				None => match std::env::consts::EXE_SUFFIX {
+					"" => {}
+					val => root_string = root_string + "[" + val + "]",
+				},
+			}
+		}
+
+		root_string
 	}
 
 	/// Create usage preset

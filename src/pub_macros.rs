@@ -1520,6 +1520,9 @@ macro_rules! alias {
 	(=[$($at:tt)*],,$($t:tt)*)=>{
 		alias!(=[$($at)*],$($t)*)
 	};
+	(=[$($at:tt)*])=>{
+		$crate::vector!($($at)*;:String)
+	};
 	(=[$($at:tt)*],)=>{
 		$crate::vector!($($at)*;:String)
 	};

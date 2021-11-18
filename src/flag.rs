@@ -151,7 +151,13 @@ impl FlagValue {
 
 	/// Returns true if &self's FlagType is flag_type.
 	pub fn is_type(&self, flag_type: &FlagType) -> bool {
-		Some(flag_type) == self.get_type()
+		match self {
+			FlagValue::Bool(_) => &FlagType::Bool == flag_type,
+			FlagValue::String(_) => &FlagType::String == flag_type,
+			FlagValue::Int(_) => &FlagType::Int == flag_type,
+			FlagValue::Float(_) => &FlagType::Float == flag_type,
+			_ => false,
+		}
 	}
 
 	/// Gets bool FlagValue from string

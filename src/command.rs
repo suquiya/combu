@@ -2145,6 +2145,7 @@ pub mod presets {
 	use crate::FlagType;
 
 	use super::{Action, Command, Context, Flag, License, Vector};
+	use std::cmp::max;
 
 	macro_rules! _add_help_with_flag_dudup {
 		($help:ident,$iter:expr,$nl_list:ident,$s_list:ident,$suffix:ident,$name_and_alias_min_width:ident,$sp:ident,$indent:ident) => {
@@ -2240,69 +2241,12 @@ pub mod presets {
 		let indent_size: usize = 3;
 		let sp = String::from(" ");
 		let indent = sp.repeat(indent_size);
-		match &cmd.description {
-			Some(description) => {
-				help.push_str(description);
-				help.push_str("\n\n");
-			}
-			_ => {}
+		if let Some(description) = &cmd.description {
+			help.push_str(description);
+			help.push_str("\n\n");
 		}
 		help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
-
-		let mut nl_list = Vec::<&String>::new();
-		let mut s_list = Vec::<&char>::new();
 		let name_and_alias_min_width = 12;
-		if let Vector(Some(l_flags)) = &cmd.l_flags {
-			let mut i = l_flags.iter().rev();
-			if let Some(f) = i.next() {
-				// ローカルフラグ出力
-				help = flag_help_simple(f, help, name_and_alias_min_width);
-				nl_list.push(&f.name);
-				if let Vector(Some(la)) = &f.long_alias {
-					let mut la = la.iter().collect();
-					nl_list.append(&mut la);
-				};
-				if let Vector(Some(sa)) = &f.short_alias {
-					let mut sa = sa.iter().collect();
-					s_list.append(&mut sa)
-				}
-				let emp_str = String::new();
-				_add_help_with_flag_dudup!(
-					help,
-					i,
-					nl_list,
-					s_list,
-					emp_str,
-					name_and_alias_min_width,
-					sp,
-					indent
-				)
-			}
-		}
-
-		// コモンフラグ出力
-		// まず現在のコマンドのコモンフラグ出力
-		if let Vector(Some(c_flags)) = &cmd.c_flags {
-			let suffix = if cmd.sub.len() > 0 {
-				format!(
-					"[also available in sub command{} under here]",
-					(if cmd.sub.len() < 2 { "" } else { "s" })
-				)
-			} else {
-				String::new()
-			};
-			_add_help_with_flag_dudup!(
-				help,
-				c_flags.iter().rev(),
-				nl_list,
-				s_list,
-				suffix,
-				name_and_alias_min_width,
-				sp,
-				indent
-			);
-		}
-		// Context内のコモンフラグ
 		let routes = ctx.routes.clone();
 		let mut routes: Vec<String> = if routes.len() < ctx.depth() {
 			let mut routes: Vec<String> = routes.into();
@@ -2319,25 +2263,86 @@ pub mod presets {
 		} else {
 			routes.into()
 		};
-		// コモンフラグ出力(contextに取り込まれているフラグ)
-		if let Vector(Some(cfs)) = &ctx.common_flags {
-			for (c_index, c_flags) in cfs.iter().enumerate().rev() {
-				if let Vector(Some(c_flags)) = c_flags {
-					let suffix = match routes.get(c_index) {
-						Some(cmd_name) => sp.clone() + "(inherited from " + cmd_name + ")",
-						None => String::new(),
-					};
+		if cmd.l_flags.has_at_least_one()
+			|| cmd.c_flags.has_at_least_one()
+			|| ctx.common_flags.has_at_least_one()
+		{
+			help.push_str("Flags: \n");
 
+			let mut nl_list = Vec::<&String>::new();
+			let mut s_list = Vec::<&char>::new();
+
+			if let Vector(Some(l_flags)) = &cmd.l_flags {
+				let mut i = l_flags.iter().rev();
+				if let Some(f) = i.next() {
+					// ローカルフラグ出力
+					help = flag_help_simple(f, help, name_and_alias_min_width);
+					nl_list.push(&f.name);
+					if let Vector(Some(la)) = &f.long_alias {
+						let mut la = la.iter().collect();
+						nl_list.append(&mut la);
+					};
+					if let Vector(Some(sa)) = &f.short_alias {
+						let mut sa = sa.iter().collect();
+						s_list.append(&mut sa)
+					}
+					let emp_str = String::new();
 					_add_help_with_flag_dudup!(
 						help,
-						c_flags.iter().rev(),
+						i,
 						nl_list,
 						s_list,
-						suffix,
+						emp_str,
 						name_and_alias_min_width,
 						sp,
 						indent
-					);
+					)
+				}
+			}
+
+			// コモンフラグ出力
+			// まず現在のコマンドのコモンフラグ出力
+			if let Vector(Some(c_flags)) = &cmd.c_flags {
+				let suffix = if cmd.sub.len() > 0 {
+					format!(
+						"[also available in sub command{} under here]",
+						(if cmd.sub.len() < 2 { "" } else { "s" })
+					)
+				} else {
+					String::new()
+				};
+				_add_help_with_flag_dudup!(
+					help,
+					c_flags.iter().rev(),
+					nl_list,
+					s_list,
+					suffix,
+					name_and_alias_min_width,
+					sp,
+					indent
+				);
+			}
+
+			// コモンフラグ出力(contextに取り込まれているフラグ)
+			if let Vector(Some(cfs)) = &ctx.common_flags {
+				for (c_index, c_flags) in cfs.iter().enumerate().rev() {
+					if let Vector(Some(c_flags)) = c_flags {
+						let suffix = match routes.get(c_index) {
+							Some(cmd_name) => sp.clone() + "(inherited from " + cmd_name + ")",
+							None => String::new(),
+						};
+
+						_add_help_with_flag_dudup!(
+							help,
+							c_flags.iter().rev(),
+							nl_list,
+							s_list,
+							suffix,
+							name_and_alias_min_width,
+							sp,
+							indent
+						);
+					}
 				}
 			}
 		}
@@ -2435,12 +2440,9 @@ pub mod presets {
 		let indent_size: usize = 3;
 		let sp = String::from(" ");
 		let indent: String = sp.repeat(indent_size);
-		match &cmd.description {
-			Some(description) => {
-				help.push_str(description);
-				help.push_str("\n\n");
-			}
-			_ => {}
+		if let Some(description) = &cmd.description {
+			help.push_str(description);
+			help.push_str("\n\n");
 		}
 		help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
 
@@ -2684,12 +2686,9 @@ pub mod presets {
 		let indent_size: usize = 3;
 		let sp = String::from(" ");
 		let indent: String = sp.repeat(indent_size);
-		match &cmd.description {
-			Some(description) => {
-				help.push_str(description);
-				help.push_str("\n\n");
-			}
-			_ => {}
+		if let Some(description) = &cmd.description {
+			help.push_str(description);
+			help.push_str("\n\n");
 		}
 		help = help + "Usage:\n" + &indent + &cmd.usage + "\n\n";
 
@@ -2727,8 +2726,8 @@ pub mod presets {
 				|flags: &Vector<Flag>, s_width_max: &mut usize, nl_width_max: &mut usize| {
 					if let Vector(Some(flags)) = flags {
 						for f in flags {
-							*s_width_max = std::cmp::max(*s_width_max, f.short_alias.len());
-							*nl_width_max = std::cmp::max(*nl_width_max, nl_width(f));
+							*s_width_max = max(*s_width_max, f.short_alias.len());
+							*nl_width_max = max(*nl_width_max, nl_width(f));
 						}
 					}
 				};
@@ -2825,9 +2824,9 @@ pub mod presets {
 			let mut na_max_width: usize = 10;
 			for sc in sub_commands {
 				match &sc.alias {
-					Vector(None) => na_max_width = std::cmp::max(na_max_width, sc.name.len()),
+					Vector(None) => na_max_width = max(na_max_width, sc.name.len()),
 					Vector(Some(alias)) => {
-						na_max_width = std::cmp::max(
+						na_max_width = max(
 							na_max_width,
 							alias
 								.iter()
@@ -2863,6 +2862,326 @@ pub mod presets {
 				help.push_str("See '");
 				help.push_str(&root);
 				help.push_str("<subcommand> --help' for more information.")
+			}
+		}
+
+		help
+	}
+
+	macro_rules! _flag_tablize_dedup {
+		($iter:expr,$nl_col_width:ident,$s_col_width:ident,$nl_list:ident,$s_list:ident,$s_columns:ident,$nl_columns:ident) => {
+			for f in $iter {
+				if let Vector(Some(sa)) = &f.short_alias {
+					let mut dedup_s = Vec::<&char>::new();
+					for s in sa.iter() {
+						if !$s_list.contains(&s) {
+							dedup_s.push(s);
+							$s_list.push(s);
+						}
+					}
+					$s_col_width = max(dedup_s.len(), $s_col_width);
+					$s_columns.push_back(dedup_s);
+				}
+				let mut dedup_nl = Vec::<&String>::new();
+				let mut nl_width;
+				if !$nl_list.contains(&&f.name) {
+					$nl_list.push(&f.name);
+					dedup_nl.push(&f.name);
+					nl_width = f.name.len();
+				} else {
+					nl_width = 0;
+				}
+				if let Vector(Some(long_alias)) = &f.long_alias {
+					for la in long_alias {
+						if !$nl_list.contains(&la) {
+							$nl_list.push(la);
+							dedup_nl.push(la);
+							nl_width += la.len();
+						}
+					}
+				}
+				match dedup_nl.len() {
+					1 => {
+						nl_width += 2;
+					}
+					x if x > 1 => {
+						nl_width += x * 4 - 2;
+					}
+					_ => {}
+				}
+				$nl_columns.push_back(dedup_nl);
+				$nl_col_width = max(nl_width, $nl_col_width);
+			}
+		};
+	}
+
+	fn add_short_flags_str(append_to: &mut String, s_list: Vec<&char>) {
+		append_to.push('-');
+		let mut si = s_list.into_iter();
+		append_to.push(*si.next().unwrap());
+		for s in si {
+			append_to.push_str(", -");
+			append_to.push(*s);
+		}
+	}
+
+	fn add_long_flags_str_to_prev_flags(
+		append_to: &mut String,
+		nl_iter: std::vec::IntoIter<&String>,
+	) {
+		for nl in nl_iter {
+			append_to.push_str(", --");
+			append_to.push_str(nl);
+		}
+	}
+
+	fn add_long_flags_str(append_to: &mut String, mut nl_iter: std::vec::IntoIter<&String>) {
+		append_to.push_str("--");
+		append_to.push_str(nl_iter.next().unwrap());
+		add_long_flags_str_to_prev_flags(append_to, nl_iter);
+	}
+
+	fn add_flags_help_str(
+		mut append_to: String,
+		flags: &Vec<Flag>,
+		s_columns: &mut std::collections::VecDeque<Vec<&char>>,
+		nl_columns: &mut std::collections::VecDeque<Vec<&String>>,
+		s_col_width: usize,
+		nl_col_width: usize,
+		gap_width: usize,
+		suffix: &str,
+		sp: &String,
+	) -> String {
+		for f in flags.iter().rev() {
+			let s_list = s_columns.pop_front().unwrap();
+			let nl_list = nl_columns.pop_front().unwrap();
+			if s_list.is_empty() {
+				if !nl_list.is_empty() {
+					append_to.push_str(&sp.repeat(s_col_width));
+					let prev_help_len = append_to.len();
+					add_long_flags_str(&mut append_to, nl_list.into_iter());
+					let nl_len = append_to.len() - prev_help_len;
+					append_to = append_to
+						+ &sp.repeat(nl_col_width - nl_len + gap_width)
+						+ &f.description + suffix;
+				}
+			} else {
+				append_to = append_to + &sp.repeat(s_col_width - (s_list.len() * 4));
+				add_short_flags_str(&mut append_to, s_list);
+				if nl_list.is_empty() {
+					append_to = append_to + &sp.repeat(4 + nl_col_width) + &f.description + suffix;
+				} else {
+					let prev_help_len = append_to.len();
+					add_long_flags_str_to_prev_flags(&mut append_to, nl_list.into_iter());
+					let nl_len = append_to.len() - prev_help_len;
+					append_to = append_to
+						+ &sp.repeat(nl_col_width - nl_len + gap_width)
+						+ &f.description + suffix;
+				}
+			}
+		}
+		append_to
+	}
+
+	/// Preset of help function (tablize) with deleted duplication
+	pub fn help_tablize_with_alias_dedup(ctx: &Context, cmd: &Command) -> String {
+		let mut help = String::new();
+		let indent_size = 3;
+		let sp = String::from(" ");
+		let indent: String = sp.repeat(indent_size);
+		if let Some(description) = &cmd.description {
+			help.push_str(description);
+			help.push_str("\n\n");
+		}
+		help = help + "Usage:\n" + &indent + &cmd.usage + "\n\n";
+
+		let flag_num = cmd.l_flags.len() + cmd.c_flags.len() + ctx.common_flags.sum_of_length();
+		if flag_num > 0 {
+			let mut nl_col_width = 5;
+			let mut s_col_width = 1;
+			help.push_str("Flags: \n");
+
+			let mut nl_list = Vec::<&String>::new();
+			let mut s_list = Vec::<&char>::new();
+			let mut s_columns = std::collections::VecDeque::<Vec<&char>>::with_capacity(flag_num);
+			let mut nl_columns = std::collections::VecDeque::<Vec<&String>>::with_capacity(flag_num);
+			if let Vector(Some(l_flags)) = &cmd.l_flags {
+				let mut l = l_flags.iter().rev();
+				if let Some(f) = l.next() {
+					let mut nl_width = 0;
+					nl_list.push(&f.name);
+					nl_width += f.name.len();
+					if let Vector(Some(la)) = &f.long_alias {
+						let mut la: Vec<&String> = la.iter().collect();
+						nl_width += 4 * la.len() - 2;
+						for l in la.iter() {
+							nl_width += l.len();
+						}
+						nl_list.append(&mut la);
+					}
+					nl_col_width = max(nl_width, nl_col_width);
+					nl_columns.push_back(nl_list.clone());
+					if let Vector(Some(sa)) = &f.short_alias {
+						let mut sa: Vec<&char> = sa.iter().collect();
+						s_col_width = max(sa.len(), s_col_width);
+						s_list.append(&mut sa);
+					}
+					s_columns.push_back(s_list.clone());
+					_flag_tablize_dedup!(
+						l,
+						nl_col_width,
+						s_col_width,
+						nl_list,
+						s_list,
+						s_columns,
+						nl_columns
+					);
+				}
+			}
+			if let Vector(Some(c_flags)) = &cmd.c_flags {
+				_flag_tablize_dedup!(
+					c_flags.iter().rev(),
+					nl_col_width,
+					s_col_width,
+					nl_list,
+					s_list,
+					s_columns,
+					nl_columns
+				);
+			}
+			if let Vector(Some(cfs)) = &ctx.common_flags {
+				for c_flags in cfs.iter().rev() {
+					if let Vector(Some(c_flags)) = c_flags {
+						_flag_tablize_dedup!(
+							c_flags.iter().rev(),
+							nl_col_width,
+							s_col_width,
+							nl_list,
+							s_list,
+							s_columns,
+							nl_columns
+						)
+					}
+				}
+			}
+			drop(s_list);
+			drop(nl_list);
+			// help出力
+			s_col_width = s_col_width * 4;
+			let gap_width = 2;
+			if let Vector(Some(l_flags)) = &cmd.l_flags {
+				let suffix = "\n";
+				help = add_flags_help_str(
+					help,
+					l_flags,
+					&mut s_columns,
+					&mut nl_columns,
+					s_col_width,
+					nl_col_width,
+					gap_width,
+					suffix,
+					&sp,
+				)
+			}
+
+			if let Vector(Some(c_flags)) = &cmd.c_flags {
+				let suffix = match &cmd.sub {
+					Vector(Some(subs)) if subs.len() > 1 => {
+						" [common: also available in sub commands under here]\n"
+					}
+					Vector(Some(subs)) if subs.len() > 0 => {
+						" [common: also available in sub command under here]\n"
+					}
+					_ => "\n",
+				};
+				help = add_flags_help_str(
+					help,
+					c_flags,
+					&mut s_columns,
+					&mut nl_columns,
+					s_col_width,
+					nl_col_width,
+					gap_width,
+					suffix,
+					&sp,
+				)
+			}
+
+			if let Vector(Some(c_flags_list)) = &ctx.common_flags {
+				let route_without_root = ctx.depth() > ctx.routes.len();
+				for (index, c_flags) in c_flags_list.into_iter().enumerate().rev() {
+					if let Vector(Some(c_flags)) = c_flags {
+						let mut suffix = sp.clone() + "[common: inherited from ";
+						if route_without_root {
+							if index < 1 {
+								suffix.push_str(&root_str(ctx.exe_path()))
+							} else {
+								match ctx.routes.get(index - 1) {
+									Some(val) => suffix.push_str(val),
+									None => suffix.push_str("unknown"),
+								}
+							}
+						} else {
+							match ctx.routes.get(index) {
+								Some(val) => suffix.push_str(val),
+								None => suffix.push_str("unknown"),
+							}
+						}
+
+						help = add_flags_help_str(
+							help,
+							c_flags,
+							&mut s_columns,
+							&mut nl_columns,
+							s_col_width,
+							nl_col_width,
+							gap_width,
+							&suffix,
+							&sp,
+						);
+					}
+				}
+			}
+		}
+
+		if let Vector(Some(sub_commands)) = &cmd.sub {
+			help = help + "Sub Command";
+			if sub_commands.len() > 1 {
+				help.push('s');
+			}
+			help = help + ": \n";
+
+			// サブコマンド名の列挙最大長算出
+			let mut na_max_width: usize = 10;
+			for sc in sub_commands {
+				match &sc.alias {
+					Vector(None) => na_max_width = max(na_max_width, sc.name.len()),
+					Vector(Some(alias)) => {
+						na_max_width = max(
+							na_max_width,
+							alias
+								.iter()
+								.fold(sc.name.len() + 2 * alias.len(), |sum, a| sum + a.len()),
+						);
+					}
+				}
+			}
+			na_max_width += 3;
+
+			for sc in sub_commands {
+				let help_pref_len = help.len();
+				help = help + &sc.name;
+				if let Vector(Some(alias)) = &sc.alias {
+					for a in alias {
+						help = help + a;
+					}
+				}
+				let sp_num = na_max_width - help.len() + help_pref_len;
+				help = help + &sp.repeat(sp_num);
+				if let Some(description) = &sc.description {
+					help.push_str(description);
+				}
+				help.push('\n');
 			}
 		}
 

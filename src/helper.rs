@@ -1,7 +1,4 @@
-// TODO
-// + presetのhelp function
-//   + テーブル版の追加
-// + 各種プリセットの実装
-//   + コマンドプリセット
-//   + helpサブコマンドのプリセット
-//   + helpリクエスト投げ上げ用マクロ
+// TODO: presetのhelp function テーブル版の追加
+// TODO: コマンドプリセット
+// TODO: helpサブコマンドのプリセット
+// TODO: helpリクエスト投げ上げ用マクロ

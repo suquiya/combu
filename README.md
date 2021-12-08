@@ -18,8 +18,8 @@ combu(com + 昆布)は柔軟に CLI を組み上げられることを目標と�
 - flag parsing before sub command args(サブコマンド前のフラグの受付)
 - 独自でパース等を行いたい場合に再利用できる構造体の設定
   - 似たような CLI フレームワークを作りたいときに使用できる部品を用意
-- ヘルプ表示用等の各種プリセット
-- エラーハンドリングに関して、ある程度の自由度を持たせた設計
+- Useful presets (コマンド、フラグ等のプリセット)
+- Return the result of run as Result<ActionResult, ActionError> (実行結果を Result に込めて実行後返却)
 
 # Documentation
 
@@ -131,7 +131,7 @@ $ cargo run --example single a b c d e -r
 edcba
 ```
 
-## Multi (Use Sub command)
+## Multi (Have Sub command)
 
 ### Code
 

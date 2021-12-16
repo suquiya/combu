@@ -2696,29 +2696,13 @@ pub mod presets {
 			// フラグが存在するとき
 			help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
 
-			let nl_width = |flag: &Flag| {
-				match &flag.long_alias {
-					Vector(None) => {
-						flag.name.len()
-							+ match &flag.flag_type {
-								crate::FlagType::Bool => 2,
-								crate::FlagType::String => 11, // 2 + " <string>"
-								crate::FlagType::Int => 8,     // 2 + " <int>"
-								crate::FlagType::Float => 10,  //2 + " <float>"
-							}
-					}
-					Vector(Some(long_aliases)) => {
-						long_aliases.iter().fold(
-							flag.name.len()
-								+ match &flag.flag_type {
-									crate::FlagType::Bool => 2,
-									crate::FlagType::String => 11, // 2 + " <string>"
-									crate::FlagType::Int => 8,     // 2 + " <int>"
-									crate::FlagType::Float => 10,  //2 + " <float>"
-								},
-							|width, long_alias| width + long_alias.len(),
-						) + long_aliases.len() * 4
-					}
+			let nl_width = |flag: &Flag| match &flag.long_alias {
+				Vector(None) => flag.name.len() + flag_type_suffix_len(&flag.flag_type),
+				Vector(Some(long_aliases)) => {
+					long_aliases.iter().fold(
+						flag.name.len() + flag_type_suffix_len(&flag.flag_type),
+						|width, long_alias| width + long_alias.len(),
+					) + long_aliases.len() * 4
 				}
 			};
 
@@ -2852,14 +2836,27 @@ pub mod presets {
 				help.push('\n');
 			}
 
+			help.push_str("See '");
 			if ctx.depth() > 0 {
+				if ctx.depth() > ctx.routes.len() {
+					help.push_str(&root_str(ctx.exe_path()));
+					help.push_str(&sp);
+				}
+				if let Vector(Some(routes)) = &ctx.routes {
+					for route in routes {
+						help.push_str(route);
+						help.push_str(&sp);
+					}
+				}
+				help.push_str(&cmd.name);
+				help.push_str(" <subcommand> --help' for more information");
 			} else {
 				let root = if cmd.name.is_empty() {
 					root_str(&ctx.exe_path())
 				} else {
 					cmd.name.clone()
 				};
-				help.push_str("See '");
+
 				help.push_str(&root);
 				help.push_str("<subcommand> --help' for more information.")
 			}
@@ -2871,12 +2868,14 @@ pub mod presets {
 	macro_rules! _flag_tablize_dedup {
 		($iter:expr,$nl_col_width:ident,$s_col_width:ident,$nl_list:ident,$s_list:ident,$s_columns:ident,$nl_columns:ident) => {
 			for f in $iter {
+				let mut alias_exist = false;
 				if let Vector(Some(sa)) = &f.short_alias {
 					let mut dedup_s = Vec::<&char>::new();
 					for s in sa.iter() {
 						if !$s_list.contains(&s) {
 							dedup_s.push(s);
 							$s_list.push(s);
+							alias_exist = true;
 						}
 					}
 					$s_col_width = max(dedup_s.len(), $s_col_width);
@@ -2888,6 +2887,7 @@ pub mod presets {
 					$nl_list.push(&f.name);
 					dedup_nl.push(&f.name);
 					nl_width = f.name.len();
+					alias_exist = true;
 				} else {
 					nl_width = 0;
 				}
@@ -2897,17 +2897,25 @@ pub mod presets {
 							$nl_list.push(la);
 							dedup_nl.push(la);
 							nl_width += la.len();
+							alias_exist = true;
 						}
 					}
 				}
-				match dedup_nl.len() {
-					1 => {
-						nl_width += 2;
+				if alias_exist {
+					match dedup_nl.len() {
+						1 => {
+							nl_width += flag_type_suffix_len(&f.flag_type);
+						}
+						x if x > 1 => {
+							nl_width += match &f.flag_type {
+								FlagType::Bool => x * 4,
+								FlagType::String => x * 4 + 9,
+								FlagType::Int => x * 4 + 6,
+								FlagType::Float => x * 4 + 8,
+							};
+						}
+						_ => {}
 					}
-					x if x > 1 => {
-						nl_width += x * 4 - 2;
-					}
-					_ => {}
 				}
 				$nl_columns.push_back(dedup_nl);
 				$nl_col_width = max(nl_width, $nl_col_width);
@@ -2922,6 +2930,14 @@ pub mod presets {
 		for s in si {
 			append_to.push_str(", -");
 			append_to.push(*s);
+		}
+	}
+	fn flag_type_suffix_len(ft: &FlagType) -> usize {
+		match &ft {
+			FlagType::Bool => 2,
+			FlagType::String => 11, // 2 + " <string>"
+			FlagType::Int => 8,     // 2 + " <int>"
+			FlagType::Float => 10,  // 2 + " <float>"
 		}
 	}
 
@@ -2960,6 +2976,7 @@ pub mod presets {
 					append_to.push_str(&sp.repeat(s_col_width));
 					let prev_help_len = append_to.len();
 					add_long_flags_str(&mut append_to, nl_list.into_iter());
+					append_to = add_type_suffix(append_to, &f.flag_type);
 					let nl_len = append_to.len() - prev_help_len;
 					append_to = append_to
 						+ &sp.repeat(nl_col_width - nl_len + gap_width)
@@ -2969,10 +2986,13 @@ pub mod presets {
 				append_to = append_to + &sp.repeat(s_col_width - (s_list.len() * 4));
 				add_short_flags_str(&mut append_to, s_list);
 				if nl_list.is_empty() {
-					append_to = append_to + &sp.repeat(4 + nl_col_width) + &f.description + suffix;
+					append_to = add_type_suffix(append_to, &f.flag_type)
+						+ &sp.repeat(4 + nl_col_width)
+						+ &f.description + suffix;
 				} else {
 					let prev_help_len = append_to.len();
 					add_long_flags_str_to_prev_flags(&mut append_to, nl_list.into_iter());
+					append_to = add_type_suffix(append_to, &f.flag_type);
 					let nl_len = append_to.len() - prev_help_len;
 					append_to = append_to
 						+ &sp.repeat(nl_col_width - nl_len + gap_width)
@@ -3183,6 +3203,29 @@ pub mod presets {
 				}
 				help.push('\n');
 			}
+
+			help.push_str("See '");
+			if ctx.depth() > 0 {
+				if ctx.depth() > ctx.routes.len() {
+					help.push_str(&root_str(ctx.exe_path()));
+					help.push_str(&sp);
+				}
+				if let Vector(Some(routes)) = &ctx.routes {
+					for route in routes {
+						help.push_str(route);
+						help.push_str(&sp);
+					}
+				}
+				help.push_str(&cmd.name);
+			} else {
+				let root = if cmd.name.is_empty() {
+					root_str(&ctx.exe_path())
+				} else {
+					cmd.name.clone()
+				};
+				help.push_str(&root);
+			}
+			help.push_str(" <subcommand> --help' for more information");
 		}
 
 		help

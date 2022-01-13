@@ -316,10 +316,22 @@ macro_rules! char {
 #[macro_export]
 /// Checks context has help flag. If the context has help flag, return ShowHelpRequest.
 macro_rules! check_help {
-	($context:ident, $corrent_command:ident, $($help_func:tt)+) => {
-		if $context.is_flag_true("help", &$corrent_command) {
-			println!("{}",$($help_func)+(&$context, &$corrent_command));
+	($context:ident, $current_command:ident, {$($ht:tt)*})=>{
+		if $context.is_flag_true("help", &$corrent_command){
+			$($ht)*
 		}
+	};
+	($context:ident$(,)*$current_command:ident$(,)*{$($ht:tt)*})=>{
+		check_help!($context,$current_command, {$($ht)*})
+	};
+	($context:ident, $current_command:ident, $($help_func:tt)+) => {
+		if $context.is_flag_true("help", &$current_command) {
+			println!("{}",$($help_func)+(&$context, &$current_command));
+			return done!()
+		}
+	};
+	($context:ident$(,)*$current_command:ident$(,)*$($help_func:tt)+) => {
+		check_help!($context,$current_command,$($help_func)+)
 	};
 }
 

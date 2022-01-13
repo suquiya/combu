@@ -2467,7 +2467,7 @@ pub mod presets {
 		if let Vector(Some(l_flags)) = l_flags {
 			if cl_label {
 				help.push_str(&indent);
-				help.push_str("Local: \n");
+				help.push_str("[Local]: \n");
 			}
 			help = l_flags.iter().rfold(help, |help, l_flag| {
 				flag_help_simple(l_flag, help + &head, name_and_alias_field_min_width + 10)
@@ -2477,7 +2477,7 @@ pub mod presets {
 		let mut common_head = true;
 		if let Vector(Some(c_flags)) = &cmd.c_flags {
 			if cl_label {
-				help = help + &indent + "Common" + &format!("(common flags are available in this command and sub command{} under this command): \n", (if cmd.sub.len()<2{""}else{"s"}));
+				help = help + &indent + "[Common" + &format!("(common flags are available in this command and sub command{} under this command)]: \n", (if cmd.sub.len()<2{""}else{"s"}));
 			}
 
 			for cf in c_flags {
@@ -2494,7 +2494,7 @@ pub mod presets {
 			help = c_flags
 				.iter()
 				.enumerate()
-				.rfold(help, |help, (index, c_flags)| {
+				.rfold(help, |help, (index, c_flags)| -> String {
 					//コモンフラグ書き出し
 					if let Vector(Some(c_flags)) = c_flags {
 						let mut help = help;
@@ -2531,7 +2531,7 @@ pub mod presets {
 							}
 						}
 
-						help = c_flags.iter().rfold(help, |help, c_flag| {
+						help = c_flags.iter().rfold(help, |help, c_flag| -> String {
 							flag_help_simple(c_flag, help + &head, name_and_alias_field_min_width)
 						});
 						help
@@ -2676,6 +2676,7 @@ pub mod presets {
 		}
 		help.push_str(&pre_d_space);
 		help.push_str(&f.description);
+		help.push('\n');
 
 		help
 	}
@@ -2746,7 +2747,7 @@ pub mod presets {
 			if let Vector(Some(l_flags)) = l_flags {
 				if cl_label {
 					help.push_str(&indent);
-					help.push_str("Local: \n");
+					help.push_str("[Local]: \n");
 				}
 				for l in l_flags.iter().rev() {
 					help.push_str(&head);
@@ -2757,11 +2758,11 @@ pub mod presets {
 			if let Vector(Some(c_flags)) = c_flags {
 				if cl_label {
 					help.push_str(&indent);
-					help.push_str("Common (available in this command and sub command");
+					help.push_str("[Common (available in this command and sub command");
 					if cmd.sub.len() > 1 {
 						help.push('s');
 					}
-					help.push_str(" under this command): \n");
+					help.push_str(" under this command)]: \n");
 				}
 				for c in c_flags.iter().rev() {
 					help.push_str(&head);
@@ -2773,7 +2774,7 @@ pub mod presets {
 				let route_without_root = ctx.depth() > ctx.routes.len();
 				for (index, cc_flags) in ctx_c_flags.iter().enumerate().rev() {
 					if let Vector(Some(cc_flags)) = cc_flags {
-						help.push_str("Common [inherited from ");
+						help.push_str("[Common, inherited from ");
 						if route_without_root {
 							if index < 1 {
 								help.push_str(&root_str(ctx.exe_path()))
@@ -2966,9 +2967,11 @@ pub mod presets {
 		nl_col_width: usize,
 		gap_width: usize,
 		suffix: &str,
+		prefix: &str,
 		sp: &String,
 	) -> String {
 		for f in flags.iter().rev() {
+			append_to.push_str(prefix);
 			let s_list = s_columns.pop_front().unwrap();
 			let nl_list = nl_columns.pop_front().unwrap();
 			if s_list.is_empty() {
@@ -2993,7 +2996,7 @@ pub mod presets {
 					let prev_help_len = append_to.len();
 					add_long_flags_str_to_prev_flags(&mut append_to, nl_list.into_iter());
 					append_to = add_type_suffix(append_to, &f.flag_type);
-					let nl_len = append_to.len() - prev_help_len;
+					let nl_len = append_to.len() - prev_help_len - 2;
 					append_to = append_to
 						+ &sp.repeat(nl_col_width - nl_len + gap_width)
 						+ &f.description + suffix;
@@ -3028,12 +3031,11 @@ pub mod presets {
 			if let Vector(Some(l_flags)) = &cmd.l_flags {
 				let mut l = l_flags.iter().rev();
 				if let Some(f) = l.next() {
-					let mut nl_width = 0;
 					nl_list.push(&f.name);
-					nl_width += f.name.len();
+					let mut nl_width = f.name.len() + 2;
 					if let Vector(Some(la)) = &f.long_alias {
 						let mut la: Vec<&String> = la.iter().collect();
-						nl_width += 4 * la.len() - 2;
+						nl_width += 4 * la.len();
 						for l in la.iter() {
 							nl_width += l.len();
 						}
@@ -3069,6 +3071,7 @@ pub mod presets {
 					nl_columns
 				);
 			}
+			println!("nl_col_width: {}", nl_col_width);
 			if let Vector(Some(cfs)) = &ctx.common_flags {
 				for c_flags in cfs.iter().rev() {
 					if let Vector(Some(c_flags)) = c_flags {
@@ -3087,8 +3090,9 @@ pub mod presets {
 			drop(s_list);
 			drop(nl_list);
 			// help出力
+			println!("nl_col_width: {}", nl_col_width);
 			s_col_width = s_col_width * 4;
-			let gap_width = 2;
+			let gap_width = 3;
 			if let Vector(Some(l_flags)) = &cmd.l_flags {
 				let suffix = "\n";
 				help = add_flags_help_str(
@@ -3100,6 +3104,7 @@ pub mod presets {
 					nl_col_width,
 					gap_width,
 					suffix,
+					&indent,
 					&sp,
 				)
 			}
@@ -3123,6 +3128,7 @@ pub mod presets {
 					nl_col_width,
 					gap_width,
 					suffix,
+					&indent,
 					&sp,
 				)
 			}
@@ -3157,6 +3163,7 @@ pub mod presets {
 							nl_col_width,
 							gap_width,
 							&suffix,
+							&indent,
 							&sp,
 						);
 					}
@@ -3172,7 +3179,7 @@ pub mod presets {
 			help = help + ": \n";
 
 			// サブコマンド名の列挙最大長算出
-			let mut na_max_width: usize = 10;
+			let mut na_max_width: usize = 12;
 			for sc in sub_commands {
 				match &sc.alias {
 					Vector(None) => na_max_width = max(na_max_width, sc.name.len()),
@@ -3190,13 +3197,13 @@ pub mod presets {
 
 			for sc in sub_commands {
 				let help_pref_len = help.len();
-				help = help + &sc.name;
+				help = help + &indent + &sc.name;
 				if let Vector(Some(alias)) = &sc.alias {
 					for a in alias {
 						help = help + a;
 					}
 				}
-				let sp_num = na_max_width - help.len() + help_pref_len;
+				let sp_num = na_max_width + help_pref_len - help.len();
 				help = help + &sp.repeat(sp_num);
 				if let Some(description) = &sc.description {
 					help.push_str(description);

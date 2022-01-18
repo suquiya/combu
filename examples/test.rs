@@ -1,4 +1,4 @@
-use combu::command::presets::help_with_alias_dedup;
+use combu::command::presets::func::help_with_alias_dedup;
 use combu::{check_help, Action};
 use combu::{cmd, command::*};
 use combu::{done, Done, Flag};

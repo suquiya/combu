@@ -20,7 +20,7 @@ fn root_command() -> Command {
 		.sub_command(sub_command())
 }
 fn call_help(c: &Context, cur_cmd: &Command) -> Result<ActionResult, ActionError> {
-	println!("{}", presets::help(c, cur_cmd));
+	println!("{}", presets::func::help(c, cur_cmd));
 	done!()
 }
 fn print_args(context: Context, current_command: Command) -> Result<ActionResult, ActionError> {

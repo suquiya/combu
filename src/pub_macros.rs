@@ -1390,6 +1390,23 @@ macro_rules! cmd {
 	};
 }
 
+/// Create usage
+#[macro_export]
+macro_rules! default_usage {
+	($name:ident) => {
+		concat!(stringify!($name), "[SUBCOMMAND OR ARG] [OPTIONS]")
+	};
+	($name:ident :expr) => {
+		$name.into() + "[SUBCOMMAND OR ARG] [OPTIONS]"
+	};
+	($name:literal) => {
+		concat!($name, "[SUBCOMMAND OR ARG] [OPTIONS]")
+	};
+	($name:expr) => {
+		$name.into() + "[SUBCOMMAND OR ARG] [OPTIONS]"
+	};
+}
+
 #[macro_export]
 /// Macro for creating copyright
 macro_rules! copyright {

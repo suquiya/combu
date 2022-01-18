@@ -2142,1127 +2142,14 @@ mod tests {
 /// Presets of Command
 pub mod presets {
 
-	use crate::FlagType;
+	use crate::default_usage;
+	use crate::Vector;
 
-	use super::{Action, Command, Context, Flag, License, Vector};
-	use std::cmp::max;
-
-	macro_rules! _add_help_with_flag_dudup {
-		($help:ident,$iter:expr,$nl_list:ident,$s_list:ident,$suffix:ident,$name_and_alias_min_width:ident,$sp:ident,$indent:ident) => {
-			for f in $iter {
-				let mut all_dup = true;
-				let first_help_width = $help.len();
-				if let Vector(Some(short_alias)) = &f.short_alias {
-					for s in short_alias.iter() {
-						if !$s_list.contains(&s) {
-							if (!all_dup) {
-								$help.push(',');
-							}
-							all_dup = false;
-							$help.push_str("-");
-							$help.push(*s);
-							$s_list.push(s);
-						}
-					}
-				} else {
-					$help.push_str(&$indent);
-				}
-				if !$nl_list.contains(&&f.name) {
-					$help.push_str(if all_dup { " --" } else { ", --" });
-					all_dup = false;
-					$help.push_str(&f.name);
-					$nl_list.push(&f.name);
-				}
-				if let Vector(Some(long_alias)) = &f.long_alias {
-					for long in long_alias.iter() {
-						if !$nl_list.contains(&long) {
-							$nl_list.push(long);
-							if all_dup {
-								$help.push_str(" --");
-								all_dup = false;
-							} else {
-								$help.push_str(", --");
-							}
-							$help.push_str(long);
-						}
-					}
-				}
-				if all_dup {
-					$help.truncate(first_help_width);
-				} else {
-					let name_and_alias_width = $help.len() - first_help_width;
-					if name_and_alias_width < $name_and_alias_min_width {
-						$help.push_str(
-							$sp.repeat($name_and_alias_min_width - name_and_alias_width)
-								.as_str(),
-						);
-					}
-					$help.push('\t');
-					$help.push_str(&f.description);
-					$help.push_str(&$suffix);
-					$help.push('\n');
-				}
-			}
-		};
-	}
-
-	// Add help for this flag to append_to. name_and_alias_min_width means min width of name and alias' field.
-	// Flagに対するヘルプをappend_toに追加する。nameとalias表示部分のずれをある程度吸収できるようにその部分の最小幅をname_and_alias_min_widthで指定する
-	fn flag_help_simple(flag: &Flag, append_to: String, name_and_alias_min_width: usize) -> String {
-		let mut help = append_to;
-		let first_help_width = help.len();
-
-		if let Vector(Some(short_alias)) = &flag.short_alias {
-			help = short_alias
-				.iter()
-				.fold(help, |help, s| format!("{}-{},", help, s));
-		} else {
-			help += "   ";
-		}
-		help = help + " --" + &flag.name;
-		if let Vector(Some(long_alias)) = &flag.long_alias {
-			help = long_alias.iter().fold(help, |help, l| {
-				//ロングフラグ出力
-				format!("{}, --{}", help, l)
-			})
-		};
-		help = add_type_suffix(help, &flag.flag_type);
-		let name_and_alias_width = help.len() - first_help_width;
-
-		if name_and_alias_width < name_and_alias_min_width {
-			help += &" ".repeat(name_and_alias_min_width - name_and_alias_width);
-		}
-
-		help + "\t" + &flag.description + "\n"
-	}
-	/// Preset of help function(compact version)
-	pub fn help_with_alias_dedup(ctx: &Context, cmd: &Command) -> String {
-		let mut help = String::new();
-		let indent_size: usize = 3;
-		let sp = String::from(" ");
-		let indent = sp.repeat(indent_size);
-		if let Some(description) = &cmd.description {
-			help.push_str(description);
-			help.push_str("\n\n");
-		}
-		help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
-		let name_and_alias_min_width = 12;
-		let routes = ctx.routes.clone();
-		let mut routes: Vec<String> = if routes.len() < ctx.depth() {
-			let mut routes: Vec<String> = routes.into();
-			routes.insert(
-				0,
-				std::path::Path::new(ctx.exe_path())
-					.file_stem()
-					.unwrap_or(std::ffi::OsStr::new("root"))
-					.to_str()
-					.unwrap_or("root")
-					.to_owned(),
-			);
-			routes
-		} else {
-			routes.into()
-		};
-		if cmd.l_flags.has_at_least_one()
-			|| cmd.c_flags.has_at_least_one()
-			|| ctx.common_flags.has_at_least_one()
-		{
-			help.push_str("Flags: \n");
-
-			let mut nl_list = Vec::<&String>::new();
-			let mut s_list = Vec::<&char>::new();
-
-			if let Vector(Some(l_flags)) = &cmd.l_flags {
-				let mut i = l_flags.iter().rev();
-				if let Some(f) = i.next() {
-					// ローカルフラグ出力
-					help = flag_help_simple(f, help, name_and_alias_min_width);
-					nl_list.push(&f.name);
-					if let Vector(Some(la)) = &f.long_alias {
-						let mut la = la.iter().collect();
-						nl_list.append(&mut la);
-					};
-					if let Vector(Some(sa)) = &f.short_alias {
-						let mut sa = sa.iter().collect();
-						s_list.append(&mut sa)
-					}
-					let emp_str = String::new();
-					_add_help_with_flag_dudup!(
-						help,
-						i,
-						nl_list,
-						s_list,
-						emp_str,
-						name_and_alias_min_width,
-						sp,
-						indent
-					)
-				}
-			}
-
-			// コモンフラグ出力
-			// まず現在のコマンドのコモンフラグ出力
-			if let Vector(Some(c_flags)) = &cmd.c_flags {
-				let suffix = if cmd.sub.len() > 0 {
-					format!(
-						"[also available in sub command{} under here]",
-						(if cmd.sub.len() < 2 { "" } else { "s" })
-					)
-				} else {
-					String::new()
-				};
-				_add_help_with_flag_dudup!(
-					help,
-					c_flags.iter().rev(),
-					nl_list,
-					s_list,
-					suffix,
-					name_and_alias_min_width,
-					sp,
-					indent
-				);
-			}
-
-			// コモンフラグ出力(contextに取り込まれているフラグ)
-			if let Vector(Some(cfs)) = &ctx.common_flags {
-				for (c_index, c_flags) in cfs.iter().enumerate().rev() {
-					if let Vector(Some(c_flags)) = c_flags {
-						let suffix = match routes.get(c_index) {
-							Some(cmd_name) => sp.clone() + "(inherited from " + cmd_name + ")",
-							None => String::new(),
-						};
-
-						_add_help_with_flag_dudup!(
-							help,
-							c_flags.iter().rev(),
-							nl_list,
-							s_list,
-							suffix,
-							name_and_alias_min_width,
-							sp,
-							indent
-						);
-					}
-				}
-			}
-		}
-
-		// サブコマンド出力
-		if let Vector(Some(sub)) = &cmd.sub {
-			let mut iter = sub.iter();
-			if let Some(sub_command) = iter.next() {
-				help.push_str("Sub Command");
-				if sub.len() > 1 {
-					help.push('s');
-				}
-				help.push_str(": \n");
-				// 最初のフラグ情報追加
-				help = help + &indent + &sub_command.name;
-				let mut na_list = vec![&sub_command.name];
-				let mut name_and_alias_width = sub_command.name.len();
-				if let Vector(Some(alias)) = &sub_command.alias {
-					let mut a = alias.iter().collect();
-					na_list.append(&mut a);
-					for a in alias {
-						help = help + ", " + a;
-						name_and_alias_width += a.len() + 2;
-					}
-				}
-				if name_and_alias_width < name_and_alias_min_width {
-					help = help + &sp.repeat(name_and_alias_min_width - name_and_alias_width);
-				}
-				if let Some(description) = &sub_command.description {
-					help = help + "\t" + description
-				}
-				help += "\n";
-
-				for sub_cmd in iter {
-					let mut all_dup = true;
-					let help_first_width = help.len();
-					if !na_list.contains(&&sub_cmd.name) {
-						na_list.push(&sub_cmd.name);
-						help = help + &indent + &sub_cmd.name;
-						all_dup = false;
-					}
-					if let Vector(Some(alias)) = &sub_cmd.alias {
-						for a in alias {
-							if !na_list.contains(&a) {
-								na_list.push(a);
-								if all_dup {
-									help = help + &indent + a;
-								} else {
-									help = help + ", " + a;
-								}
-								all_dup = false;
-							}
-						}
-					}
-					if !all_dup {
-						let name_and_alias_width = help_first_width - help.len();
-						if name_and_alias_width < name_and_alias_min_width {
-							help += &sp.repeat(name_and_alias_min_width - name_and_alias_width);
-						}
-						if let Some(description) = &sub_cmd.description {
-							help = help + "\t" + description;
-						}
-						help += "\n"
-					}
-				}
-			}
-			if routes.len() < 2 && !cmd.name.is_empty() {
-				routes[0] = cmd.name.clone();
-			}
-			let exe_suffix = std::env::consts::EXE_SUFFIX;
-			if !exe_suffix.is_empty() {
-				routes[0].push_str("[");
-				routes[0].push_str(exe_suffix);
-				routes[0].push_str("]")
-			}
-			help = help + &routes.join(" ") + "<subcommand> --help for more information.";
-			help += "\n";
-		}
-		return help;
-	}
-
-	/// Add type suffix for flag help
-	pub fn add_type_suffix(to: String, ft: &FlagType) -> String {
-		match &ft {
-			FlagType::Bool => to,
-			FlagType::String => to + " <string>",
-			FlagType::Int => to + " <int>",
-			FlagType::Float => to + " <float>",
-		}
-	}
-
-	/// Preset of help function
-	pub fn help(ctx: &Context, cmd: &Command) -> String {
-		let mut help = String::new();
-		let indent_size: usize = 3;
-		let sp = String::from(" ");
-		let indent: String = sp.repeat(indent_size);
-		if let Some(description) = &cmd.description {
-			help.push_str(description);
-			help.push_str("\n\n");
-		}
-		help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
-
-		//フラグ処理
-		let l_flags: &Vector<Flag> = &cmd.l_flags;
-		let ctx_c_flags: &Vector<Vector<Flag>> = &ctx.common_flags;
-
-		help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
-		let head: String;
-		let cl_label;
-		let name_and_alias_field_min_width: usize = 7;
-		if (ctx_c_flags.sum_of_length() + cmd.c_flags.len()) > 0 && cmd.l_flags.has_at_least_one() {
-			//コモンフラグとローカルフラグ両方が設定されている場合
-			head = indent.repeat(2);
-			cl_label = true;
-		} else {
-			//設定されていない場合、ローカルフラグもしくはコモンフラグだけなのでラベルはいらない
-			head = indent.clone();
-			cl_label = false;
-		}
-
-		if let Vector(Some(l_flags)) = l_flags {
-			if cl_label {
-				help.push_str(&indent);
-				help.push_str("[Local]: \n");
-			}
-			help = l_flags.iter().rfold(help, |help, l_flag| {
-				flag_help_simple(l_flag, help + &head, name_and_alias_field_min_width + 10)
-			});
-		}
-		let depth = ctx.depth();
-		let mut common_head = true;
-		if let Vector(Some(c_flags)) = &cmd.c_flags {
-			if cl_label {
-				help = help + &indent + "[Common" + &format!("(common flags are available in this command and sub command{} under this command)]: \n", (if cmd.sub.len()<2{""}else{"s"}));
-			}
-
-			for cf in c_flags {
-				help = flag_help_simple(cf, help + &head, name_and_alias_field_min_width)
-			}
-
-			common_head = false;
-		}
-		if let Vector(Some(c_flags)) = ctx_c_flags {
-			let route_without_root = depth > ctx.routes.len();
-			if cl_label && common_head {
-				help = help + &indent + "Common ";
-			}
-			help = c_flags
-				.iter()
-				.enumerate()
-				.rfold(help, |help, (index, c_flags)| -> String {
-					//コモンフラグ書き出し
-					if let Vector(Some(c_flags)) = c_flags {
-						let mut help = help;
-						if cl_label {
-							let mut from_owned: String;
-							let from = if route_without_root {
-								if index < 1 {
-									let cur_path = std::path::Path::new(ctx.exe_path());
-									from_owned = cur_path
-										.file_stem()
-										.unwrap_or(std::ffi::OsStr::new("root"))
-										.to_str()
-										.unwrap_or("root")
-										.to_owned();
-									match cur_path.extension() {
-										None => {}
-										Some(val) => {
-											from_owned += &format!("[.{}]", val.to_str().unwrap_or("exe"))
-										}
-									}
-
-									&from_owned
-								} else {
-									ctx.routes.get(index - 1).unwrap()
-								}
-							} else {
-								ctx.routes.get(index).unwrap()
-							};
-							if common_head {
-								help += &format!("[inherited from {}]: \n", from)
-							} else {
-								common_head = false;
-								help += &format!("{}[inherited from {}]: \n", &indent, from)
-							}
-						}
-
-						help = c_flags.iter().rfold(help, |help, c_flag| -> String {
-							flag_help_simple(c_flag, help + &head, name_and_alias_field_min_width)
-						});
-						help
-					} else {
-						help
-					}
-				});
-			help += "\n";
-		}
-
-		if let Vector(Some(sub_commands)) = &cmd.sub {
-			help += &format!(
-				"Sub Command{}: \n",
-				if sub_commands.len() < 2 { "" } else { "s" }
-			);
-			help = sub_commands.iter().fold(help, |help, sub_command| {
-				//サブコマンドの説明出力
-				let mut help = help + &indent + &sub_command.name;
-				let mut name_and_alias_width = sub_command.name.len();
-				if let Vector(Some(alias)) = &sub_command.alias {
-					let (h_str, w) = alias
-						.iter()
-						.fold((help, name_and_alias_width), |(help, w), alias| {
-							(help + ", " + alias, w + 2 + alias.len())
-						});
-					help = h_str;
-					name_and_alias_width = w;
-				}
-				if name_and_alias_width < name_and_alias_field_min_width {
-					help += &sp.repeat(name_and_alias_field_min_width - name_and_alias_width);
-				}
-
-				help = if let Some(description) = &sub_command.description {
-					help + "\t" + description
-				} else {
-					help
-				};
-				help + "\n"
-			});
-			let loc_owned: String;
-			let location: &str = {
-				if cmd.name.is_empty() {
-					let path = std::path::Path::new(ctx.exe_path());
-					let mut l: String = path
-						.file_stem()
-						.unwrap_or(std::ffi::OsStr::new("root"))
-						.to_str()
-						.unwrap_or("root")
-						.to_owned();
-					match path.extension() {
-						None => {}
-						Some(ext) => {
-							l = l + "[." + ext.to_str().unwrap_or("exe") + "]";
-						}
-					}
-					loc_owned = l;
-					&loc_owned
-				} else {
-					//セルフネームがある
-					if depth < 1 {
-						//コモンフラグが1コマンド分しかない→現在はルートコマンド
-						&cmd.name
-					} else {
-						loc_owned = if let Vector(Some(routes)) = &ctx.routes {
-							routes.iter().rfold(
-								{
-									if depth > routes.len() {
-										let path = std::path::Path::new(ctx.exe_path());
-										let mut l = path
-											.file_stem()
-											.unwrap_or(std::ffi::OsStr::new("root"))
-											.to_str()
-											.unwrap_or("root")
-											.to_owned();
-										match path.extension() {
-											None => {}
-											Some(val) => {
-												l = l + "[." + val.to_str().unwrap_or("exe") + "]";
-											}
-										}
-										l
-									} else {
-										String::new()
-									}
-								},
-								|str, route| {
-									//現在どのコマンドに対応しているか
-									str + &sp + route
-								},
-							)
-						} else {
-							panic!("Routes of context should be not none under sub command.")
-						};
-						&loc_owned
-					}
-				}
-			};
-			help = help
-				+ "\n" + &format!(
-				//"See '{0} help <subcommand>' or '{0} <subcommand> --help' for more information.",
-				"{0} <subcommand> --help for more information.",
-				location
-			);
-			help += "\n";
-		}
-
-		return help;
-	}
-
-	/// Preset of flag help function (tablize)
-	pub fn flag_help_tablize(
-		append_to: String,
-		f: &Flag,
-		sp: &String,
-		s_max_num: usize, //最大ショートエイリアス数
-		nl_width: usize,
-		pre_d_space: &String,
-	) -> String {
-		let mut help = append_to;
-		// short_alias出力
-		help = help + &sp.repeat((s_max_num - f.short_alias.len()) * 4);
-		if let Vector(Some(short_alias)) = &f.short_alias {
-			for s in short_alias {
-				help.push_str("-");
-				help.push(*s);
-				help.push_str(", ");
-			}
-		}
-		let prev_help_len = help.len();
-		help.push_str("--");
-		help.push_str(&f.name);
-		if let Vector(Some(long_alias)) = &f.long_alias {
-			for l in long_alias {
-				help.push_str(", --");
-				help.push_str(l);
-			}
-		}
-		help = add_type_suffix(help, &f.flag_type);
-		let _nl_width = help.len() - prev_help_len;
-		if _nl_width < nl_width {
-			help.push_str(&sp.repeat(nl_width - _nl_width));
-		}
-		help.push_str(&pre_d_space);
-		help.push_str(&f.description);
-		help.push('\n');
-
-		help
-	}
-
-	/// Preset of help function (tablize)
-	pub fn help_tablize(ctx: &Context, cmd: &Command) -> String {
-		let mut help = String::new();
-		let indent_size: usize = 3;
-		let sp = String::from(" ");
-		let indent: String = sp.repeat(indent_size);
-		if let Some(description) = &cmd.description {
-			help.push_str(description);
-			help.push_str("\n\n");
-		}
-		help = help + "Usage:\n" + &indent + &cmd.usage + "\n\n";
-
-		if &cmd.l_flags.len() + &cmd.c_flags.len() + &ctx.common_flags.sum_of_length() > 0 {
-			// フラグが存在するとき
-			help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
-
-			let nl_width = |flag: &Flag| match &flag.long_alias {
-				Vector(None) => flag.name.len() + flag_type_suffix_len(&flag.flag_type),
-				Vector(Some(long_aliases)) => {
-					long_aliases.iter().fold(
-						flag.name.len() + flag_type_suffix_len(&flag.flag_type),
-						|width, long_alias| width + long_alias.len(),
-					) + long_aliases.len() * 4
-				}
-			};
-
-			let max_calc =
-				|flags: &Vector<Flag>, s_width_max: &mut usize, nl_width_max: &mut usize| {
-					if let Vector(Some(flags)) = flags {
-						for f in flags {
-							*s_width_max = max(*s_width_max, f.short_alias.len());
-							*nl_width_max = max(*nl_width_max, nl_width(f));
-						}
-					}
-				};
-			// フラグ出力
-			let l_flags = &cmd.l_flags;
-			let c_flags = &cmd.c_flags;
-			let ctx_c_flags = &ctx.common_flags;
-			// short_aliasの幅とlong_aliasの幅計算
-			// short_aliasとlong_aliasを調べてmax_widthを出す
-			let mut s_width_max: usize = 1; //文字幅が決まっているので文字数を記録
-			let mut nl_width_max: usize = 8;
-			max_calc(l_flags, &mut s_width_max, &mut nl_width_max);
-			max_calc(c_flags, &mut s_width_max, &mut nl_width_max);
-			if let Vector(Some(ctx_c_flags)) = ctx_c_flags {
-				for ccf in ctx_c_flags {
-					max_calc(ccf, &mut s_width_max, &mut nl_width_max);
-				}
-			}
-
-			let head: String;
-			let cl_label: bool;
-			if cmd.l_flags.has_at_least_one() {
-				// ローカルがある場合、区別用のラベル表示する
-				head = indent.repeat(2);
-				cl_label = true;
-			} else {
-				head = indent.clone();
-				cl_label = false;
-			}
-
-			let gap = sp.repeat(2);
-			if let Vector(Some(l_flags)) = l_flags {
-				if cl_label {
-					help.push_str(&indent);
-					help.push_str("[Local]: \n");
-				}
-				for l in l_flags.iter().rev() {
-					help.push_str(&head);
-					help = flag_help_tablize(help, l, &sp, s_width_max, nl_width_max, &gap);
-				}
-			}
-
-			if let Vector(Some(c_flags)) = c_flags {
-				if cl_label {
-					help.push_str(&indent);
-					help.push_str("[Common (available in this command and sub command");
-					if cmd.sub.len() > 1 {
-						help.push('s');
-					}
-					help.push_str(" under this command)]: \n");
-				}
-				for c in c_flags.iter().rev() {
-					help.push_str(&head);
-					help = flag_help_tablize(help, c, &sp, s_width_max, nl_width_max, &gap)
-				}
-			}
-
-			if let Vector(Some(ctx_c_flags)) = ctx_c_flags {
-				let route_without_root = ctx.depth() > ctx.routes.len();
-				for (index, cc_flags) in ctx_c_flags.iter().enumerate().rev() {
-					if let Vector(Some(cc_flags)) = cc_flags {
-						help.push_str("[Common, inherited from ");
-						if route_without_root {
-							if index < 1 {
-								help.push_str(&root_str(ctx.exe_path()))
-							} else {
-								match ctx.routes.get(index - 1) {
-									Some(val) => help.push_str(val),
-									None => help.push_str("unknown"),
-								}
-							}
-						} else {
-							match ctx.routes.get(index) {
-								Some(val) => help.push_str(val),
-								None => help.push_str("unknown"),
-							}
-						}
-						help.push_str("]: \n");
-						for c in cc_flags {
-							help.push_str(&head);
-							help = flag_help_tablize(help, c, &sp, s_width_max, nl_width_max, &gap);
-						}
-					}
-				}
-			}
-		}
-
-		if let Vector(Some(sub_commands)) = &cmd.sub {
-			help = help + "Sub Command";
-			if sub_commands.len() > 1 {
-				help.push('s');
-			}
-			help = help + ": \n";
-			let mut na_max_width: usize = 10;
-			for sc in sub_commands {
-				match &sc.alias {
-					Vector(None) => na_max_width = max(na_max_width, sc.name.len()),
-					Vector(Some(alias)) => {
-						na_max_width = max(
-							na_max_width,
-							alias
-								.iter()
-								.fold(sc.name.len() + 2 * alias.len(), |sum, a| sum + a.len()),
-						);
-					}
-				}
-			}
-
-			na_max_width += 3;
-
-			for sc in sub_commands {
-				let help_pref_len = help.len();
-				help = help + &sc.name;
-				if let Vector(Some(alias)) = &sc.alias {
-					help = alias.iter().fold(help, |help, a| help + ", " + a)
-				}
-				let sp_num = na_max_width - help.len() + help_pref_len;
-				help = help + &sp.repeat(sp_num);
-				if let Some(description) = &sc.description {
-					help.push_str(description);
-				}
-				help.push('\n');
-			}
-
-			help.push_str("See '");
-			if ctx.depth() > 0 {
-				if ctx.depth() > ctx.routes.len() {
-					help.push_str(&root_str(ctx.exe_path()));
-					help.push_str(&sp);
-				}
-				if let Vector(Some(routes)) = &ctx.routes {
-					for route in routes {
-						help.push_str(route);
-						help.push_str(&sp);
-					}
-				}
-				help.push_str(&cmd.name);
-				help.push_str(" <subcommand> --help' for more information");
-			} else {
-				let root = if cmd.name.is_empty() {
-					root_str(&ctx.exe_path())
-				} else {
-					cmd.name.clone()
-				};
-
-				help.push_str(&root);
-				help.push_str("<subcommand> --help' for more information.")
-			}
-		}
-
-		help
-	}
-
-	macro_rules! _flag_tablize_dedup {
-		($iter:expr,$nl_col_width:ident,$s_col_width:ident,$nl_list:ident,$s_list:ident,$s_columns:ident,$nl_columns:ident) => {
-			for f in $iter {
-				let mut alias_exist = false;
-				if let Vector(Some(sa)) = &f.short_alias {
-					let mut dedup_s = Vec::<&char>::new();
-					for s in sa.iter() {
-						if !$s_list.contains(&s) {
-							dedup_s.push(s);
-							$s_list.push(s);
-							alias_exist = true;
-						}
-					}
-					$s_col_width = max(dedup_s.len(), $s_col_width);
-					$s_columns.push_back(dedup_s);
-				}
-				let mut dedup_nl = Vec::<&String>::new();
-				let mut nl_width;
-				if !$nl_list.contains(&&f.name) {
-					$nl_list.push(&f.name);
-					dedup_nl.push(&f.name);
-					nl_width = f.name.len();
-					alias_exist = true;
-				} else {
-					nl_width = 0;
-				}
-				if let Vector(Some(long_alias)) = &f.long_alias {
-					for la in long_alias {
-						if !$nl_list.contains(&la) {
-							$nl_list.push(la);
-							dedup_nl.push(la);
-							nl_width += la.len();
-							alias_exist = true;
-						}
-					}
-				}
-				if alias_exist {
-					match dedup_nl.len() {
-						1 => {
-							nl_width += flag_type_suffix_len(&f.flag_type);
-						}
-						x if x > 1 => {
-							nl_width += match &f.flag_type {
-								FlagType::Bool => x * 4,
-								FlagType::String => x * 4 + 9,
-								FlagType::Int => x * 4 + 6,
-								FlagType::Float => x * 4 + 8,
-							};
-						}
-						_ => {}
-					}
-				}
-				$nl_columns.push_back(dedup_nl);
-				$nl_col_width = max(nl_width, $nl_col_width);
-			}
-		};
-	}
-
-	fn add_short_flags_str(append_to: &mut String, s_list: Vec<&char>) {
-		append_to.push('-');
-		let mut si = s_list.into_iter();
-		append_to.push(*si.next().unwrap());
-		for s in si {
-			append_to.push_str(", -");
-			append_to.push(*s);
-		}
-	}
-	fn flag_type_suffix_len(ft: &FlagType) -> usize {
-		match &ft {
-			FlagType::Bool => 2,
-			FlagType::String => 11, // 2 + " <string>"
-			FlagType::Int => 8,     // 2 + " <int>"
-			FlagType::Float => 10,  // 2 + " <float>"
-		}
-	}
-
-	fn add_long_flags_str_to_prev_flags(
-		append_to: &mut String,
-		nl_iter: std::vec::IntoIter<&String>,
-	) {
-		for nl in nl_iter {
-			append_to.push_str(", --");
-			append_to.push_str(nl);
-		}
-	}
-
-	fn add_long_flags_str(append_to: &mut String, mut nl_iter: std::vec::IntoIter<&String>) {
-		append_to.push_str("--");
-		append_to.push_str(nl_iter.next().unwrap());
-		add_long_flags_str_to_prev_flags(append_to, nl_iter);
-	}
-
-	fn add_flags_help_str(
-		mut append_to: String,
-		flags: &Vec<Flag>,
-		s_columns: &mut std::collections::VecDeque<Vec<&char>>,
-		nl_columns: &mut std::collections::VecDeque<Vec<&String>>,
-		s_col_width: usize,
-		nl_col_width: usize,
-		gap_width: usize,
-		suffix: &str,
-		prefix: &str,
-		sp: &String,
-	) -> String {
-		for f in flags.iter().rev() {
-			append_to.push_str(prefix);
-			let s_list = s_columns.pop_front().unwrap();
-			let nl_list = nl_columns.pop_front().unwrap();
-			if s_list.is_empty() {
-				if !nl_list.is_empty() {
-					append_to.push_str(&sp.repeat(s_col_width));
-					let prev_help_len = append_to.len();
-					add_long_flags_str(&mut append_to, nl_list.into_iter());
-					append_to = add_type_suffix(append_to, &f.flag_type);
-					let nl_len = append_to.len() - prev_help_len;
-					append_to = append_to
-						+ &sp.repeat(nl_col_width - nl_len + gap_width)
-						+ &f.description + suffix;
-				}
-			} else {
-				append_to = append_to + &sp.repeat(s_col_width - (s_list.len() * 4));
-				add_short_flags_str(&mut append_to, s_list);
-				if nl_list.is_empty() {
-					append_to = add_type_suffix(append_to, &f.flag_type)
-						+ &sp.repeat(4 + nl_col_width)
-						+ &f.description + suffix;
-				} else {
-					let prev_help_len = append_to.len();
-					add_long_flags_str_to_prev_flags(&mut append_to, nl_list.into_iter());
-					append_to = add_type_suffix(append_to, &f.flag_type);
-					let nl_len = append_to.len() - prev_help_len - 2;
-					append_to = append_to
-						+ &sp.repeat(nl_col_width - nl_len + gap_width)
-						+ &f.description + suffix;
-				}
-			}
-		}
-		append_to
-	}
-
-	/// Preset of help function (tablize) with deleted duplication
-	pub fn help_tablize_with_alias_dedup(ctx: &Context, cmd: &Command) -> String {
-		let mut help = String::new();
-		let indent_size = 3;
-		let sp = String::from(" ");
-		let indent: String = sp.repeat(indent_size);
-		if let Some(description) = &cmd.description {
-			help.push_str(description);
-			help.push_str("\n\n");
-		}
-		help = help + "Usage:\n" + &indent + &cmd.usage + "\n\n";
-
-		let flag_num = cmd.l_flags.len() + cmd.c_flags.len() + ctx.common_flags.sum_of_length();
-		if flag_num > 0 {
-			let mut nl_col_width = 5;
-			let mut s_col_width = 1;
-			help.push_str("Flags: \n");
-
-			let mut nl_list = Vec::<&String>::new();
-			let mut s_list = Vec::<&char>::new();
-			let mut s_columns = std::collections::VecDeque::<Vec<&char>>::with_capacity(flag_num);
-			let mut nl_columns = std::collections::VecDeque::<Vec<&String>>::with_capacity(flag_num);
-			if let Vector(Some(l_flags)) = &cmd.l_flags {
-				let mut l = l_flags.iter().rev();
-				if let Some(f) = l.next() {
-					nl_list.push(&f.name);
-					let mut nl_width = f.name.len() + 2;
-					if let Vector(Some(la)) = &f.long_alias {
-						let mut la: Vec<&String> = la.iter().collect();
-						nl_width += 4 * la.len();
-						for l in la.iter() {
-							nl_width += l.len();
-						}
-						nl_list.append(&mut la);
-					}
-					nl_col_width = max(nl_width, nl_col_width);
-					nl_columns.push_back(nl_list.clone());
-					if let Vector(Some(sa)) = &f.short_alias {
-						let mut sa: Vec<&char> = sa.iter().collect();
-						s_col_width = max(sa.len(), s_col_width);
-						s_list.append(&mut sa);
-					}
-					s_columns.push_back(s_list.clone());
-					_flag_tablize_dedup!(
-						l,
-						nl_col_width,
-						s_col_width,
-						nl_list,
-						s_list,
-						s_columns,
-						nl_columns
-					);
-				}
-			}
-			if let Vector(Some(c_flags)) = &cmd.c_flags {
-				_flag_tablize_dedup!(
-					c_flags.iter().rev(),
-					nl_col_width,
-					s_col_width,
-					nl_list,
-					s_list,
-					s_columns,
-					nl_columns
-				);
-			}
-			println!("nl_col_width: {}", nl_col_width);
-			if let Vector(Some(cfs)) = &ctx.common_flags {
-				for c_flags in cfs.iter().rev() {
-					if let Vector(Some(c_flags)) = c_flags {
-						_flag_tablize_dedup!(
-							c_flags.iter().rev(),
-							nl_col_width,
-							s_col_width,
-							nl_list,
-							s_list,
-							s_columns,
-							nl_columns
-						)
-					}
-				}
-			}
-			drop(s_list);
-			drop(nl_list);
-			// help出力
-			println!("nl_col_width: {}", nl_col_width);
-			s_col_width = s_col_width * 4;
-			let gap_width = 3;
-			if let Vector(Some(l_flags)) = &cmd.l_flags {
-				let suffix = "\n";
-				help = add_flags_help_str(
-					help,
-					l_flags,
-					&mut s_columns,
-					&mut nl_columns,
-					s_col_width,
-					nl_col_width,
-					gap_width,
-					suffix,
-					&indent,
-					&sp,
-				)
-			}
-
-			if let Vector(Some(c_flags)) = &cmd.c_flags {
-				let suffix = match &cmd.sub {
-					Vector(Some(subs)) if subs.len() > 1 => {
-						" [common: also available in sub commands under here]\n"
-					}
-					Vector(Some(subs)) if subs.len() > 0 => {
-						" [common: also available in sub command under here]\n"
-					}
-					_ => "\n",
-				};
-				help = add_flags_help_str(
-					help,
-					c_flags,
-					&mut s_columns,
-					&mut nl_columns,
-					s_col_width,
-					nl_col_width,
-					gap_width,
-					suffix,
-					&indent,
-					&sp,
-				)
-			}
-
-			if let Vector(Some(c_flags_list)) = &ctx.common_flags {
-				let route_without_root = ctx.depth() > ctx.routes.len();
-				for (index, c_flags) in c_flags_list.into_iter().enumerate().rev() {
-					if let Vector(Some(c_flags)) = c_flags {
-						let mut suffix = sp.clone() + "[common: inherited from ";
-						if route_without_root {
-							if index < 1 {
-								suffix.push_str(&root_str(ctx.exe_path()))
-							} else {
-								match ctx.routes.get(index - 1) {
-									Some(val) => suffix.push_str(val),
-									None => suffix.push_str("unknown"),
-								}
-							}
-						} else {
-							match ctx.routes.get(index) {
-								Some(val) => suffix.push_str(val),
-								None => suffix.push_str("unknown"),
-							}
-						}
-
-						help = add_flags_help_str(
-							help,
-							c_flags,
-							&mut s_columns,
-							&mut nl_columns,
-							s_col_width,
-							nl_col_width,
-							gap_width,
-							&suffix,
-							&indent,
-							&sp,
-						);
-					}
-				}
-			}
-		}
-
-		if let Vector(Some(sub_commands)) = &cmd.sub {
-			help = help + "Sub Command";
-			if sub_commands.len() > 1 {
-				help.push('s');
-			}
-			help = help + ": \n";
-
-			// サブコマンド名の列挙最大長算出
-			let mut na_max_width: usize = 12;
-			for sc in sub_commands {
-				match &sc.alias {
-					Vector(None) => na_max_width = max(na_max_width, sc.name.len()),
-					Vector(Some(alias)) => {
-						na_max_width = max(
-							na_max_width,
-							alias
-								.iter()
-								.fold(sc.name.len() + 2 * alias.len(), |sum, a| sum + a.len()),
-						);
-					}
-				}
-			}
-			na_max_width += 3;
-
-			for sc in sub_commands {
-				let help_pref_len = help.len();
-				help = help + &indent + &sc.name;
-				if let Vector(Some(alias)) = &sc.alias {
-					for a in alias {
-						help = help + a;
-					}
-				}
-				let sp_num = na_max_width + help_pref_len - help.len();
-				help = help + &sp.repeat(sp_num);
-				if let Some(description) = &sc.description {
-					help.push_str(description);
-				}
-				help.push('\n');
-			}
-
-			help.push_str("See '");
-			if ctx.depth() > 0 {
-				if ctx.depth() > ctx.routes.len() {
-					help.push_str(&root_str(ctx.exe_path()));
-					help.push_str(&sp);
-				}
-				if let Vector(Some(routes)) = &ctx.routes {
-					for route in routes {
-						help.push_str(route);
-						help.push_str(&sp);
-					}
-				}
-				help.push_str(&cmd.name);
-			} else {
-				let root = if cmd.name.is_empty() {
-					root_str(&ctx.exe_path())
-				} else {
-					cmd.name.clone()
-				};
-				help.push_str(&root);
-			}
-			help.push_str(" <subcommand> --help' for more information");
-		}
-
-		help
-	}
-
-	/// Get root path as string for help
-	pub fn root_str(exe_path: &str) -> String {
-		let exe_path = std::path::Path::new(exe_path);
-		let mut root_string = exe_path
-			.file_stem()
-			.unwrap_or(std::ffi::OsStr::new("root"))
-			.to_str()
-			.unwrap_or("root")
-			.to_owned();
-		if let Some(val) = exe_path.extension() {
-			match val.to_str() {
-				Some(val) => root_string = root_string + "[." + val + "]",
-				None => match std::env::consts::EXE_SUFFIX {
-					"" => {}
-					val => root_string = root_string + "[" + val + "]",
-				},
-			}
-		}
-
-		root_string
-	}
+	use super::{Action, Command, License};
 
 	/// Create usage preset
 	pub fn usage<T: Into<String>>(name: T) -> String {
-		format!("{} [SUBCOMMAND OR ARG] [OPTIONS]", name.into())
+		default_usage!(name: expr)
 	}
 
 	/// Create root command with base
@@ -3287,5 +2174,1132 @@ pub mod presets {
 			version.into(),
 			Vector::default(),
 		)
+	}
+
+	/// function presets for command construction.
+	pub mod func {
+		use crate::FlagType;
+
+		use super::super::{Command, Context, Flag, Vector};
+		use std::cmp::max;
+
+		macro_rules! _add_help_with_flag_dudup {
+			($help:ident,$iter:expr,$nl_list:ident,$s_list:ident,$suffix:ident,$name_and_alias_min_width:ident,$sp:ident,$indent:ident) => {
+				for f in $iter {
+					let mut all_dup = true;
+					let first_help_width = $help.len();
+					if let Vector(Some(short_alias)) = &f.short_alias {
+						for s in short_alias.iter() {
+							if !$s_list.contains(&s) {
+								if (!all_dup) {
+									$help.push(',');
+								}
+								all_dup = false;
+								$help.push_str("-");
+								$help.push(*s);
+								$s_list.push(s);
+							}
+						}
+					} else {
+						$help.push_str(&$indent);
+					}
+					if !$nl_list.contains(&&f.name) {
+						$help.push_str(if all_dup { " --" } else { ", --" });
+						all_dup = false;
+						$help.push_str(&f.name);
+						$nl_list.push(&f.name);
+					}
+					if let Vector(Some(long_alias)) = &f.long_alias {
+						for long in long_alias.iter() {
+							if !$nl_list.contains(&long) {
+								$nl_list.push(long);
+								if all_dup {
+									$help.push_str(" --");
+									all_dup = false;
+								} else {
+									$help.push_str(", --");
+								}
+								$help.push_str(long);
+							}
+						}
+					}
+					if all_dup {
+						$help.truncate(first_help_width);
+					} else {
+						let name_and_alias_width = $help.len() - first_help_width;
+						if name_and_alias_width < $name_and_alias_min_width {
+							$help.push_str(
+								$sp.repeat($name_and_alias_min_width - name_and_alias_width)
+									.as_str(),
+							);
+						}
+						$help.push('\t');
+						$help.push_str(&f.description);
+						$help.push_str(&$suffix);
+						$help.push('\n');
+					}
+				}
+			};
+		}
+
+		// Add help for this flag to append_to. name_and_alias_min_width means min width of name and alias' field.
+		// Flagに対するヘルプをappend_toに追加する。nameとalias表示部分のずれをある程度吸収できるようにその部分の最小幅をname_and_alias_min_widthで指定する
+		fn flag_help_simple(
+			flag: &Flag,
+			append_to: String,
+			name_and_alias_min_width: usize,
+		) -> String {
+			let mut help = append_to;
+			let first_help_width = help.len();
+
+			if let Vector(Some(short_alias)) = &flag.short_alias {
+				help = short_alias
+					.iter()
+					.fold(help, |help, s| format!("{}-{},", help, s));
+			} else {
+				help += "   ";
+			}
+			help = help + " --" + &flag.name;
+			if let Vector(Some(long_alias)) = &flag.long_alias {
+				help = long_alias.iter().fold(help, |help, l| {
+					//ロングフラグ出力
+					format!("{}, --{}", help, l)
+				})
+			};
+			help = add_type_suffix(help, &flag.flag_type);
+			let name_and_alias_width = help.len() - first_help_width;
+
+			if name_and_alias_width < name_and_alias_min_width {
+				help += &" ".repeat(name_and_alias_min_width - name_and_alias_width);
+			}
+
+			help + "\t" + &flag.description + "\n"
+		}
+		/// Preset of help function(compact version)
+		pub fn help_with_alias_dedup(ctx: &Context, cmd: &Command) -> String {
+			let mut help = String::new();
+			let indent_size: usize = 3;
+			let sp = String::from(" ");
+			let indent = sp.repeat(indent_size);
+			if let Some(description) = &cmd.description {
+				help.push_str(description);
+				help.push_str("\n\n");
+			}
+			help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
+			let name_and_alias_min_width = 12;
+			let routes = ctx.routes.clone();
+			let mut routes: Vec<String> = if routes.len() < ctx.depth() {
+				let mut routes: Vec<String> = routes.into();
+				routes.insert(
+					0,
+					std::path::Path::new(ctx.exe_path())
+						.file_stem()
+						.unwrap_or(std::ffi::OsStr::new("root"))
+						.to_str()
+						.unwrap_or("root")
+						.to_owned(),
+				);
+				routes
+			} else {
+				routes.into()
+			};
+			if cmd.l_flags.has_at_least_one()
+				|| cmd.c_flags.has_at_least_one()
+				|| ctx.common_flags.has_at_least_one()
+			{
+				help.push_str("Flags: \n");
+
+				let mut nl_list = Vec::<&String>::new();
+				let mut s_list = Vec::<&char>::new();
+
+				if let Vector(Some(l_flags)) = &cmd.l_flags {
+					let mut i = l_flags.iter().rev();
+					if let Some(f) = i.next() {
+						// ローカルフラグ出力
+						help = flag_help_simple(f, help, name_and_alias_min_width);
+						nl_list.push(&f.name);
+						if let Vector(Some(la)) = &f.long_alias {
+							let mut la = la.iter().collect();
+							nl_list.append(&mut la);
+						};
+						if let Vector(Some(sa)) = &f.short_alias {
+							let mut sa = sa.iter().collect();
+							s_list.append(&mut sa)
+						}
+						let emp_str = String::new();
+						_add_help_with_flag_dudup!(
+							help,
+							i,
+							nl_list,
+							s_list,
+							emp_str,
+							name_and_alias_min_width,
+							sp,
+							indent
+						)
+					}
+				}
+
+				// コモンフラグ出力
+				// まず現在のコマンドのコモンフラグ出力
+				if let Vector(Some(c_flags)) = &cmd.c_flags {
+					let suffix = if cmd.sub.len() > 0 {
+						format!(
+							"[also available in sub command{} under here]",
+							(if cmd.sub.len() < 2 { "" } else { "s" })
+						)
+					} else {
+						String::new()
+					};
+					_add_help_with_flag_dudup!(
+						help,
+						c_flags.iter().rev(),
+						nl_list,
+						s_list,
+						suffix,
+						name_and_alias_min_width,
+						sp,
+						indent
+					);
+				}
+
+				// コモンフラグ出力(contextに取り込まれているフラグ)
+				if let Vector(Some(cfs)) = &ctx.common_flags {
+					for (c_index, c_flags) in cfs.iter().enumerate().rev() {
+						if let Vector(Some(c_flags)) = c_flags {
+							let suffix = match routes.get(c_index) {
+								Some(cmd_name) => sp.clone() + "(inherited from " + cmd_name + ")",
+								None => String::new(),
+							};
+
+							_add_help_with_flag_dudup!(
+								help,
+								c_flags.iter().rev(),
+								nl_list,
+								s_list,
+								suffix,
+								name_and_alias_min_width,
+								sp,
+								indent
+							);
+						}
+					}
+				}
+			}
+
+			// サブコマンド出力
+			if let Vector(Some(sub)) = &cmd.sub {
+				let mut iter = sub.iter();
+				if let Some(sub_command) = iter.next() {
+					help.push_str("Sub Command");
+					if sub.len() > 1 {
+						help.push('s');
+					}
+					help.push_str(": \n");
+					// 最初のフラグ情報追加
+					help = help + &indent + &sub_command.name;
+					let mut na_list = vec![&sub_command.name];
+					let mut name_and_alias_width = sub_command.name.len();
+					if let Vector(Some(alias)) = &sub_command.alias {
+						let mut a = alias.iter().collect();
+						na_list.append(&mut a);
+						for a in alias {
+							help = help + ", " + a;
+							name_and_alias_width += a.len() + 2;
+						}
+					}
+					if name_and_alias_width < name_and_alias_min_width {
+						help = help + &sp.repeat(name_and_alias_min_width - name_and_alias_width);
+					}
+					if let Some(description) = &sub_command.description {
+						help = help + "\t" + description
+					}
+					help += "\n";
+
+					for sub_cmd in iter {
+						let mut all_dup = true;
+						let help_first_width = help.len();
+						if !na_list.contains(&&sub_cmd.name) {
+							na_list.push(&sub_cmd.name);
+							help = help + &indent + &sub_cmd.name;
+							all_dup = false;
+						}
+						if let Vector(Some(alias)) = &sub_cmd.alias {
+							for a in alias {
+								if !na_list.contains(&a) {
+									na_list.push(a);
+									if all_dup {
+										help = help + &indent + a;
+									} else {
+										help = help + ", " + a;
+									}
+									all_dup = false;
+								}
+							}
+						}
+						if !all_dup {
+							let name_and_alias_width = help_first_width - help.len();
+							if name_and_alias_width < name_and_alias_min_width {
+								help += &sp.repeat(name_and_alias_min_width - name_and_alias_width);
+							}
+							if let Some(description) = &sub_cmd.description {
+								help = help + "\t" + description;
+							}
+							help += "\n"
+						}
+					}
+				}
+				if routes.len() < 2 && !cmd.name.is_empty() {
+					routes[0] = cmd.name.clone();
+				}
+				let exe_suffix = std::env::consts::EXE_SUFFIX;
+				if !exe_suffix.is_empty() {
+					routes[0].push_str("[");
+					routes[0].push_str(exe_suffix);
+					routes[0].push_str("]")
+				}
+				help = help + &routes.join(" ") + "<subcommand> --help for more information.";
+				help += "\n";
+			}
+			return help;
+		}
+
+		/// Add type suffix for flag help
+		pub fn add_type_suffix(to: String, ft: &FlagType) -> String {
+			match &ft {
+				FlagType::Bool => to,
+				FlagType::String => to + " <string>",
+				FlagType::Int => to + " <int>",
+				FlagType::Float => to + " <float>",
+			}
+		}
+
+		/// Preset of help function
+		pub fn help(ctx: &Context, cmd: &Command) -> String {
+			let mut help = String::new();
+			let indent_size: usize = 3;
+			let sp = String::from(" ");
+			let indent: String = sp.repeat(indent_size);
+			if let Some(description) = &cmd.description {
+				help.push_str(description);
+				help.push_str("\n\n");
+			}
+			help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
+
+			//フラグ処理
+			let l_flags: &Vector<Flag> = &cmd.l_flags;
+			let ctx_c_flags: &Vector<Vector<Flag>> = &ctx.common_flags;
+
+			help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
+			let head: String;
+			let cl_label;
+			let name_and_alias_field_min_width: usize = 7;
+			if (ctx_c_flags.sum_of_length() + cmd.c_flags.len()) > 0 && cmd.l_flags.has_at_least_one()
+			{
+				//コモンフラグとローカルフラグ両方が設定されている場合
+				head = indent.repeat(2);
+				cl_label = true;
+			} else {
+				//設定されていない場合、ローカルフラグもしくはコモンフラグだけなのでラベルはいらない
+				head = indent.clone();
+				cl_label = false;
+			}
+
+			if let Vector(Some(l_flags)) = l_flags {
+				if cl_label {
+					help.push_str(&indent);
+					help.push_str("[Local]: \n");
+				}
+				help = l_flags.iter().rfold(help, |help, l_flag| {
+					flag_help_simple(l_flag, help + &head, name_and_alias_field_min_width + 10)
+				});
+			}
+			let depth = ctx.depth();
+			let mut common_head = true;
+			if let Vector(Some(c_flags)) = &cmd.c_flags {
+				if cl_label {
+					help = help + &indent + "[Common" + &format!("(common flags are available in this command and sub command{} under this command)]: \n", (if cmd.sub.len()<2{""}else{"s"}));
+				}
+
+				for cf in c_flags {
+					help = flag_help_simple(cf, help + &head, name_and_alias_field_min_width)
+				}
+
+				common_head = false;
+			}
+			if let Vector(Some(c_flags)) = ctx_c_flags {
+				let route_without_root = depth > ctx.routes.len();
+				if cl_label && common_head {
+					help = help + &indent + "Common ";
+				}
+				help = c_flags
+					.iter()
+					.enumerate()
+					.rfold(help, |help, (index, c_flags)| -> String {
+						//コモンフラグ書き出し
+						if let Vector(Some(c_flags)) = c_flags {
+							let mut help = help;
+							if cl_label {
+								let mut from_owned: String;
+								let from = if route_without_root {
+									if index < 1 {
+										let cur_path = std::path::Path::new(ctx.exe_path());
+										from_owned = cur_path
+											.file_stem()
+											.unwrap_or(std::ffi::OsStr::new("root"))
+											.to_str()
+											.unwrap_or("root")
+											.to_owned();
+										match cur_path.extension() {
+											None => {}
+											Some(val) => {
+												from_owned += &format!("[.{}]", val.to_str().unwrap_or("exe"))
+											}
+										}
+
+										&from_owned
+									} else {
+										ctx.routes.get(index - 1).unwrap()
+									}
+								} else {
+									ctx.routes.get(index).unwrap()
+								};
+								if common_head {
+									help += &format!("[inherited from {}]: \n", from)
+								} else {
+									common_head = false;
+									help += &format!("{}[inherited from {}]: \n", &indent, from)
+								}
+							}
+
+							help = c_flags.iter().rfold(help, |help, c_flag| -> String {
+								flag_help_simple(c_flag, help + &head, name_and_alias_field_min_width)
+							});
+							help
+						} else {
+							help
+						}
+					});
+				help += "\n";
+			}
+
+			if let Vector(Some(sub_commands)) = &cmd.sub {
+				help += &format!(
+					"Sub Command{}: \n",
+					if sub_commands.len() < 2 { "" } else { "s" }
+				);
+				help = sub_commands.iter().fold(help, |help, sub_command| {
+					//サブコマンドの説明出力
+					let mut help = help + &indent + &sub_command.name;
+					let mut name_and_alias_width = sub_command.name.len();
+					if let Vector(Some(alias)) = &sub_command.alias {
+						let (h_str, w) = alias
+							.iter()
+							.fold((help, name_and_alias_width), |(help, w), alias| {
+								(help + ", " + alias, w + 2 + alias.len())
+							});
+						help = h_str;
+						name_and_alias_width = w;
+					}
+					if name_and_alias_width < name_and_alias_field_min_width {
+						help += &sp.repeat(name_and_alias_field_min_width - name_and_alias_width);
+					}
+
+					help = if let Some(description) = &sub_command.description {
+						help + "\t" + description
+					} else {
+						help
+					};
+					help + "\n"
+				});
+				let loc_owned: String;
+				let location: &str = {
+					if cmd.name.is_empty() {
+						let path = std::path::Path::new(ctx.exe_path());
+						let mut l: String = path
+							.file_stem()
+							.unwrap_or(std::ffi::OsStr::new("root"))
+							.to_str()
+							.unwrap_or("root")
+							.to_owned();
+						match path.extension() {
+							None => {}
+							Some(ext) => {
+								l = l + "[." + ext.to_str().unwrap_or("exe") + "]";
+							}
+						}
+						loc_owned = l;
+						&loc_owned
+					} else {
+						//セルフネームがある
+						if depth < 1 {
+							//コモンフラグが1コマンド分しかない→現在はルートコマンド
+							&cmd.name
+						} else {
+							loc_owned = if let Vector(Some(routes)) = &ctx.routes {
+								routes.iter().rfold(
+									{
+										if depth > routes.len() {
+											let path = std::path::Path::new(ctx.exe_path());
+											let mut l = path
+												.file_stem()
+												.unwrap_or(std::ffi::OsStr::new("root"))
+												.to_str()
+												.unwrap_or("root")
+												.to_owned();
+											match path.extension() {
+												None => {}
+												Some(val) => {
+													l = l + "[." + val.to_str().unwrap_or("exe") + "]";
+												}
+											}
+											l
+										} else {
+											String::new()
+										}
+									},
+									|str, route| {
+										//現在どのコマンドに対応しているか
+										str + &sp + route
+									},
+								)
+							} else {
+								panic!("Routes of context should be not none under sub command.")
+							};
+							&loc_owned
+						}
+					}
+				};
+				help = help
+					+ "\n" + &format!(
+					//"See '{0} help <subcommand>' or '{0} <subcommand> --help' for more information.",
+					"{0} <subcommand> --help for more information.",
+					location
+				);
+				help += "\n";
+			}
+
+			return help;
+		}
+
+		/// Preset of flag help function (tablize)
+		pub fn flag_help_tablize(
+			append_to: String,
+			f: &Flag,
+			sp: &String,
+			s_max_num: usize, //最大ショートエイリアス数
+			nl_width: usize,
+			pre_d_space: &String,
+		) -> String {
+			let mut help = append_to;
+			// short_alias出力
+			help = help + &sp.repeat((s_max_num - f.short_alias.len()) * 4);
+			if let Vector(Some(short_alias)) = &f.short_alias {
+				for s in short_alias {
+					help.push_str("-");
+					help.push(*s);
+					help.push_str(", ");
+				}
+			}
+			let prev_help_len = help.len();
+			help.push_str("--");
+			help.push_str(&f.name);
+			if let Vector(Some(long_alias)) = &f.long_alias {
+				for l in long_alias {
+					help.push_str(", --");
+					help.push_str(l);
+				}
+			}
+			help = add_type_suffix(help, &f.flag_type);
+			let _nl_width = help.len() - prev_help_len;
+			if _nl_width < nl_width {
+				help.push_str(&sp.repeat(nl_width - _nl_width));
+			}
+			help.push_str(&pre_d_space);
+			help.push_str(&f.description);
+			help.push('\n');
+
+			help
+		}
+
+		/// Preset of help function (tablize)
+		pub fn help_tablize(ctx: &Context, cmd: &Command) -> String {
+			let mut help = String::new();
+			let indent_size: usize = 3;
+			let sp = String::from(" ");
+			let indent: String = sp.repeat(indent_size);
+			if let Some(description) = &cmd.description {
+				help.push_str(description);
+				help.push_str("\n\n");
+			}
+			help = help + "Usage:\n" + &indent + &cmd.usage + "\n\n";
+
+			if &cmd.l_flags.len() + &cmd.c_flags.len() + &ctx.common_flags.sum_of_length() > 0 {
+				// フラグが存在するとき
+				help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
+
+				let nl_width = |flag: &Flag| match &flag.long_alias {
+					Vector(None) => flag.name.len() + flag_type_suffix_len(&flag.flag_type),
+					Vector(Some(long_aliases)) => {
+						long_aliases.iter().fold(
+							flag.name.len() + flag_type_suffix_len(&flag.flag_type),
+							|width, long_alias| width + long_alias.len(),
+						) + long_aliases.len() * 4
+					}
+				};
+
+				let max_calc =
+					|flags: &Vector<Flag>, s_width_max: &mut usize, nl_width_max: &mut usize| {
+						if let Vector(Some(flags)) = flags {
+							for f in flags {
+								*s_width_max = max(*s_width_max, f.short_alias.len());
+								*nl_width_max = max(*nl_width_max, nl_width(f));
+							}
+						}
+					};
+				// フラグ出力
+				let l_flags = &cmd.l_flags;
+				let c_flags = &cmd.c_flags;
+				let ctx_c_flags = &ctx.common_flags;
+				// short_aliasの幅とlong_aliasの幅計算
+				// short_aliasとlong_aliasを調べてmax_widthを出す
+				let mut s_width_max: usize = 1; //文字幅が決まっているので文字数を記録
+				let mut nl_width_max: usize = 8;
+				max_calc(l_flags, &mut s_width_max, &mut nl_width_max);
+				max_calc(c_flags, &mut s_width_max, &mut nl_width_max);
+				if let Vector(Some(ctx_c_flags)) = ctx_c_flags {
+					for ccf in ctx_c_flags {
+						max_calc(ccf, &mut s_width_max, &mut nl_width_max);
+					}
+				}
+
+				let head: String;
+				let cl_label: bool;
+				if cmd.l_flags.has_at_least_one() {
+					// ローカルがある場合、区別用のラベル表示する
+					head = indent.repeat(2);
+					cl_label = true;
+				} else {
+					head = indent.clone();
+					cl_label = false;
+				}
+
+				let gap = sp.repeat(2);
+				if let Vector(Some(l_flags)) = l_flags {
+					if cl_label {
+						help.push_str(&indent);
+						help.push_str("[Local]: \n");
+					}
+					for l in l_flags.iter().rev() {
+						help.push_str(&head);
+						help = flag_help_tablize(help, l, &sp, s_width_max, nl_width_max, &gap);
+					}
+				}
+
+				if let Vector(Some(c_flags)) = c_flags {
+					if cl_label {
+						help.push_str(&indent);
+						help.push_str("[Common (available in this command and sub command");
+						if cmd.sub.len() > 1 {
+							help.push('s');
+						}
+						help.push_str(" under this command)]: \n");
+					}
+					for c in c_flags.iter().rev() {
+						help.push_str(&head);
+						help = flag_help_tablize(help, c, &sp, s_width_max, nl_width_max, &gap)
+					}
+				}
+
+				if let Vector(Some(ctx_c_flags)) = ctx_c_flags {
+					let route_without_root = ctx.depth() > ctx.routes.len();
+					for (index, cc_flags) in ctx_c_flags.iter().enumerate().rev() {
+						if let Vector(Some(cc_flags)) = cc_flags {
+							help.push_str("[Common, inherited from ");
+							if route_without_root {
+								if index < 1 {
+									help.push_str(&root_str(ctx.exe_path()))
+								} else {
+									match ctx.routes.get(index - 1) {
+										Some(val) => help.push_str(val),
+										None => help.push_str("unknown"),
+									}
+								}
+							} else {
+								match ctx.routes.get(index) {
+									Some(val) => help.push_str(val),
+									None => help.push_str("unknown"),
+								}
+							}
+							help.push_str("]: \n");
+							for c in cc_flags {
+								help.push_str(&head);
+								help = flag_help_tablize(help, c, &sp, s_width_max, nl_width_max, &gap);
+							}
+						}
+					}
+				}
+			}
+
+			if let Vector(Some(sub_commands)) = &cmd.sub {
+				help = help + "Sub Command";
+				if sub_commands.len() > 1 {
+					help.push('s');
+				}
+				help = help + ": \n";
+				let mut na_max_width: usize = 10;
+				for sc in sub_commands {
+					match &sc.alias {
+						Vector(None) => na_max_width = max(na_max_width, sc.name.len()),
+						Vector(Some(alias)) => {
+							na_max_width = max(
+								na_max_width,
+								alias
+									.iter()
+									.fold(sc.name.len() + 2 * alias.len(), |sum, a| sum + a.len()),
+							);
+						}
+					}
+				}
+
+				na_max_width += 3;
+
+				for sc in sub_commands {
+					let help_pref_len = help.len();
+					help = help + &sc.name;
+					if let Vector(Some(alias)) = &sc.alias {
+						help = alias.iter().fold(help, |help, a| help + ", " + a)
+					}
+					let sp_num = na_max_width - help.len() + help_pref_len;
+					help = help + &sp.repeat(sp_num);
+					if let Some(description) = &sc.description {
+						help.push_str(description);
+					}
+					help.push('\n');
+				}
+
+				help.push_str("See '");
+				if ctx.depth() > 0 {
+					if ctx.depth() > ctx.routes.len() {
+						help.push_str(&root_str(ctx.exe_path()));
+						help.push_str(&sp);
+					}
+					if let Vector(Some(routes)) = &ctx.routes {
+						for route in routes {
+							help.push_str(route);
+							help.push_str(&sp);
+						}
+					}
+					help.push_str(&cmd.name);
+					help.push_str(" <subcommand> --help' for more information");
+				} else {
+					let root = if cmd.name.is_empty() {
+						root_str(&ctx.exe_path())
+					} else {
+						cmd.name.clone()
+					};
+
+					help.push_str(&root);
+					help.push_str("<subcommand> --help' for more information.")
+				}
+			}
+
+			help
+		}
+
+		macro_rules! _flag_tablize_dedup {
+			($iter:expr,$nl_col_width:ident,$s_col_width:ident,$nl_list:ident,$s_list:ident,$s_columns:ident,$nl_columns:ident) => {
+				for f in $iter {
+					let mut alias_exist = false;
+					if let Vector(Some(sa)) = &f.short_alias {
+						let mut dedup_s = Vec::<&char>::new();
+						for s in sa.iter() {
+							if !$s_list.contains(&s) {
+								dedup_s.push(s);
+								$s_list.push(s);
+								alias_exist = true;
+							}
+						}
+						$s_col_width = max(dedup_s.len(), $s_col_width);
+						$s_columns.push_back(dedup_s);
+					}
+					let mut dedup_nl = Vec::<&String>::new();
+					let mut nl_width;
+					if !$nl_list.contains(&&f.name) {
+						$nl_list.push(&f.name);
+						dedup_nl.push(&f.name);
+						nl_width = f.name.len();
+						alias_exist = true;
+					} else {
+						nl_width = 0;
+					}
+					if let Vector(Some(long_alias)) = &f.long_alias {
+						for la in long_alias {
+							if !$nl_list.contains(&la) {
+								$nl_list.push(la);
+								dedup_nl.push(la);
+								nl_width += la.len();
+								alias_exist = true;
+							}
+						}
+					}
+					if alias_exist {
+						match dedup_nl.len() {
+							1 => {
+								nl_width += flag_type_suffix_len(&f.flag_type);
+							}
+							x if x > 1 => {
+								nl_width += match &f.flag_type {
+									FlagType::Bool => x * 4,
+									FlagType::String => x * 4 + 9,
+									FlagType::Int => x * 4 + 6,
+									FlagType::Float => x * 4 + 8,
+								};
+							}
+							_ => {}
+						}
+					}
+					$nl_columns.push_back(dedup_nl);
+					$nl_col_width = max(nl_width, $nl_col_width);
+				}
+			};
+		}
+
+		fn add_short_flags_str(append_to: &mut String, s_list: Vec<&char>) {
+			append_to.push('-');
+			let mut si = s_list.into_iter();
+			append_to.push(*si.next().unwrap());
+			for s in si {
+				append_to.push_str(", -");
+				append_to.push(*s);
+			}
+		}
+		fn flag_type_suffix_len(ft: &FlagType) -> usize {
+			match &ft {
+				FlagType::Bool => 2,
+				FlagType::String => 11, // 2 + " <string>"
+				FlagType::Int => 8,     // 2 + " <int>"
+				FlagType::Float => 10,  // 2 + " <float>"
+			}
+		}
+
+		fn add_long_flags_str_to_prev_flags(
+			append_to: &mut String,
+			nl_iter: std::vec::IntoIter<&String>,
+		) {
+			for nl in nl_iter {
+				append_to.push_str(", --");
+				append_to.push_str(nl);
+			}
+		}
+
+		fn add_long_flags_str(append_to: &mut String, mut nl_iter: std::vec::IntoIter<&String>) {
+			append_to.push_str("--");
+			append_to.push_str(nl_iter.next().unwrap());
+			add_long_flags_str_to_prev_flags(append_to, nl_iter);
+		}
+
+		fn add_flags_help_str(
+			mut append_to: String,
+			flags: &Vec<Flag>,
+			s_columns: &mut std::collections::VecDeque<Vec<&char>>,
+			nl_columns: &mut std::collections::VecDeque<Vec<&String>>,
+			s_col_width: usize,
+			nl_col_width: usize,
+			gap_width: usize,
+			suffix: &str,
+			prefix: &str,
+			sp: &String,
+		) -> String {
+			for f in flags.iter().rev() {
+				append_to.push_str(prefix);
+				let s_list = s_columns.pop_front().unwrap();
+				let nl_list = nl_columns.pop_front().unwrap();
+				if s_list.is_empty() {
+					if !nl_list.is_empty() {
+						append_to.push_str(&sp.repeat(s_col_width));
+						let prev_help_len = append_to.len();
+						add_long_flags_str(&mut append_to, nl_list.into_iter());
+						append_to = add_type_suffix(append_to, &f.flag_type);
+						let nl_len = append_to.len() - prev_help_len;
+						append_to = append_to
+							+ &sp.repeat(nl_col_width - nl_len + gap_width)
+							+ &f.description + suffix;
+					}
+				} else {
+					append_to = append_to + &sp.repeat(s_col_width - (s_list.len() * 4));
+					add_short_flags_str(&mut append_to, s_list);
+					if nl_list.is_empty() {
+						append_to = add_type_suffix(append_to, &f.flag_type)
+							+ &sp.repeat(4 + nl_col_width)
+							+ &f.description + suffix;
+					} else {
+						let prev_help_len = append_to.len();
+						add_long_flags_str_to_prev_flags(&mut append_to, nl_list.into_iter());
+						append_to = add_type_suffix(append_to, &f.flag_type);
+						let nl_len = append_to.len() - prev_help_len - 2;
+						append_to = append_to
+							+ &sp.repeat(nl_col_width - nl_len + gap_width)
+							+ &f.description + suffix;
+					}
+				}
+			}
+			append_to
+		}
+
+		/// Preset of help function (tablize) with deleted duplication
+		pub fn help_tablize_with_alias_dedup(ctx: &Context, cmd: &Command) -> String {
+			let mut help = String::new();
+			let indent_size = 3;
+			let sp = String::from(" ");
+			let indent: String = sp.repeat(indent_size);
+			if let Some(description) = &cmd.description {
+				help.push_str(description);
+				help.push_str("\n\n");
+			}
+			help = help + "Usage:\n" + &indent + &cmd.usage + "\n\n";
+
+			let flag_num = cmd.l_flags.len() + cmd.c_flags.len() + ctx.common_flags.sum_of_length();
+			if flag_num > 0 {
+				let mut nl_col_width = 5;
+				let mut s_col_width = 1;
+				help.push_str("Flags: \n");
+
+				let mut nl_list = Vec::<&String>::new();
+				let mut s_list = Vec::<&char>::new();
+				let mut s_columns = std::collections::VecDeque::<Vec<&char>>::with_capacity(flag_num);
+				let mut nl_columns =
+					std::collections::VecDeque::<Vec<&String>>::with_capacity(flag_num);
+				if let Vector(Some(l_flags)) = &cmd.l_flags {
+					let mut l = l_flags.iter().rev();
+					if let Some(f) = l.next() {
+						nl_list.push(&f.name);
+						let mut nl_width = f.name.len() + 2;
+						if let Vector(Some(la)) = &f.long_alias {
+							let mut la: Vec<&String> = la.iter().collect();
+							nl_width += 4 * la.len();
+							for l in la.iter() {
+								nl_width += l.len();
+							}
+							nl_list.append(&mut la);
+						}
+						nl_col_width = max(nl_width, nl_col_width);
+						nl_columns.push_back(nl_list.clone());
+						if let Vector(Some(sa)) = &f.short_alias {
+							let mut sa: Vec<&char> = sa.iter().collect();
+							s_col_width = max(sa.len(), s_col_width);
+							s_list.append(&mut sa);
+						}
+						s_columns.push_back(s_list.clone());
+						_flag_tablize_dedup!(
+							l,
+							nl_col_width,
+							s_col_width,
+							nl_list,
+							s_list,
+							s_columns,
+							nl_columns
+						);
+					}
+				}
+				if let Vector(Some(c_flags)) = &cmd.c_flags {
+					_flag_tablize_dedup!(
+						c_flags.iter().rev(),
+						nl_col_width,
+						s_col_width,
+						nl_list,
+						s_list,
+						s_columns,
+						nl_columns
+					);
+				}
+				println!("nl_col_width: {}", nl_col_width);
+				if let Vector(Some(cfs)) = &ctx.common_flags {
+					for c_flags in cfs.iter().rev() {
+						if let Vector(Some(c_flags)) = c_flags {
+							_flag_tablize_dedup!(
+								c_flags.iter().rev(),
+								nl_col_width,
+								s_col_width,
+								nl_list,
+								s_list,
+								s_columns,
+								nl_columns
+							)
+						}
+					}
+				}
+				drop(s_list);
+				drop(nl_list);
+				// help出力
+				println!("nl_col_width: {}", nl_col_width);
+				s_col_width = s_col_width * 4;
+				let gap_width = 3;
+				if let Vector(Some(l_flags)) = &cmd.l_flags {
+					let suffix = "\n";
+					help = add_flags_help_str(
+						help,
+						l_flags,
+						&mut s_columns,
+						&mut nl_columns,
+						s_col_width,
+						nl_col_width,
+						gap_width,
+						suffix,
+						&indent,
+						&sp,
+					)
+				}
+
+				if let Vector(Some(c_flags)) = &cmd.c_flags {
+					let suffix = match &cmd.sub {
+						Vector(Some(subs)) if subs.len() > 1 => {
+							" [common: also available in sub commands under here]\n"
+						}
+						Vector(Some(subs)) if subs.len() > 0 => {
+							" [common: also available in sub command under here]\n"
+						}
+						_ => "\n",
+					};
+					help = add_flags_help_str(
+						help,
+						c_flags,
+						&mut s_columns,
+						&mut nl_columns,
+						s_col_width,
+						nl_col_width,
+						gap_width,
+						suffix,
+						&indent,
+						&sp,
+					)
+				}
+
+				if let Vector(Some(c_flags_list)) = &ctx.common_flags {
+					let route_without_root = ctx.depth() > ctx.routes.len();
+					for (index, c_flags) in c_flags_list.into_iter().enumerate().rev() {
+						if let Vector(Some(c_flags)) = c_flags {
+							let mut suffix = sp.clone() + "[common: inherited from ";
+							if route_without_root {
+								if index < 1 {
+									suffix.push_str(&root_str(ctx.exe_path()))
+								} else {
+									match ctx.routes.get(index - 1) {
+										Some(val) => suffix.push_str(val),
+										None => suffix.push_str("unknown"),
+									}
+								}
+							} else {
+								match ctx.routes.get(index) {
+									Some(val) => suffix.push_str(val),
+									None => suffix.push_str("unknown"),
+								}
+							}
+
+							help = add_flags_help_str(
+								help,
+								c_flags,
+								&mut s_columns,
+								&mut nl_columns,
+								s_col_width,
+								nl_col_width,
+								gap_width,
+								&suffix,
+								&indent,
+								&sp,
+							);
+						}
+					}
+				}
+			}
+
+			if let Vector(Some(sub_commands)) = &cmd.sub {
+				help = help + "Sub Command";
+				if sub_commands.len() > 1 {
+					help.push('s');
+				}
+				help = help + ": \n";
+
+				// サブコマンド名の列挙最大長算出
+				let mut na_max_width: usize = 12;
+				for sc in sub_commands {
+					match &sc.alias {
+						Vector(None) => na_max_width = max(na_max_width, sc.name.len()),
+						Vector(Some(alias)) => {
+							na_max_width = max(
+								na_max_width,
+								alias
+									.iter()
+									.fold(sc.name.len() + 2 * alias.len(), |sum, a| sum + a.len()),
+							);
+						}
+					}
+				}
+				na_max_width += 3;
+
+				for sc in sub_commands {
+					let help_pref_len = help.len();
+					help = help + &indent + &sc.name;
+					if let Vector(Some(alias)) = &sc.alias {
+						for a in alias {
+							help = help + a;
+						}
+					}
+					let sp_num = na_max_width + help_pref_len - help.len();
+					help = help + &sp.repeat(sp_num);
+					if let Some(description) = &sc.description {
+						help.push_str(description);
+					}
+					help.push('\n');
+				}
+
+				help.push_str("See '");
+				if ctx.depth() > 0 {
+					if ctx.depth() > ctx.routes.len() {
+						help.push_str(&root_str(ctx.exe_path()));
+						help.push_str(&sp);
+					}
+					if let Vector(Some(routes)) = &ctx.routes {
+						for route in routes {
+							help.push_str(route);
+							help.push_str(&sp);
+						}
+					}
+					help.push_str(&cmd.name);
+				} else {
+					let root = if cmd.name.is_empty() {
+						root_str(&ctx.exe_path())
+					} else {
+						cmd.name.clone()
+					};
+					help.push_str(&root);
+				}
+				help.push_str(" <subcommand> --help' for more information");
+			}
+
+			help
+		}
+
+		/// Get root path as string for help
+		pub fn root_str(exe_path: &str) -> String {
+			let exe_path = std::path::Path::new(exe_path);
+			let mut root_string = exe_path
+				.file_stem()
+				.unwrap_or(std::ffi::OsStr::new("root"))
+				.to_str()
+				.unwrap_or("root")
+				.to_owned();
+			if let Some(val) = exe_path.extension() {
+				match val.to_str() {
+					Some(val) => root_string = root_string + "[." + val + "]",
+					None => match std::env::consts::EXE_SUFFIX {
+						"" => {}
+						val => root_string = root_string + "[" + val + "]",
+					},
+				}
+			}
+
+			root_string
+		}
 	}
 }

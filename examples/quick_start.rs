@@ -1,4 +1,4 @@
-use combu::command::presets::{help, help_tablize_with_alias_dedup};
+use combu::command::presets::func::{help, help_tablize_with_alias_dedup};
 use combu::{action_result, check_help, done, preset_root, Command};
 use combu::{Context, Flag};
 use std::env;
@@ -17,7 +17,7 @@ fn main() {
 				//.alias("test")
 				.description("local flag"),
 		)
-		/* If you want to use subcommand, uncomment this block.
+		/* If you want to use subcommand, uncomment this block, then remove this line and the line above sub_act function.
 		.sub_command(
 			Command::with_name("sub")
 				.desctiption("sub description")

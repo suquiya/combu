@@ -1394,16 +1394,22 @@ macro_rules! cmd {
 #[macro_export]
 macro_rules! default_usage {
 	($name:ident) => {
-		concat!(stringify!($name), "[SUBCOMMAND OR ARG] [OPTIONS]")
+		default_usage!(stringify!($name))
 	};
-	($name:ident :expr) => {
+	($name:ident  as var) => {
 		$name.into() + "[SUBCOMMAND OR ARG] [OPTIONS]"
 	};
-	($name:literal) => {
+	($name: literal) => {
 		concat!($name, "[SUBCOMMAND OR ARG] [OPTIONS]")
 	};
-	($name:expr) => {
+	($name:ident : into) => {
 		$name.into() + "[SUBCOMMAND OR ARG] [OPTIONS]"
+	};
+	($name:ident : string) => {
+		$name + "[SUBCOMMAND OR ARG] [OPTIONS]"
+	};
+	(nameString=>$name:expr) => {
+		$name + "[SUBCOMMAND OR ARG] [OPTIONS]"
 	};
 }
 
@@ -3599,8 +3605,8 @@ mod tests {
 		assert_eq!(left.name, right.name);
 		match (left.action, right.action) {
 			(Some(la), Some(ra)) => {
-				assert!(la(c.clone(), left.clone()).unwrap().is_done());
-				assert!(ra(c.clone(), right.clone()).unwrap().is_done());
+				assert!(la(left.clone(), c.clone()).unwrap().is_done());
+				assert!(ra(right.clone(), c.clone()).unwrap().is_done());
 				assert_eq!(la, ra);
 				assert_eq!(la as usize, ra as usize);
 			}
@@ -3653,7 +3659,7 @@ mod tests {
 
 	#[test]
 	fn cmd_macro_test() {
-		let act = |c: Context, _| -> action_result!() {
+		let act = |_, c: Context| -> action_result!() {
 			println!("action!{:?}", c);
 			assert_eq!(
 				c.raw_args,

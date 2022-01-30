@@ -28,7 +28,7 @@ fn main() {
 		.run_from_args(env::args().collect());
 }
 
-fn act(c: Context, cmd: Command) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
+fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
 {
 	check_help!(c, cmd, help_tablize_with_alias_dedup);
 	println!("Hello, combu - {:?}", c.args);
@@ -38,7 +38,7 @@ fn act(c: Context, cmd: Command) -> action_result!() // Or use combu::{ActionRes
 }
 
 #[allow(dead_code)]
-fn sub_act(c: Context, cmd: Command) -> action_result!() {
+fn sub_act(cmd: Command, c: Context) -> action_result!() {
 	check_help!(c, cmd, help);
 	println!("sub hello, combu - {:?}", c.args);
 	done!()

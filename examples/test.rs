@@ -1,56 +1,50 @@
-use combu::command::presets::func::help_with_alias_dedup;
-use combu::{check_help, Action};
-use combu::{cmd, command::*};
-use combu::{done, Done, Flag};
+use combu::command::presets::func::{help, help_tablize_with_alias_dedup};
+use combu::command::presets::help_command_action;
+use combu::{action_result, check_help, done, preset_root, Command};
+use combu::{Context, Flag};
+use std::env;
 
 fn main() {
-	let _sub = sub();
-	let act: Action = |c, cmd| {
-		check_help!(c, cmd, help_with_alias_dedup);
-		println!("root_action: {:?}", c);
-		done!()
-	};
-	let r = cmd!(root
-	[
-		>act
-		<from_crate,
-		@"suquiya copyright",
-		@"test_license","test_license_fn",
-		="test_command",
-		usage:"test_usage",
-		l~{tlf[="test_local_flag" -l >bool?false]},
-		c~{tcf[="test_common_flag" -c >bool?false]},
-		&alias,
-		&alias2,
-		n "0.0.1",
-		+ _sub.clone(),
-	]
-	);
-
-	let _ = r.run_with_auto_arg_collect();
-}
-
-fn sub() -> Command {
-	Command::with_name("sublong")
-		.desctiption("sub command")
-		.action(|c, _| {
-			println!("sub_action: {:?}", c);
-			Ok(Done)
-		})
-		.alias("s")
-		.version("sublong_version")
-		.common_flag(Flag::with_name("scommon"))
-		.sub_command(Command::with_name("leaf").action(|c, cc| {
-			println!("leaf_action: {:?}", c);
-			println!("common: {:?}", c.get_flag_value_of("common", &cc));
-			Ok(Done)
-		}))
+	let _r = preset_root!(act)
+		.usage(env!("CARGO_PKG_NAME").to_string() + " [args]")
+		.common_flag(
+			Flag::new_bool("help")
+				.short_alias('h')
+				.description("show help"),
+		)
+		.local_flag(
+			Flag::new_bool("local")
+				.short_alias('l')
+				//.alias("test")
+				.description("local flag"),
+		)
+		.sub_command(
+			Command::with_name("sub")
+				.description("sub description")
+				.action(sub_act)
+				.usage("sub usage")
+				.local_flag(Flag::new_bool("sflag").description("sub local flag")),
+		)
 		.sub_command(
 			Command::with_name("help")
-				.action(|c, _| {
-					println!("send help req: {:?}", c);
-					done!()
-				})
-				.version("leaf_version"),
+				.description("show help")
+				.action(help_command_action()),
 		)
+		.run_from_args(env::args().collect());
+}
+
+fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
+{
+	check_help!(c, cmd, help_tablize_with_alias_dedup);
+	println!("Hello, combu - {:?}", c.args);
+
+	done!()
+	// Or use combu::Done and Ok(Done)
+}
+
+#[allow(dead_code)]
+fn sub_act(cmd: Command, c: Context) -> action_result!() {
+	check_help!(c, cmd, help);
+	println!("sub hello, combu - {:?}", c.args);
+	done!()
 }

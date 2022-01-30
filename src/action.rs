@@ -4,7 +4,7 @@ use crate::{Command, Context};
 use std::{error::Error, fmt};
 
 ///Action is type for command action. It returns Result<ActionResult, ActionError>.
-pub type Action = fn(Context, Command) -> Result<ActionResult, ActionError>;
+pub type Action = fn(Command, Context) -> Result<ActionResult, ActionError>;
 
 ///ActionResult stores result of action.
 #[derive(Debug)]

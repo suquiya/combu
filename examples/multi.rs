@@ -6,7 +6,7 @@ fn main() {
 
 fn root_command() -> Command {
 	Command::with_name("multi")
-		.desctiption("root command sample: arg printer")
+		.description("root command sample: arg printer")
 		.usage(presets::usage("multi"))
 		.common_flag(Flag::new_bool("help").short_alias('h'))
 		.common_flag(Flag::new_bool("reverse").short_alias('r'))
@@ -23,7 +23,7 @@ fn call_help(c: &Context, cur_cmd: &Command) -> Result<ActionResult, ActionError
 	println!("{}", presets::func::help(c, cur_cmd));
 	done!()
 }
-fn print_args(context: Context, current_command: Command) -> Result<ActionResult, ActionError> {
+fn print_args(current_command: Command, context: Context) -> Result<ActionResult, ActionError> {
 	if called_help(&context, &current_command) {
 		return call_help(&context, &current_command);
 	}
@@ -65,7 +65,7 @@ fn add_command() -> Command {
 		.local_flag(Flag::new_bool("detail").short_alias('d'))
 }
 
-fn add_action(c: Context, cmd: Command) -> Result<ActionResult, ActionError> {
+fn add_action(cmd: Command, c: Context) -> Result<ActionResult, ActionError> {
 	if called_help(&c, &cmd) {
 		return call_help(&c, &cmd);
 	}
@@ -102,7 +102,7 @@ fn sub_command() -> Command {
 		.local_flag(Flag::new_bool("sort").short_alias('s'))
 }
 
-fn sub_action(c: Context, cmd: Command) -> Result<ActionResult, ActionError> {
+fn sub_action(cmd: Command, c: Context) -> Result<ActionResult, ActionError> {
 	if called_help(&c, &cmd) {
 		return call_help(&c, &cmd);
 	}

@@ -323,13 +323,13 @@ impl Command {
 		match self.action.take() {
 			Some(action) => {
 				if raw_args.len() < 2 {
-					action(gen_context_for_self_action!(raw_args), self)
+					action(self, gen_context_for_self_action!(raw_args))
 				} else {
 					let mut context = gen_context_for_self_action!(raw_args);
 					//println!("single_run_context: {:?}", context);
 					context =
 						Parser::default().parse_args_until_end(&self.l_flags, &self.c_flags, context);
-					action(context, self)
+					action(self, context)
 				}
 			}
 			None => match self.sub {
@@ -397,7 +397,7 @@ impl Command {
 	}
 
 	/// Set command's description
-	pub fn desctiption<T: Into<String>>(mut self, description: T) -> Self {
+	pub fn description<T: Into<String>>(mut self, description: T) -> Self {
 		self.description = Some(description.into());
 		self
 	}
@@ -533,7 +533,7 @@ impl Command {
 			//引数がない場合
 			let c = gen_context_for_self_action!(raw_args, args, exe_path);
 			match self.action {
-				Some(action) => action(c, self),
+				Some(action) => action(self, c),
 				None => no_registered_error!(self, c),
 			}
 		} else {
@@ -560,7 +560,7 @@ impl Command {
 								None => no_registered_error!(self, c),
 								Some(action) => {
 									c = p.parse_args_until_end(&self.l_flags, &self.c_flags, c);
-									action(c, self)
+									action(self, c)
 								}
 							}
 						}
@@ -594,7 +594,7 @@ impl Command {
 			}
 			context = p.parse_args_until_end(&self.l_flags, &self.c_flags, context);
 			match self.action {
-				Some(action) => action(context, self),
+				Some(action) => action(self, context),
 				None => no_registered_error!(self, context),
 			}
 		} else {
@@ -643,7 +643,7 @@ impl Command {
 										context
 									}
 								};
-								action(c, self)
+								action(self, c)
 							}
 						},
 					}
@@ -658,7 +658,7 @@ impl Command {
 								non_flag_args.append(&mut context.args);
 								context.args = non_flag_args;
 							}
-							action(context, self)
+							action(self, context)
 						}
 						None => {
 							let (mut context, non_flag_args) =
@@ -752,7 +752,7 @@ impl Command {
 										c.args = non_flag_args;
 									}
 									match self.action {
-										Some(action) => action(c, self),
+										Some(action) => action(self, c),
 										None => no_registered_error!(self, c),
 									}
 								}
@@ -772,7 +772,7 @@ impl Command {
 									c.args = args;
 								}
 								match self.action {
-									Some(action) => action(c, self),
+									Some(action) => action(self, c),
 									None => no_registered_error!(self, c),
 								}
 							}
@@ -794,7 +794,7 @@ impl Command {
 							c.args = non_flag_args;
 						}
 						match self.action {
-							Some(action) => action(c, self),
+							Some(action) => action(self, c),
 							None => no_registered_error!(self, c),
 						}
 					}
@@ -817,7 +817,7 @@ impl Command {
 					c.args = non_flag_args;
 				}
 				match self.action {
-					Some(action) => action(c, self),
+					Some(action) => action(self, c),
 					None => no_registered_error!(self, c),
 				}
 			}
@@ -899,7 +899,7 @@ impl Command {
 												c.args = non_flag_args;
 											};
 											match self.action {
-												Some(action) => action(c, self),
+												Some(action) => action(self, c),
 												None => no_registered_error!(self, c),
 											}
 										}
@@ -919,7 +919,7 @@ impl Command {
 											c.args = non_flag_args;
 										}
 										match self.action {
-											Some(action) => action(c, self),
+											Some(action) => action(self, c),
 											None => no_registered_error!(self, c),
 										}
 									}
@@ -945,7 +945,7 @@ impl Command {
 									c.args = non_flag_args;
 								}
 								match self.action {
-									Some(action) => action(c, self),
+									Some(action) => action(self, c),
 									_ => no_registered_error!(self, c),
 								}
 							}
@@ -967,7 +967,7 @@ impl Command {
 				}
 
 				match self.action {
-					Some(action) => action(c, self),
+					Some(action) => action(self, c),
 					None => no_registered_error!(self, c),
 				}
 			}
@@ -989,7 +989,7 @@ impl Command {
 				self.c_flags = c.common_flags.remove_last(); //コモンフラグを戻す
 				check_sub!(self, sub); // authors, version, copyright, licenseを戻す
 				self.sub.push(sub); //サブコマンドを親コマンドの末尾に戻す
-				action(c, self)
+				action(self, c)
 			}
 			Err(ref mut err) => {
 				if !err.printed {
@@ -1021,7 +1021,7 @@ mod tests {
 			"test".to_string(),
 			"test".to_string(),
 		];
-		let root = base_root().action(|c, _| {
+		let root = base_root().action(|_, c| {
 			println!("test_action: {:?}", c);
 			let raw_args = vec![
 				"exe_path".to_string(),
@@ -1047,7 +1047,7 @@ mod tests {
 		arg.insert(1, "--common=C_before".into());
 		arg.insert(1, "--local=L_before".into());
 		let root = Command::with_name("root")
-			.action(|c, cmd| {
+			.action(|cmd, c| {
 				println!("test_action: {:?}", c);
 				let raw_args: Vec<String> = vec![
 					"exe_path".to_string(),
@@ -1106,7 +1106,7 @@ mod tests {
 			"test".to_string(),
 		];
 		let root = Command::new()
-			.action(|c, mut cmd| {
+			.action(|mut cmd, c| {
 				println!("test_action: {:?}", c);
 				let raw_args = vec![
 					"exe_path".to_string(),
@@ -1195,7 +1195,7 @@ mod tests {
 		arg.push("test".into());
 		let _ = root
 			.clone()
-			.action(|c, cmd| {
+			.action(|cmd, c| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "test"]),
@@ -1213,7 +1213,7 @@ mod tests {
 		arg[2] = "--common".into();
 		let _ = root
 			.clone()
-			.action(|c, cur_cmd| {
+			.action(|cur_cmd, c| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "--common"]),
@@ -1236,7 +1236,7 @@ mod tests {
 		arg.push("test".into());
 		let _ = root
 			.clone()
-			.action(|c, cc| {
+			.action(|cc, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "--common", "test"]),
@@ -1264,7 +1264,7 @@ mod tests {
 		arg.push("--cafter".into());
 		let _ = root
 			.clone()
-			.action(|c, cur| {
+			.action(|cur, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					cnv_arg(vec![
@@ -1311,7 +1311,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.action(|c, cur_cmd| {
+			.action(|cur_cmd, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1351,7 +1351,7 @@ mod tests {
 		arg.push("ex_arg".into());
 		let _ = root
 			.clone()
-			.action(|c, cmd| {
+			.action(|cmd, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1394,7 +1394,7 @@ mod tests {
 		arg[4] = "-a".into();
 		let _ = root
 			.clone()
-			.action(|c, cmd| {
+			.action(|cmd, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1462,7 +1462,7 @@ mod tests {
 			));
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cmd| {
+			.sub_command(sub.clone().action(|cmd, c| {
 				println!("{:?}", c);
 				let raw_args = cnv_arg(vec![
 					"exe_path", "sub", "test", "--common", "test", "--cstr", "strt", "-b", "--local",
@@ -1492,7 +1492,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.name("root")
-			.sub_command(sub.clone().action(|c, cmd| {
+			.sub_command(sub.clone().action(|cmd, c| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1518,7 +1518,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cmd| {
+			.sub_command(sub.clone().action(|cmd, c| {
 				println!("c:{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1547,7 +1547,7 @@ mod tests {
 		arg.push("testStr".into());
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cmd| {
+			.sub_command(sub.clone().action(|cmd, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1591,7 +1591,7 @@ mod tests {
 		arg.remove(4);
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cmd| {
+			.sub_command(sub.clone().action(|cmd, c| {
 				println!("result_c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1630,7 +1630,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cmd| {
+			.sub_command(sub.clone().action(|cmd, c| {
 				println!("C: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1661,7 +1661,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cmd| {
+			.sub_command(sub.clone().action(|cmd, c| {
 				println!("C: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1717,7 +1717,7 @@ mod tests {
 
 		let _ = root
 			.clone()
-			.sub_command(sub.clone().action(|c, cmd| {
+			.sub_command(sub.clone().action(|cmd, c| {
 				println!("c: {:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1792,7 +1792,7 @@ mod tests {
 					.authors("sub_authors")
 					.sub_command(
 						Command::with_name("leaf")
-							.action(|c, cmd| {
+							.action(|cmd, c| {
 								println!("{:?}", c);
 								let raw_args = vec![
 									"exe_path".to_string(),
@@ -1883,7 +1883,7 @@ mod tests {
 			root.clone().name("root"),
 			sub.clone(),
 			leaf.clone(),
-			|c, cmd| {
+			|cmd, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1914,7 +1914,7 @@ mod tests {
 			root.clone(),
 			sub.clone(),
 			leaf.clone(),
-			|c, cmd| {
+			|cmd, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1947,7 +1947,7 @@ mod tests {
 			root.clone(),
 			sub.clone(),
 			leaf.clone(),
-			|c, cmd| {
+			|cmd, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -1987,7 +1987,7 @@ mod tests {
 			root.clone(),
 			sub.clone(),
 			leaf.clone(),
-			|c, cmd| {
+			|cmd, c| {
 				println!("{:?}", c);
 				assert_eq!(
 					c.raw_args,
@@ -2038,7 +2038,7 @@ mod tests {
 		];
 
 		let leaf = Command::with_name("leaf")
-			.action(|c, cmd| {
+			.action(|cmd, c| {
 				println!("sub_action: {:?}", c);
 				let raw_args = vec![
 					"exe_path".to_string(),
@@ -2142,14 +2142,17 @@ mod tests {
 /// Presets of Command
 pub mod presets {
 
+	use crate::action_result;
+	use crate::command::presets::func::help_tablize_with_alias_dedup;
 	use crate::default_usage;
+	use crate::Context;
 	use crate::Vector;
 
 	use super::{Action, Command, License};
 
 	/// Create usage preset
 	pub fn usage<T: Into<String>>(name: T) -> String {
-		default_usage!(name: expr)
+		default_usage!(name as var)
 	}
 
 	/// Create root command with base
@@ -2160,20 +2163,61 @@ pub mod presets {
 		description: T,
 		action: Option<Action>,
 	) -> Command {
+		let name = name.into();
+		let usage = default_usage!(nameString=>name.clone());
 		Command::with_all_field(
-			name.into(),
+			name,
 			action,
 			authors.into(),
 			String::default(),
 			License(None),
 			Some(description.into()),
-			String::default(),
+			usage,
 			Vector::default(),
 			Vector::default(),
 			Vector::default(),
 			version.into(),
 			Vector::default(),
 		)
+	}
+
+	/// Preset help command action
+	pub fn help_command_action() -> Action {
+		|cmd, ctx| -> action_result!() {
+			Ok(crate::ActionResult::ParentActionRequest(
+				ctx,
+				cmd,
+				parent_request_action,
+			))
+		}
+	}
+
+	/// Preset help request to parent for help command.
+	pub fn parent_request_action(cmd: Command, mut ctx: Context) -> action_result!() {
+		println!("cmd name:{}\n", cmd.name);
+		println!("raw_args: {:?}", ctx.raw_args);
+		println!("args: {:?}", ctx.args);
+		println!("common_flags: {:?}", ctx.common_flags);
+		if ctx.args.is_empty() {
+			let help_str = help_tablize_with_alias_dedup(&ctx, &cmd);
+			println!("{}", help_str);
+		} else {
+			// argsを辿って対象のサブコマンドを特定
+			let mut tail_cmd = cmd;
+			for arg in ctx.args {
+				match tail_cmd.take_sub(&arg) {
+					Some(sub) => {
+						ctx.routes.push(sub.name.clone());
+						ctx.common_flags.push(tail_cmd.c_flags);
+						tail_cmd = sub;
+					}
+					_ => {
+						// マッチしないものはとりあえず無視
+					}
+				}
+			}
+		}
+		crate::done!()
 	}
 
 	/// function presets for command construction.
@@ -3113,7 +3157,6 @@ pub mod presets {
 						nl_columns
 					);
 				}
-				println!("nl_col_width: {}", nl_col_width);
 				if let Vector(Some(cfs)) = &ctx.common_flags {
 					for c_flags in cfs.iter().rev() {
 						if let Vector(Some(c_flags)) = c_flags {
@@ -3132,7 +3175,6 @@ pub mod presets {
 				drop(s_list);
 				drop(nl_list);
 				// help出力
-				println!("nl_col_width: {}", nl_col_width);
 				s_col_width = s_col_width * 4;
 				let gap_width = 3;
 				if let Vector(Some(l_flags)) = &cmd.l_flags {

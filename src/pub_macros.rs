@@ -326,7 +326,7 @@ macro_rules! check_help {
 	};
 	($context:ident, $current_command:ident, $($help_func:tt)+) => {
 		if $context.is_flag_true("help", &$current_command) {
-			println!("{}",$($help_func)+(&$context, &$current_command));
+			println!("{}",$($help_func)+(&$current_command, &$context));
 			return done!()
 		}
 	};
@@ -429,14 +429,6 @@ macro_rules! done {
 }
 
 #[macro_export]
-/// Simple Alias of Ok(ShowHelpRequest)
-macro_rules! help_req {
-	($context:expr) => {
-		Ok($crate::ActionResult::ShowHelpRequest($context))
-	};
-}
-
-#[macro_export]
 /// Gets crate name from cargo.toml.
 macro_rules! crate_name {
 	() => {
@@ -510,6 +502,49 @@ macro_rules! preset_root {
 			$crate::crate_description!(),
 			Some($action))
 	}
+}
+
+#[macro_export]
+/// Preset for help request to parent command
+macro_rules! parent_help_request_action {
+	($func:ident) => {
+		|cmd, mut ctx| -> action_result!() {
+			if ctx.args.is_empty() {
+				let help_str = $func(&cmd, &ctx);
+				println!("{}", help_str);
+			} else {
+				// argsを辿って対象のサブコマンドを特定
+				let mut tail_cmd = cmd;
+				for arg in ctx.args {
+					match tail_cmd.take_sub(&arg) {
+						Some(sub) => {
+							ctx.routes.push(tail_cmd.name.clone());
+							ctx.common_flags.push(tail_cmd.c_flags);
+							tail_cmd = sub;
+						}
+						_ => {
+							// マッチしないものはとりあえず無視
+						}
+					}
+				}
+			}
+			crate::done!()
+		}
+	};
+}
+
+#[macro_export]
+/// preset of help command action
+macro_rules! help_command_action {
+	($func:ident) => {
+		|cmd, ctx| -> action_result!() {
+			Ok($crate::ActionResult::ParentActionRequest(
+				ctx,
+				cmd,
+				$crate::parent_help_request_action!($func),
+			))
+		}
+	};
 }
 
 #[macro_export]

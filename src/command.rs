@@ -2142,10 +2142,7 @@ mod tests {
 /// Presets of Command
 pub mod presets {
 
-	use crate::action_result;
-	use crate::command::presets::func::help_tablize_with_alias_dedup;
 	use crate::default_usage;
-	use crate::Context;
 	use crate::Vector;
 
 	use super::{Action, Command, License};
@@ -2179,45 +2176,6 @@ pub mod presets {
 			version.into(),
 			Vector::default(),
 		)
-	}
-
-	/// Preset help command action
-	pub fn help_command_action() -> Action {
-		|cmd, ctx| -> action_result!() {
-			Ok(crate::ActionResult::ParentActionRequest(
-				ctx,
-				cmd,
-				parent_request_action,
-			))
-		}
-	}
-
-	/// Preset help request to parent for help command.
-	pub fn parent_request_action(cmd: Command, mut ctx: Context) -> action_result!() {
-		println!("cmd name:{}\n", cmd.name);
-		println!("raw_args: {:?}", ctx.raw_args);
-		println!("args: {:?}", ctx.args);
-		println!("common_flags: {:?}", ctx.common_flags);
-		if ctx.args.is_empty() {
-			let help_str = help_tablize_with_alias_dedup(&ctx, &cmd);
-			println!("{}", help_str);
-		} else {
-			// argsを辿って対象のサブコマンドを特定
-			let mut tail_cmd = cmd;
-			for arg in ctx.args {
-				match tail_cmd.take_sub(&arg) {
-					Some(sub) => {
-						ctx.routes.push(sub.name.clone());
-						ctx.common_flags.push(tail_cmd.c_flags);
-						tail_cmd = sub;
-					}
-					_ => {
-						// マッチしないものはとりあえず無視
-					}
-				}
-			}
-		}
-		crate::done!()
 	}
 
 	/// function presets for command construction.
@@ -2320,7 +2278,7 @@ pub mod presets {
 			help + "\t" + &flag.description + "\n"
 		}
 		/// Preset of help function(compact version)
-		pub fn help_with_alias_dedup(ctx: &Context, cmd: &Command) -> String {
+		pub fn help_with_alias_dedup(cmd: &Command, ctx: &Context) -> String {
 			let mut help = String::new();
 			let indent_size: usize = 3;
 			let sp = String::from(" ");
@@ -2519,7 +2477,7 @@ pub mod presets {
 		}
 
 		/// Preset of help function
-		pub fn help(ctx: &Context, cmd: &Command) -> String {
+		pub fn help(cmd: &Command, ctx: &Context) -> String {
 			let mut help = String::new();
 			let indent_size: usize = 3;
 			let sp = String::from(" ");
@@ -2767,7 +2725,7 @@ pub mod presets {
 		}
 
 		/// Preset of help function (tablize)
-		pub fn help_tablize(ctx: &Context, cmd: &Command) -> String {
+		pub fn help_tablize(cmd: &Command, ctx: &Context) -> String {
 			let mut help = String::new();
 			let indent_size: usize = 3;
 			let sp = String::from(" ");
@@ -3092,7 +3050,7 @@ pub mod presets {
 		}
 
 		/// Preset of help function (tablize) with deleted duplication
-		pub fn help_tablize_with_alias_dedup(ctx: &Context, cmd: &Command) -> String {
+		pub fn help_tablize_with_alias_dedup(cmd: &Command, ctx: &Context) -> String {
 			let mut help = String::new();
 			let indent_size = 3;
 			let sp = String::from(" ");

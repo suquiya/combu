@@ -509,13 +509,12 @@ macro_rules! preset_root {
 macro_rules! parent_help_request_action {
 	($func:ident) => {
 		|cmd, mut ctx| -> action_result!() {
-			if ctx.args.is_empty() {
-				let help_str = $func(&cmd, &ctx);
-				println!("{}", help_str);
+			let help_str = if ctx.args.is_empty() {
+				$func(&cmd, &ctx)
 			} else {
 				// argsを辿って対象のサブコマンドを特定
 				let mut tail_cmd = cmd;
-				for arg in ctx.args {
+				for arg in &ctx.args {
 					match tail_cmd.take_sub(&arg) {
 						Some(sub) => {
 							ctx.routes.push(tail_cmd.name.clone());
@@ -527,8 +526,57 @@ macro_rules! parent_help_request_action {
 						}
 					}
 				}
-			}
+				$func(&tail_cmd, &ctx)
+			};
+			println!("{}", help_str);
 			crate::done!()
+		}
+	};
+}
+
+#[macro_export]
+/// Preset for definition function that can use help request action
+macro_rules! define_parent_help_request_action {
+	($func_name:ident,$help_func:ident)=>{
+		$crate::define_parent_help_request_action!(name=>$func_name,help_func=>$help_func);
+	};
+	(name=>$func_name:ident, help_func=>$help_func:ident) => {
+		fn $func_name(cmd: $crate::Command, mut ctx: $crate::Context) -> action_result!() {
+			let help_str = if ctx.args.is_empty() {
+				$help_func(&cmd, &ctx)
+			} else {
+				// argsを辿って対象のサブコマンドを特定
+				let mut tail_cmd = cmd;
+				for arg in &ctx.args {
+					match tail_cmd.take_sub(&arg) {
+						Some(sub) => {
+							ctx.routes.push(tail_cmd.name.clone());
+							ctx.common_flags.push(tail_cmd.c_flags);
+							tail_cmd = sub;
+						}
+						_ => {
+							// マッチしないものはとりあえず無視
+						}
+					}
+				}
+				$help_func(&tail_cmd, &ctx)
+			};
+			println!("{}", help_str);
+			crate::done!()
+		}
+	};
+}
+
+#[macro_export]
+/// Preset of definition of help command action
+macro_rules! define_help_command_action {
+	($action_name:ident, $req_action_name:ident) => {
+		fn $action_name(cmd: $crate::Command, ctx: $crate::Context) -> action_result!() {
+			Ok($crate::ActionResult::ParentActionRequest(
+				ctx,
+				cmd,
+				$req_action_name,
+			))
 		}
 	};
 }

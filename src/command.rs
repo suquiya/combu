@@ -2287,7 +2287,7 @@ pub mod presets {
 				help.push_str(description);
 				help.push_str("\n\n");
 			}
-			help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
+			help += &format!("Usage:\n{}{}\n", &indent, cmd.usage);
 			let name_and_alias_min_width = 12;
 			let routes = ctx.routes.clone();
 			let mut routes: Vec<String> = if routes.len() < ctx.depth() {
@@ -2309,7 +2309,7 @@ pub mod presets {
 				|| cmd.c_flags.has_at_least_one()
 				|| ctx.common_flags.has_at_least_one()
 			{
-				help.push_str("Flags: \n");
+				help.push_str("\nFlags: \n");
 
 				let mut nl_list = Vec::<&String>::new();
 				let mut s_list = Vec::<&char>::new();
@@ -2672,12 +2672,8 @@ pub mod presets {
 						}
 					}
 				};
-				help = help
-					+ "\n" + &format!(
-					//"See '{0} help <subcommand>' or '{0} <subcommand> --help' for more information.",
-					"{0} <subcommand> --help for more information.",
-					location
-				);
+				help =
+					help + "\n" + &format!("{0} <subcommand> --help for more information.", location);
 				help += "\n";
 			}
 
@@ -2880,7 +2876,7 @@ pub mod presets {
 					help.push('\n');
 				}
 
-				help.push_str("See '");
+				help.push_str("\nSee '");
 				if ctx.depth() > 0 {
 					if ctx.depth() > ctx.routes.len() {
 						help.push_str(&root_str(ctx.exe_path()));
@@ -3059,13 +3055,13 @@ pub mod presets {
 				help.push_str(description);
 				help.push_str("\n\n");
 			}
-			help = help + "Usage:\n" + &indent + &cmd.usage + "\n\n";
+			help = help + "Usage:\n" + &indent + &cmd.usage + "\n";
 
 			let flag_num = cmd.l_flags.len() + cmd.c_flags.len() + ctx.common_flags.sum_of_length();
 			if flag_num > 0 {
 				let mut nl_col_width = 5;
 				let mut s_col_width = 1;
-				help.push_str("Flags: \n");
+				help.push_str("\nFlags: \n");
 
 				let mut nl_list = Vec::<&String>::new();
 				let mut s_list = Vec::<&char>::new();
@@ -3195,6 +3191,7 @@ pub mod presets {
 									None => suffix.push_str("unknown"),
 								}
 							}
+							suffix.push_str("]\n");
 
 							help = add_flags_help_str(
 								help,
@@ -3214,7 +3211,7 @@ pub mod presets {
 			}
 
 			if let Vector(Some(sub_commands)) = &cmd.sub {
-				help = help + "Sub Command";
+				help = help + "\nSub Command";
 				if sub_commands.len() > 1 {
 					help.push('s');
 				}
@@ -3253,7 +3250,7 @@ pub mod presets {
 					help.push('\n');
 				}
 
-				help.push_str("See '");
+				help.push_str("\nSee '");
 				if ctx.depth() > 0 {
 					if ctx.depth() > ctx.routes.len() {
 						help.push_str(&root_str(ctx.exe_path()));

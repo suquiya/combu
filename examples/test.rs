@@ -1,6 +1,8 @@
 use combu::command::presets::func::{help, help_tablize_with_alias_dedup};
-use combu::help_command_action;
-use combu::{action_result, check_help, done, preset_root, Command};
+use combu::{
+	action_result, check_help, define_parent_help_request_action, done, preset_root, Command,
+};
+use combu::{define_help_command_action, help_command_action};
 use combu::{Context, Flag};
 use std::env;
 
@@ -23,7 +25,8 @@ fn main() {
 				.description("sub description")
 				.action(sub_act)
 				.usage("sub usage")
-				.local_flag(Flag::new_bool("sflag").description("sub local flag")),
+				.local_flag(Flag::new_bool("sflag").description("sub local flag"))
+				.sub_command(Command::with_name("leaf").description("leaf description")),
 		)
 		.sub_command(
 			Command::with_name("help")
@@ -48,3 +51,7 @@ fn sub_act(cmd: Command, c: Context) -> action_result!() {
 	println!("sub hello, combu - {:?}", c.args);
 	done!()
 }
+
+define_help_command_action!(help_action, help_req);
+
+define_parent_help_request_action!(help_req, help_tablize_with_alias_dedup);

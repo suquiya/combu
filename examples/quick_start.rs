@@ -17,6 +17,9 @@ fn main() {
 				//.alias("test")
 				.description("local flag"),
 		)
+		/* If you want to use help subcommand,uncomment this block and add preset_help_command to use.
+		.sub_command(preset_help_command!(help_tablize_with_alias_dedup))
+		*/
 		/* If you want to use subcommand, uncomment this block, then remove this line and the line above sub_act function.
 		.sub_command(
 			Command::with_name("sub")

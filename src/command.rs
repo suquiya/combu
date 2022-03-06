@@ -2178,12 +2178,37 @@ pub mod presets {
 		)
 	}
 
+	/// Create version command preset
+	pub fn preset_version() -> Command {
+		Command::with_all_field(
+			String::from("version"),
+			Some(func::version_print),
+			String::default(),
+			String::default(),
+			License::default(),
+			Some(String::from("show version")),
+			String::default(),
+			Vector::default(),
+			Vector::default(),
+			Vector::default(),
+			String::default(),
+			Vector::default(),
+		)
+	}
+
 	/// function presets for command construction.
 	pub mod func {
-		use crate::FlagType;
+		use crate::{action_result, FlagType};
 
 		use super::super::{Command, Context, Flag, Vector};
 		use std::cmp::max;
+
+		/// Preset of version command action
+		pub fn version_print(cmd: Command, ctx: Context) -> action_result!() {
+			crate::check_help!(ctx, cmd, help_tablize_with_alias_dedup);
+			println!("{}", cmd.version);
+			crate::done!()
+		}
 
 		macro_rules! _add_help_with_flag_dudup {
 			($help:ident,$iter:expr,$nl_list:ident,$s_list:ident,$suffix:ident,$name_and_alias_min_width:ident,$sp:ident,$indent:ident) => {

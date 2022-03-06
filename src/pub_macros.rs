@@ -327,7 +327,7 @@ macro_rules! check_help {
 	($context:ident, $current_command:ident, $($help_func:tt)+) => {
 		if $context.is_flag_true("help", &$current_command) {
 			println!("{}",$($help_func)+(&$current_command, &$context));
-			return done!()
+			return $crate::done!()
 		}
 	};
 	($context:ident$(,)*$current_command:ident$(,)*$($help_func:tt)+) => {
@@ -529,7 +529,7 @@ macro_rules! parent_help_request_action {
 				$func(&tail_cmd, &ctx)
 			};
 			println!("{}", help_str);
-			crate::done!()
+			$crate::done!()
 		}
 	};
 }

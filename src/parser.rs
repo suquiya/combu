@@ -52,15 +52,95 @@ macro_rules! str_char {
 	}};
 }
 
-/*macro_rules! vector_to_vecdeque {
-	($vector:expr) => {{
-		match $vector {
-			crate::vector::Vector(None) => VecDeque::new(),
-			crate::vector::Vector(Some(inner)) => inner.into(),
+macro_rules! arg_match {
+	($self:ident, $arg:expr,long_flag=>$long_flag:ident{$($lp:tt)*}$(,)?short_flag=>$short_flag:ident{$($sp:tt)*}$(,)?non_flag=>$non_flag:ident{$($nfp:tt)*}$(,)?rest_opt=>$rest_opt:ident{$($ot:tt)*}) =>{
+		match $arg {
+			Some(arg) if $self.long_flag(&arg)=>{
+				match arg {
+					$non_flag if $non_flag.len() < 2 => {
+						$($nfp)*
+					}
+					$long_flag=>{
+						$($lp)*
+					}
+				}
+			}
+			Some(arg) if $self.flag(&arg)=>{
+				match arg {
+					$non_flag if $non_flag.len() < 1 =>{
+						$($nfp)*
+					}
+					$short_flag=>{
+						$($sp)*
+					}
+				}
+			}
+			$rest_opt =>{
+				$($ot)*
+			}
 		}
-	}};
-}*/
-
+	};
+	($self:ident, $arg:expr,long_flag=>$long_flag:ident{$($lp:tt)*}$(,)?short_flag=>$short_flag:ident{$($sp:tt)*}$(,)?normal_arg=>$normal_arg:ident{$($ap:tt)*}$(,)?none=>{$($np:tt)*}) => {
+		match $arg {
+			None=>{
+				$($np)*
+			}
+			Some(arg) if $self.long_flag(&arg)=>{
+				match arg {
+					$normal_arg if $normal_arg.len() < 2 => {
+						$($ap)*
+					}
+					$long_flag=>{
+						$($lp)*
+					}
+				}
+			}
+			Some(arg) if $self.flag(&arg)=>{
+				match arg {
+					$normal_arg if $normal_arg.len() < 1 =>{
+						$($ap)*
+					}
+					$short_flag=>{
+						$($sp)*
+					}
+				}
+			}
+			Some($normal_arg)=>{
+				$($ap)*
+			}
+		}
+	};
+	($self:ident, $arg:expr,long_flag=>$long_flag:ident{$($lp:tt)*}$(,)?short_flag=>$short_flag:ident{$($sp:tt)*}$(,)?normal_arg=>$normal_arg:ident{$($ap:tt)*}$(,)?none=>$none:ident{$($np:tt)*}) => {
+		match $arg {
+			Some(arg) if $self.long_flag(&arg)=>{
+				match arg {
+					$normal_arg if $normal_arg.len() < 2 => {
+						$($ap)*
+					}
+					$long_flag=>{
+						$($lp)*
+					}
+				}
+			}
+			Some(arg) if $self.flag(&arg)=>{
+				match arg {
+					$normal_arg if $normal_arg.len() < 1 =>{
+						$($ap)*
+					}
+					$short_flag=>{
+						$($sp)*
+					}
+				}
+			}
+			Some($normal_arg)=>{
+				$($ap)*
+			}
+			$none=>{
+				$($np)*
+			}
+		}
+	};
+}
 impl Parser {
 	/// Creates a new Parser with flag_pattern and long_flag_prefix.
 	pub fn new(flag_pattern: char, long_flag_prefix: &str) -> Parser {
@@ -71,13 +151,13 @@ impl Parser {
 		}
 	}
 
-	/// Returns true if str is long-flag.
+	/// Returns true if str has long-flag prefix (default prefix: --).
 	/// ロングフラグか判定する
 	pub fn long_flag(&self, str: &str) -> bool {
 		str.starts_with(&self.long_flag_prefix)
 	}
 
-	/// Returns true if str is flag.
+	/// Returns true if str has flag prefix (default prefix: -).
 	/// フラグならtrueを返す
 	pub fn flag(&self, str: &str) -> bool {
 		str.starts_with(self.flag_pattern)
@@ -118,19 +198,23 @@ impl Parser {
 		MiddleArg,
 	) {
 		loop {
-			match args.pop_front() {
-				Some(long_flag) if self.long_flag(&long_flag) => {
-					inter_mediate_args.push_back(last);
-					last = self.long_middle(long_flag);
-				}
-				Some(short_flag) if self.flag(&short_flag) => {
-					inter_mediate_args.push_back(last);
-					last = self.short_middle(short_flag);
-				}
-				next => {
-					break (next, args, inter_mediate_args, last);
-				}
-			}
+			arg_match!(
+				self,
+				args.pop_front(),
+			long_flag=>long_flag{
+				inter_mediate_args.push_back(last);
+				last = self.long_middle(long_flag);
+			},
+			short_flag=>short_flag{
+				inter_mediate_args.push_back(last);
+				last = self.short_middle(short_flag);
+			},
+			non_flag=>arg{
+				break (Some(arg), args, inter_mediate_args, last);
+			},
+			rest_opt=>next{
+				break (next, args, inter_mediate_args, last);
+			})
 		}
 	}
 
@@ -861,42 +945,42 @@ impl Parser {
 	) -> Context {
 		let mut non_flag_args = VecDeque::<String>::new();
 		loop {
-			match c.args.pop_front() {
-				None => {
-					break;
-				}
-				Some(long_flag) if self.long_flag(&long_flag) => {
-					let (next, _c) = self.parse_flags_start_with_long_flag(
-						long_flag,
-						local_flags,
-						current_common_flags,
-						c,
-					);
-					c = _c;
-					if let Some(arg) = next {
+			arg_match!(self, c.args.pop_front(),
+					long_flag=>long_flag{
+						let (next, _c) = self.parse_flags_start_with_long_flag(
+							long_flag,
+							local_flags,
+							current_common_flags,
+							c,
+						);
+						c = _c;
+						if let Some(arg) = next {
+							non_flag_args.push_back(arg);
+						} else {
+							break;
+						}
+					},
+					short_flag=>short_flag{
+						let (next, _c) = self.parse_flags_start_with_short_flag(
+							short_flag,
+							local_flags,
+							current_common_flags,
+							c,
+						);
+						c = _c;
+						if let Some(arg) = next {
+							non_flag_args.push_back(arg);
+						} else {
+							break;
+						}
+					},
+					normal_arg=>arg{
 						non_flag_args.push_back(arg);
-					} else {
+					},
+					none=>{
 						break;
 					}
-				}
-				Some(short_flag) if self.flag(&short_flag) => {
-					let (next, _c) = self.parse_flags_start_with_short_flag(
-						short_flag,
-						local_flags,
-						current_common_flags,
-						c,
-					);
-					c = _c;
-					if let Some(arg) = next {
-						non_flag_args.push_back(arg);
-					} else {
-						break;
-					}
-				}
-				Some(arg) => {
-					non_flag_args.push_back(arg);
-				}
-			}
+			)
 		}
 		c.args = non_flag_args;
 		c
@@ -988,8 +1072,8 @@ impl Parser {
 				self.parse_next_if_flag(local_flags, current_common_flags, c)
 			}
 			None => match local_flags.find_long_flag(&long_flag) {
-				LongFound::Name(l_flag) => match c.args.pop_front() {
-					Some(next_long_flag) if self.long_flag(&next_long_flag) => {
+				LongFound::Name(l_flag) => {
+					arg_match!(self, c.args.pop_front(),long_flag=>next_long_flag{
 						c.local_flags_values.push((long_flag, FlagValue::None));
 						self.parse_flags_start_with_long_flag(
 							next_long_flag,
@@ -997,8 +1081,8 @@ impl Parser {
 							current_common_flags,
 							c,
 						)
-					}
-					Some(next_short_flag) if self.flag(&next_short_flag) => {
+					},
+					short_flag=>next_short_flag{
 						c.local_flags_values.push((long_flag, FlagValue::None));
 						self.parse_flags_start_with_short_flag(
 							next_short_flag,
@@ -1006,26 +1090,29 @@ impl Parser {
 							current_common_flags,
 							c,
 						)
-					}
-					Some(next_arg) => match l_flag.derive_flag_value_from_string(next_arg) {
-						FlagValue::Invalid(next_arg) => {
-							c.local_flags_values.push((long_flag, FlagValue::None));
-							(Some(next_arg), c)
-						}
-						val => {
-							c.local_flags_values.push((long_flag, val));
-							self.parse_next_if_flag(local_flags, current_common_flags, c)
+					},
+					normal_arg=>next_arg{
+						match l_flag.derive_flag_value_from_string(next_arg) {
+							FlagValue::Invalid(next_arg) => {
+								c.local_flags_values.push((long_flag, FlagValue::None));
+								(Some(next_arg), c)
+							}
+							val => {
+								c.local_flags_values.push((long_flag, val));
+								self.parse_next_if_flag(local_flags, current_common_flags, c)
+							}
 						}
 					},
-					None => {
+					none=>{
 						c.local_flags_values.push((long_flag, FlagValue::None));
 						(None, c)
-					}
-				},
-				LongFound::Long(l_flag) => match c.args.pop_front() {
-					Some(next_long_flag) if self.long_flag(&next_long_flag) => {
+					})
+				}
+				LongFound::Long(l_flag) => arg_match!(
+					self,c.args.pop_front(),
+					long_flag=>next_long_flag{
 						c.local_flags_values
-							.push((l_flag.get_name_clone(), FlagValue::None));
+						.push((l_flag.get_name_clone(), FlagValue::None));
 						self.parse_flags_start_with_long_flag(
 							next_long_flag,
 							local_flags,
@@ -1033,9 +1120,9 @@ impl Parser {
 							c,
 						)
 					}
-					Some(next_short_flag) if self.flag(&next_short_flag) => {
+					short_flag=>next_short_flag{
 						c.local_flags_values
-							.push((l_flag.get_name_clone(), FlagValue::None));
+						.push((l_flag.get_name_clone(), FlagValue::None));
 						self.parse_flags_start_with_short_flag(
 							next_short_flag,
 							local_flags,
@@ -1043,96 +1130,104 @@ impl Parser {
 							c,
 						)
 					}
-					Some(next_arg) => match l_flag.derive_flag_value_from_string(next_arg) {
-						FlagValue::Invalid(next_arg) => {
-							c.local_flags_values
+					normal_arg=>next_arg{
+						match l_flag.derive_flag_value_from_string(next_arg) {
+							FlagValue::Invalid(next_arg) => {
+								c.local_flags_values
 								.push((l_flag.get_name_clone(), FlagValue::None));
-							(Some(next_arg), c)
+								(Some(next_arg), c)
+							}
+							val => {
+								c.local_flags_values.push((long_flag, val));
+								self.parse_next_if_flag(local_flags, current_common_flags, c)
+							}
 						}
-						val => {
-							c.local_flags_values.push((long_flag, val));
-							self.parse_next_if_flag(local_flags, current_common_flags, c)
-						}
-					},
-					None => {
+					}
+					none=>{
 						c.local_flags_values
-							.push((l_flag.get_name_clone(), FlagValue::None));
+						.push((l_flag.get_name_clone(), FlagValue::None));
 						(None, c)
 					}
-				},
+				),
 				_ => match (current_common_flags, &c.common_flags).find_long_flag(&long_flag) {
-					LongFound::Name(c_flag) => match c.args.pop_front() {
-						Some(next_long_flag) if self.long_flag(&next_long_flag) => {
-							c.common_flags_values.push((long_flag, FlagValue::None));
-							self.parse_flags_start_with_long_flag(
-								next_long_flag,
-								local_flags,
-								current_common_flags,
-								c,
-							)
-						}
-						Some(next_short_flag) if self.flag(&next_short_flag) => {
-							c.common_flags_values.push((long_flag, FlagValue::None));
-							self.parse_flags_start_with_short_flag(
-								next_short_flag,
-								local_flags,
-								current_common_flags,
-								c,
-							)
-						}
-						Some(next_arg) => match c_flag.flag_type.get_value_from_string(next_arg) {
-							FlagValue::Invalid(next_arg) => {
+					LongFound::Name(c_flag) => {
+						arg_match!(self,c.args.pop_front(), long_flag=>next_long_flag{
 								c.common_flags_values.push((long_flag, FlagValue::None));
-								(Some(next_arg), c)
+								self.parse_flags_start_with_long_flag(
+									next_long_flag,
+									local_flags,
+									current_common_flags,
+									c,
+								)
+							},
+							short_flag=>next_short_flag{
+								c.common_flags_values.push((long_flag, FlagValue::None));
+								self.parse_flags_start_with_short_flag(
+									next_short_flag,
+									local_flags,
+									current_common_flags,
+									c,
+								)
 							}
-							val => {
-								c.common_flags_values.push((long_flag, val));
-								self.parse_next_if_flag(local_flags, current_common_flags, c)
+							normal_arg=>next_arg{
+								match c_flag.flag_type.get_value_from_string(next_arg) {
+								FlagValue::Invalid(next_arg) => {
+									c.common_flags_values.push((long_flag, FlagValue::None));
+									(Some(next_arg), c)
+								}
+								val => {
+									c.common_flags_values.push((long_flag, val));
+									self.parse_next_if_flag(local_flags, current_common_flags, c)
+								}
 							}
-						},
-						next_none => {
-							c.common_flags_values.push((long_flag, FlagValue::None));
-							(next_none, c)
-						}
-					},
-					LongFound::Long(c_flag) => match c.args.pop_front() {
-						Some(next_long_flag) if self.long_flag(&next_long_flag) => {
-							c.common_flags_values
-								.push((c_flag.get_name_clone(), FlagValue::None));
-							self.parse_flags_start_with_long_flag(
-								next_long_flag,
-								local_flags,
-								current_common_flags,
-								c,
-							)
-						}
-						Some(next_short_flag) if self.flag(&next_short_flag) => {
-							c.common_flags_values
-								.push((c_flag.get_name_clone(), FlagValue::None));
-							self.parse_flags_start_with_short_flag(
-								next_short_flag,
-								local_flags,
-								current_common_flags,
-								c,
-							)
-						}
-						Some(next_arg) => match c_flag.flag_type.get_value_from_string(next_arg) {
-							FlagValue::Invalid(next_arg) => {
+							}
+							none=>next_none{
+								c.common_flags_values.push((long_flag, FlagValue::None));
+								(next_none, c)
+							}
+						)
+					}
+					LongFound::Long(c_flag) => {
+						arg_match!(self,c.args.pop_front(),
+							long_flag=>next_long_flag{
 								c.common_flags_values
-									.push((c_flag.get_name_clone(), FlagValue::None));
-								(Some(next_arg), c)
-							}
-							val => {
-								c.common_flags_values.push((c_flag.get_name_clone(), val));
-								self.parse_next_if_flag(local_flags, current_common_flags, c)
-							}
-						},
-						next_none => {
+										.push((c_flag.get_name_clone(), FlagValue::None));
+									self.parse_flags_start_with_long_flag(
+										next_long_flag,
+										local_flags,
+										current_common_flags,
+										c,
+									)
+							},
+							short_flag=>next_short_flag{
+								c.common_flags_values
+										.push((c_flag.get_name_clone(), FlagValue::None));
+									self.parse_flags_start_with_short_flag(
+										next_short_flag,
+										local_flags,
+										current_common_flags,
+										c,
+									)
+							},
+							normal_arg=>next_arg{
+								match c_flag.flag_type.get_value_from_string(next_arg) {
+									FlagValue::Invalid(next_arg) => {
+										c.common_flags_values
+											.push((c_flag.get_name_clone(), FlagValue::None));
+										(Some(next_arg), c)
+									}
+									val => {
+										c.common_flags_values.push((c_flag.get_name_clone(), val));
+										self.parse_next_if_flag(local_flags, current_common_flags, c)
+									}
+								}
+							},
+						none=>next_none{
 							c.common_flags_values
-								.push((c_flag.get_name_clone(), FlagValue::None));
-							(next_none, c)
-						}
-					},
+										.push((c_flag.get_name_clone(), FlagValue::None));
+									(next_none, c)
+						})
+					}
 					_ => {
 						let flag_arg = MiddleArg::LongFlag(long_flag, FlagValue::None);
 						c.error_info_list.push((
@@ -1312,84 +1407,89 @@ impl Parser {
 						}
 						//最後の１フラグを処理
 						match local_flags.find_short_flag(&last) {
-							Some(l_flag) => match c.args.pop_front() {
-								Some(next_long_flag) if self.long_flag(&next_long_flag) => {
+							Some(l_flag) => {
+								arg_match!(self,c.args.pop_front(),
+										long_flag=>next_long_flag{
+											c.local_flags_values
+													.push((l_flag.get_name_clone(), FlagValue::None));
+												self.parse_flags_start_with_long_flag(
+													next_long_flag,
+													local_flags,
+													current_common_flags,
+													c,
+												)
+										},
+									short_flag=>next_short_flag{
+										c.local_flags_values
+													.push((l_flag.get_name_clone(), FlagValue::None));
+												self.parse_flags_start_with_short_flag(
+													next_short_flag,
+													local_flags,
+													current_common_flags,
+													c,
+												)
+									},
+									normal_arg=>next_arg{
+										match l_flag.derive_flag_value_from_string(next_arg) {
+												FlagValue::Invalid(next_arg) => {
+													//
+													c.local_flags_values
+														.push((l_flag.get_name_clone(), FlagValue::None));
+													(Some(next_arg), c)
+												}
+												val => {
+													c.local_flags_values.push((l_flag.get_name_clone(), val));
+													self.parse_next_if_flag(local_flags, current_common_flags, c)
+												}
+											}
+									},
+								none=>next_none{
 									c.local_flags_values
-										.push((l_flag.get_name_clone(), FlagValue::None));
+													.push((l_flag.get_name_clone(), FlagValue::None));
+												(next_none, c)
+								})
+							}
+							_ => match (current_common_flags, &c.common_flags).find_short_flag(&last) {
+								Some(c_flag) => arg_match!(self, c.args.pop_front(),
+								long_flag=>next_long_flag {
+									c.common_flags_values
+									.push((c_flag.get_name_clone(), FlagValue::None));
 									self.parse_flags_start_with_long_flag(
 										next_long_flag,
 										local_flags,
 										current_common_flags,
 										c,
 									)
-								}
-								Some(next_short_flag) if self.flag(&next_short_flag) => {
-									c.local_flags_values
-										.push((l_flag.get_name_clone(), FlagValue::None));
+								},
+								short_flag=>next_short_flag{
+									c.common_flags_values
+									.push((c_flag.get_name_clone(), FlagValue::None));
 									self.parse_flags_start_with_short_flag(
 										next_short_flag,
 										local_flags,
 										current_common_flags,
 										c,
 									)
-								}
-								Some(next_arg) => match l_flag.derive_flag_value_from_string(next_arg) {
-									FlagValue::Invalid(next_arg) => {
-										//
-										c.local_flags_values
-											.push((l_flag.get_name_clone(), FlagValue::None));
-										(Some(next_arg), c)
-									}
-									val => {
-										c.local_flags_values.push((l_flag.get_name_clone(), val));
-										self.parse_next_if_flag(local_flags, current_common_flags, c)
-									}
 								},
-								next_none => {
-									c.local_flags_values
-										.push((l_flag.get_name_clone(), FlagValue::None));
-									(next_none, c)
-								}
-							},
-							_ => match (current_common_flags, &c.common_flags).find_short_flag(&last) {
-								Some(c_flag) => match c.args.pop_front() {
-									Some(next_long_flag) if self.long_flag(&next_long_flag) => {
-										c.common_flags_values
-											.push((c_flag.get_name_clone(), FlagValue::None));
-										self.parse_flags_start_with_long_flag(
-											next_long_flag,
-											local_flags,
-											current_common_flags,
-											c,
-										)
-									}
-									Some(next_short_flag) if self.flag(&next_short_flag) => {
-										c.common_flags_values
-											.push((c_flag.get_name_clone(), FlagValue::None));
-										self.parse_flags_start_with_short_flag(
-											next_short_flag,
-											local_flags,
-											current_common_flags,
-											c,
-										)
-									}
-									Some(next_arg) => match c_flag.derive_flag_value_from_string(next_arg) {
+								normal_arg=>next_arg{
+									match c_flag.derive_flag_value_from_string(next_arg) {
 										FlagValue::Invalid(next_arg) => {
 											c.common_flags_values
-												.push((c_flag.get_name_clone(), FlagValue::None));
+											.push((c_flag.get_name_clone(), FlagValue::None));
 											(Some(next_arg), c)
 										}
 										val => {
 											c.common_flags_values.push((c_flag.get_name_clone(), val));
 											self.parse_next_if_flag(local_flags, current_common_flags, c)
 										}
-									},
-									next_none => {
+									}
+								},
+									none=>next_none{
 										c.common_flags_values
 											.push((c_flag.get_name_clone(), FlagValue::None));
 										(next_none, c)
 									}
-								},
+								),
 								_ => {
 									let flag_arg = MiddleArg::ShortFlag(short_flag, FlagValue::None);
 									c.error_info_list.push((
@@ -1427,15 +1527,30 @@ impl Parser {
 		current_common_flags: &S,
 		mut c: Context,
 	) -> (Option<String>, Context) {
-		match c.args.pop_front() {
-			Some(long_flag) if self.long_flag(&long_flag) => {
-				self.parse_flags_start_with_long_flag(long_flag, local_flags, current_common_flags, c)
-			}
-			Some(short_flag) if self.flag(&short_flag) => {
-				self.parse_flags_start_with_short_flag(short_flag, local_flags, current_common_flags, c)
-			}
-			val => (val, c),
-		}
+		arg_match!(self,
+		c.args.pop_front(),
+		long_flag=>long_flag{
+			self.parse_flags_start_with_long_flag(
+					long_flag,
+					local_flags,
+					current_common_flags,
+					c,
+				)
+		},
+		short_flag=>short_flag{
+			self.parse_flags_start_with_short_flag(
+					short_flag,
+					local_flags,
+					current_common_flags,
+					c,
+				)
+		},
+		non_flag=>non_flag{
+			(Some(non_flag),c)
+		},
+		rest_opt=>val{
+			(val,c)
+		})
 	}
 }
 

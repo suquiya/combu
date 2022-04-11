@@ -316,6 +316,9 @@ macro_rules! char {
 #[macro_export]
 /// Checks context has help flag. If the context has help flag, return ShowHelpRequest.
 macro_rules! check_help {
+	($context:ident, $cmd:ident)=>{
+		$crate::check_help!($context:ident, $cmd:ident, $crate::command::presets::help_tablize_with_alias_dedup);
+	};
 	($context:ident, $current_command:ident, {$($ht:tt)*})=>{
 		if $context.is_flag_true("help", &$corrent_command){
 			$($ht)*
@@ -406,9 +409,9 @@ macro_rules! check_copyright {
 /// Checks context has values of the preset flags.
 macro_rules! check_preset_flags {
 	($context:ident) => {
-		$crate::check_help($context)
-		$crate::check_authors($context)
-		$crate::check_version($context)
+		$crate::check_help!($context)
+		$crate::check_authors!($context)
+		$crate::check_version!($context)
 	};
 }
 
@@ -596,6 +599,18 @@ macro_rules! help_command_action {
 			))
 		}
 	};
+}
+
+#[macro_export]
+/// Build helper for action
+macro_rules! action {
+	($cmd:ident,$ctx:ident,{$($t:tt)*}) => {};
+}
+
+#[macro_export]
+/// Build helper for action
+macro_rules! def_action_func {
+	($func_name:ident) => {};
 }
 
 #[macro_export]

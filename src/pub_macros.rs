@@ -341,8 +341,8 @@ macro_rules! check_help {
 #[macro_export]
 /// Checks context has version flag. If the context has help flag, show version and exit.
 macro_rules! check_version {
-	($context:ident) => {
-		if $context.is_flag_true("version") {
+	($context:ident,$current_command:ident) => {
+		if $context.is_flag_true("version", &$current_command) {
 			println!($context.version);
 			return $crate::done!();
 		}
@@ -352,8 +352,8 @@ macro_rules! check_version {
 #[macro_export]
 /// Checks context has authors flag. If the context has author flag, show authors and exit.
 macro_rules! check_authors {
-	($context:ident) => {
-		if $context.is_flag_true("authors") {
+	($context:ident,$current_command:ident) => {
+		if $context.is_flag_true("version", &$current_command) {
 			println!($context.authors);
 			return $crate::done!();
 		}
@@ -387,8 +387,8 @@ macro_rules! include_license_file {
 #[macro_export]
 /// Checks context has license flag. If the context has license flag, exec $license_func and return done.
 macro_rules! check_license {
-	($context:ident, $license_func:expr) => {
-		if $context.is_flag_true("license") {
+	($context:ident,$current_command:ident, $license_func:expr) => {
+		if $context.is_flag_true("license", &$current_command) {
 			$license_func;
 			return done!();
 		}
@@ -398,8 +398,8 @@ macro_rules! check_license {
 #[macro_export]
 /// Checks context has license flag. If the context has license flag, show authors and exit.
 macro_rules! check_copyright {
-	($context:ident) => {
-		if $context.is_flag_true("copyright") {
+	($context:ident,$current_command:ident) => {
+		if $context.is_flag_true("copyright", &$current_command) {
 			println!("{}", $context.copyright);
 		}
 	};
@@ -408,9 +408,9 @@ macro_rules! check_copyright {
 #[macro_export]
 /// Checks context has values of the preset flags.
 macro_rules! check_preset_flags {
-	($context:ident) => {
-		$crate::check_help!($context)
-		$crate::check_authors!($context)
+	($ctx:ident$(,)?$cmd:ident$(,)?) => {
+		$crate::check_help!($ctx,$cmd)
+		$crate::check_authors!($ctx,$cmd)
 		$crate::check_version!($context)
 	};
 }
@@ -574,13 +574,10 @@ macro_rules! define_parent_help_request_action {
 /// Preset of definition of help command action
 macro_rules! define_help_command_action {
 	($action_name:ident, $req_action_name:ident, $help_func:ident) => {
-		fn $action_name(cmd: $crate::Command, ctx: $crate::Context) -> action_result!() {
+		fn $action_name(mut cmd: $crate::Command, ctx: $crate::Context) -> action_result!() {
 			check_help!(ctx, cmd, $help_func);
-			Ok($crate::ActionResult::ParentActionRequest(
-				ctx,
-				cmd,
-				$req_action_name,
-			))
+			cmd.action = Some($req_action_name);
+			Ok($crate::ActionResult::ParentActionRequest(ctx, cmd))
 		}
 		$crate::define_parent_help_request_action!($req_action_name, $help_func);
 	};
@@ -590,13 +587,10 @@ macro_rules! define_help_command_action {
 /// preset of help command action
 macro_rules! help_command_action {
 	($func:ident) => {
-		|cmd, ctx| -> action_result!() {
+		|mut cmd, ctx| -> action_result!() {
 			$crate::check_help!(ctx, cmd, $func);
-			Ok($crate::ActionResult::ParentActionRequest(
-				ctx,
-				cmd,
-				$crate::parent_help_request_action!($func),
-			))
+			cmd.action = Some($crate::parent_help_request_action!($func));
+			Ok($crate::ActionResult::ParentActionRequest(ctx, cmd))
 		}
 	};
 }
@@ -604,7 +598,32 @@ macro_rules! help_command_action {
 #[macro_export]
 /// Build helper for action
 macro_rules! action {
-	($cmd:ident,$ctx:ident,{$($t:tt)*}) => {};
+	(check_preset_flags,{$($t:tt)*})=>{
+		$crate::action!(cmd,ctx,check_preset_flags,{$($t)*})
+	};
+	($cmd:ident,$ctx:ident,check_preset_flags,{$($t:tt)*}) => {
+		$crate::action!($cmd,$ctx,{
+			check_preset_flags!($cmd, $ctx);
+			$($t)*
+		})
+	};
+	($cmd:ident,$ctx:ident,s,{$($t:tt)*})=>{
+		$crate::action!($cmd,$ctx,{$($t)*})
+	};
+	($cmd:ident,$ctx:ident,base,{$($t:tt)*})=>{
+		$crate::action!($cmd,$ctx,{$($t)*})
+	};
+	($cmd:ident,$ctx:ident,{$($t:tt)*})=>{
+		$crate::action!($cmd,$ctx,core,{$($t)*})
+	};
+	($cmd:ident,$ctx:ident,core,{$($t:tt)*})=>{
+		|$cmd:Command, $ctx: Context|->action_result!(){
+			$($t)*
+		}
+	};
+	($($t:tt)*)=>{
+		$crate::action(cmd,ctx,core,{$($t)*})
+	}
 }
 
 #[macro_export]

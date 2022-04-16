@@ -983,11 +983,12 @@ impl Command {
 				// Doneなら何もしないでreqを上にあげる
 				req
 			}
-			Ok(ActionResult::ParentActionRequest(mut c, mut sub, action)) => {
+			Ok(ActionResult::ParentActionRequest(mut c, mut sub)) => {
 				// サブコマンドからリクエストが飛んでいた時はselfを与えてリクエストされたアクションを実行
 				c.routes.pop(); //ルートをさかのぼる
 				self.c_flags = c.common_flags.remove_last(); //コモンフラグを戻す
 				check_sub!(self, sub); // authors, version, copyright, licenseを戻す
+				let action = sub.action.unwrap(); // リクエストアクションはsub.actionに格納されているものとする
 				self.sub.push(sub); //サブコマンドを親コマンドの末尾に戻す
 				action(self, c)
 			}

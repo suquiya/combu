@@ -6,7 +6,8 @@ use std::{error::Error, fmt};
 ///Action is type for command action. It returns Result<ActionResult, ActionError>.
 pub type Action = fn(Command, Context) -> Result<ActionResult, ActionError>;
 
-///ActionResult stores result of action.
+/// ActionResult stores result of action.
+/// Commandのアクション結果を格納し、runの結果として返却するためのenum。
 #[derive(Debug)]
 pub enum ActionResult {
 	///Done shows that action is done.

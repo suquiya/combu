@@ -314,38 +314,60 @@ macro_rules! char {
 }
 
 #[macro_export]
+/// Checks context has specified flag.
+macro_rules! check {
+	(help, $ctx:ident,$cmd:ident)=>{
+		$crate::check!(help,$ctx,$cmd,$crate::command::presets::help_tablize_with_alias_dedup);
+	};
+	(help,$ctx:ident,$cmd:ident,$func:path)=>{
+		$crate::check!(help,$ctx,$cmd,{
+			println!("{}",$func(&$cmd,&$ctx));
+			return $crate::done!();
+		})
+	};
+	(license,$ctx:ident,$cmd:ident)=>{
+		$crate::check!(license,$ctx,$cmd,{
+			println!($cmd.license.output().unwrap());
+			return $crate::done!();
+		})
+	};
+	($member:ident,$ctx:ident,$cmd:ident) => {
+		$crate::check!($member,$ctx,$cmd,{
+			println!($cmd.$member);
+			return $crate::done!();
+		})
+	};
+	($member:ident,$ctx:ident,$cmd:ident,$func:path)=>{
+		$crate::check!($member,$ctx,$cmd,{
+			println!("{}",$func(&$ctx,&$cmd));
+			return $crate::done!()
+		})
+	};
+	($member:ident,$ctx:ident,$cmd:ident,{$($t:tt)*})=>{
+		if($ctx.is_flag_true(stringify!($ident),&$cmd)){
+			$($t)*
+		}
+	};
+	($member:ident,$ctx:ident,$cmd:ident,$($t:tt)*)=>{
+		if($ctx.is_flag_true(stringify!($ident),&$cmd)){
+			$($t)*
+		}
+	};
+}
+
+#[macro_export]
 /// Checks context has help flag. If the context has help flag, return ShowHelpRequest.
 macro_rules! check_help {
-	($context:ident, $cmd:ident)=>{
-		$crate::check_help!($context:ident, $cmd:ident, $crate::command::presets::help_tablize_with_alias_dedup);
-	};
-	($context:ident, $current_command:ident, {$($ht:tt)*})=>{
-		if $context.is_flag_true("help", &$corrent_command){
-			$($ht)*
-		}
-	};
-	($context:ident$(,)*$current_command:ident$(,)*{$($ht:tt)*})=>{
-		check_help!($context,$current_command, {$($ht)*})
-	};
-	($context:ident, $current_command:ident, $($help_func:tt)+) => {
-		if $context.is_flag_true("help", &$current_command) {
-			println!("{}",$($help_func)+(&$current_command, &$context));
-			return $crate::done!()
-		}
-	};
-	($context:ident$(,)*$current_command:ident$(,)*$($help_func:tt)+) => {
-		check_help!($context,$current_command,$($help_func)+)
-	};
+	($($t:tt)*)=>{
+		$crate::check!(help,$($t)*)
+	}
 }
 
 #[macro_export]
 /// Checks context has version flag. If the context has help flag, show version and exit.
 macro_rules! check_version {
 	($context:ident,$current_command:ident) => {
-		if $context.is_flag_true("version", &$current_command) {
-			println!($context.version);
-			return $crate::done!();
-		}
+		$crate::check!(version, $context, $current_command)
 	};
 }
 
@@ -353,10 +375,7 @@ macro_rules! check_version {
 /// Checks context has authors flag. If the context has author flag, show authors and exit.
 macro_rules! check_authors {
 	($context:ident,$current_command:ident) => {
-		if $context.is_flag_true("version", &$current_command) {
-			println!($context.authors);
-			return $crate::done!();
-		}
+		$crate::check!(authors, $context, $current_command)
 	};
 }
 
@@ -387,11 +406,11 @@ macro_rules! include_license_file {
 #[macro_export]
 /// Checks context has license flag. If the context has license flag, exec $license_func and return done.
 macro_rules! check_license {
-	($context:ident,$current_command:ident, $license_func:expr) => {
-		if $context.is_flag_true("license", &$current_command) {
-			$license_func;
-			return done!();
-		}
+	($ctx:ident,$cmd:ident) => {
+		$crate::ckeck!(license, $ctx, $cmd)
+	};
+	($context:ident,$current_command:ident, $license_func:path) => {
+		$crate::check!(license, $context, $current_command, $license_func)
 	};
 }
 
@@ -399,9 +418,7 @@ macro_rules! check_license {
 /// Checks context has license flag. If the context has license flag, show authors and exit.
 macro_rules! check_copyright {
 	($context:ident,$current_command:ident) => {
-		if $context.is_flag_true("copyright", &$current_command) {
-			println!("{}", $context.copyright);
-		}
+		$crate::check!(copyright, $context, $current_command);
 	};
 }
 
@@ -411,7 +428,7 @@ macro_rules! check_preset_flags {
 	($ctx:ident$(,)?$cmd:ident$(,)?) => {
 		$crate::check_help!($ctx,$cmd)
 		$crate::check_authors!($ctx,$cmd)
-		$crate::check_version!($context)
+		$crate::check_version!($ctx,$cmd)
 	};
 }
 

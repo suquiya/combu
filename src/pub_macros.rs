@@ -316,40 +316,40 @@ macro_rules! char {
 #[macro_export]
 /// Checks context has specified flag.
 macro_rules! check {
-	(help, $ctx:ident,$cmd:ident)=>{
-		$crate::check!(help,$ctx,$cmd,$crate::command::presets::help_tablize_with_alias_dedup);
+	(help,$cmd:ident,$ctx:ident)=>{
+		$crate::check!(help,$cmd,$ctx,$crate::command::presets::help_tablize_with_alias_dedup);
 	};
-	(help,$ctx:ident,$cmd:ident,$func:path)=>{
-		$crate::check!(help,$ctx,$cmd,{
+	(help,$cmd:ident,$ctx:ident,$func:path)=>{
+		$crate::check!(help,$cmd,$ctx,{
 			println!("{}",$func(&$cmd,&$ctx));
 			return $crate::done!();
 		})
 	};
-	(license,$ctx:ident,$cmd:ident)=>{
-		$crate::check!(license,$ctx,$cmd,{
+	(license,$cmd:ident,$ctx:ident)=>{
+		$crate::check!(license,$cmd,$ctx,{
 			println!($cmd.license.output().unwrap());
 			return $crate::done!();
 		})
 	};
-	($member:ident,$ctx:ident,$cmd:ident) => {
-		$crate::check!($member,$ctx,$cmd,{
+	($member:ident,$cmd:ident,$ctx:ident) => {
+		$crate::check!($member,$cmd,$ctx,{
 			println!($cmd.$member);
 			return $crate::done!();
 		})
 	};
 	($member:ident,$ctx:ident,$cmd:ident,$func:path)=>{
-		$crate::check!($member,$ctx,$cmd,{
-			println!("{}",$func(&$ctx,&$cmd));
+		$crate::check!($member,$cmd,$ctx,{
+			println!("{}",$func(&$cmd,&$ctx));
 			return $crate::done!()
 		})
 	};
 	($member:ident,$ctx:ident,$cmd:ident,{$($t:tt)*})=>{
-		if($ctx.is_flag_true(stringify!($ident),&$cmd)){
+		if($ctx.is_flag_true(stringify!($member),&$cmd)){
 			$($t)*
 		}
 	};
 	($member:ident,$ctx:ident,$cmd:ident,$($t:tt)*)=>{
-		if($ctx.is_flag_true(stringify!($ident),&$cmd)){
+		if($ctx.is_flag_true(stringify!($member),&$cmd)){
 			$($t)*
 		}
 	};
@@ -359,7 +359,7 @@ macro_rules! check {
 /// Checks context has help flag. If the context has help flag, return ShowHelpRequest.
 macro_rules! check_help {
 	($($t:tt)*)=>{
-		$crate::check!(help,$($t)*)
+		$crate::check!(help,$($t)*);
 	}
 }
 
@@ -426,9 +426,9 @@ macro_rules! check_copyright {
 /// Checks context has values of the preset flags.
 macro_rules! check_preset_flags {
 	($ctx:ident$(,)?$cmd:ident$(,)?) => {
-		$crate::check_help!($ctx,$cmd)
-		$crate::check_authors!($ctx,$cmd)
-		$crate::check_version!($ctx,$cmd)
+		$crate::check_help!($cmd,$ctx)
+		$crate::check_authors!($cmd,$ctx)
+		$crate::check_version!($cmd,$ctx)
 	};
 }
 

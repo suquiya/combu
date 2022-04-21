@@ -2206,7 +2206,7 @@ pub mod presets {
 
 		/// Preset of version command action
 		pub fn version_print(cmd: Command, ctx: Context) -> action_result!() {
-			crate::check_help!(ctx, cmd, help_tablize_with_alias_dedup);
+			crate::check_help!(cmd, ctx, help_tablize_with_alias_dedup);
 			println!("{}", cmd.version);
 			crate::done!()
 		}

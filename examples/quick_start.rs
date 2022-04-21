@@ -33,7 +33,7 @@ fn main() {
 
 fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
 {
-	check_help!(c, cmd, help_tablize_with_alias_dedup);
+	check_help!(cmd, c, help_tablize_with_alias_dedup);
 	println!("Hello, combu - {:?}", c.args);
 
 	done!()
@@ -42,7 +42,7 @@ fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionRes
 
 #[allow(dead_code)]
 fn sub_act(cmd: Command, c: Context) -> action_result!() {
-	check_help!(c, cmd, help);
+	check_help!(cmd, c, help);
 	println!("sub hello, combu - {:?}", c.args);
 	done!()
 }

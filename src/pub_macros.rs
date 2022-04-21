@@ -316,7 +316,7 @@ macro_rules! char {
 #[macro_export]
 /// Checks context has specified flag.
 macro_rules! check {
-	(help,$cmd:ident,$ctx:ident)=>{
+	(help, $cmd:ident, $ctx:ident)=>{
 		$crate::check!(help,$cmd,$ctx,$crate::command::presets::help_tablize_with_alias_dedup);
 	};
 	(help,$cmd:ident,$ctx:ident,$func:path)=>{
@@ -337,13 +337,13 @@ macro_rules! check {
 			return $crate::done!();
 		})
 	};
-	($member:ident,$ctx:ident,$cmd:ident,$func:path)=>{
+	($member:ident,$cmd:ident,$ctx:ident,$func:path)=>{
 		$crate::check!($member,$cmd,$ctx,{
 			println!("{}",$func(&$cmd,&$ctx));
 			return $crate::done!()
 		})
 	};
-	($member:ident,$ctx:ident,$cmd:ident,{$($t:tt)*})=>{
+	($member:ident,$cmd:ident,$ctx:ident,{$($t:tt)*})=>{
 		if($ctx.is_flag_true(stringify!($member),&$cmd)){
 			$($t)*
 		}
@@ -592,7 +592,7 @@ macro_rules! define_parent_help_request_action {
 macro_rules! define_help_command_action {
 	($action_name:ident, $req_action_name:ident, $help_func:ident) => {
 		fn $action_name(mut cmd: $crate::Command, ctx: $crate::Context) -> action_result!() {
-			check_help!(ctx, cmd, $help_func);
+			check_help!(cmd, ctx, $help_func);
 			cmd.action = Some($req_action_name);
 			Ok($crate::ActionResult::ParentActionRequest(ctx, cmd))
 		}
@@ -605,7 +605,7 @@ macro_rules! define_help_command_action {
 macro_rules! help_command_action {
 	($func:ident) => {
 		|mut cmd, ctx| -> action_result!() {
-			$crate::check_help!(ctx, cmd, $func);
+			$crate::check_help!(cmd, ctx, $func);
 			cmd.action = Some($crate::parent_help_request_action!($func));
 			Ok($crate::ActionResult::ParentActionRequest(ctx, cmd))
 		}

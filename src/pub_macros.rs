@@ -594,7 +594,7 @@ macro_rules! define_help_command_action {
 		fn $action_name(mut cmd: $crate::Command, ctx: $crate::Context) -> action_result!() {
 			check_help!(cmd, ctx, $help_func);
 			cmd.action = Some($req_action_name);
-			Ok($crate::ActionResult::ParentActionRequest(ctx, cmd))
+			Ok($crate::ActionResult::ParentActionRequest(cmd, ctx))
 		}
 		$crate::define_parent_help_request_action!($req_action_name, $help_func);
 	};
@@ -607,7 +607,7 @@ macro_rules! help_command_action {
 		|mut cmd, ctx| -> action_result!() {
 			$crate::check_help!(cmd, ctx, $func);
 			cmd.action = Some($crate::parent_help_request_action!($func));
-			Ok($crate::ActionResult::ParentActionRequest(ctx, cmd))
+			Ok($crate::ActionResult::ParentActionRequest(cmd, ctx))
 		}
 	};
 }

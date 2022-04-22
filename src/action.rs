@@ -13,9 +13,9 @@ pub enum ActionResult {
 	///Done shows that action is done.
 	Done,
 	/// ParentActionRequest shows that action requested to show help.
-	ParentActionRequest(Context, Command),
+	ParentActionRequest(Command, Context),
 	/// Shows return Context, reached Command and Action as result for parse and run.
-	Result(Context, Command),
+	Result(Command, Context),
 	/// Custom result(can have Box including dyn Debug).
 	Custom(Box<dyn Debug>),
 }

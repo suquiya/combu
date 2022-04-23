@@ -16,7 +16,7 @@ combu(com + 昆布)は柔軟に CLI を組み上げられることを目標と�
 - Typed flag: Bool, String, Int and Float, inspired from seahorse（seahorse を参考にした Bool, String, Int, Float の型つきフラグ）
 - common flag, local flag (コモンフラグ、ローカルフラグ両方を設定可能)
 - flag parsing before sub command args(サブコマンド前のフラグの受付)
-- 独自でパース等を行いたい場合に再利用できる構造体の設定
+- 独自でパース等を行いたい場合に再利用できそうな構造体の設定
   - 似たような CLI フレームワークを作りたいときに使用できる部品を用意
 - Useful presets (コマンド、フラグ等のプリセット)
 - Return the result of run as Result<ActionResult, ActionError> (実行結果を Result に込めて実行後返却)

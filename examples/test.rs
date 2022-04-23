@@ -1,6 +1,6 @@
 use combu::command::presets::func::{help, help_tablize_with_alias_dedup};
 use combu::{action_result, check_help, done, preset_root, Command};
-use combu::{define_help_command_action, help_command_action};
+use combu::{def_action_func, define_help_command_action, help_command_action};
 use combu::{Context, Flag};
 use std::env;
 
@@ -39,6 +39,13 @@ fn main() {
 		.run_from_args(env::args().collect());
 }
 
+def_action_func!(act, cmd, c, [help], {
+	println!("Hello, combu - {:?}", c.args);
+	println!("{:?}", c);
+	done!()
+});
+
+/*
 fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
 {
 	check_help!(cmd, c, help_tablize_with_alias_dedup);
@@ -48,6 +55,7 @@ fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionRes
 	done!()
 	// Or use combu::Done and Ok(Done)
 }
+*/
 
 #[allow(dead_code)]
 fn sub_act(cmd: Command, c: Context) -> action_result!() {

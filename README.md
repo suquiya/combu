@@ -114,6 +114,20 @@ More detail of quick_start: See [quick_start.rs](examples/quick_start.rs)
 
 If you want to contribute combu, please read [CONTRIBUTING.md](CONTRIBUTING.md) for checking our code of conduct, and submitting pull requests to us.
 
+# Code of Conduct
+
+Contribution to the combu crate is organized under the terms of the Contributor Covenant, the maintainer of combu, @suquiya, promises to intervene to uphold that code of conduct.
+
+# Author(s?)
+
+[suquiya](https://github.com/suquiya).
+
+README Contribute: [ksk001100](https://github.com/ksk001100) contributed on [this pull request](https://github.com/suquiya/combu/pull/1).
+
 # License
 
 This is licensed under [MIT LICENSE](https://github.com/suquiya/combu/blob/master/LICENSE)
+
+# Information about construct for this README.md
+
+This readme is mainly based on [seahorse's readme](https://github.com/ksk001100/seahorse) - Copyright (c) 2019 Keisuke Toyota - licensed [MIT License](https://github.com/ksk001100/seahorse/blob/master/LICENSE).

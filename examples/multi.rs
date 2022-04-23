@@ -1,5 +1,14 @@
 use combu::{command::presets, done, ActionError, ActionResult, Command, Context, Flag, FlagValue};
-
+/*
+multi command example.
+We can run as follows:
+```bash
+cargo run --example multi -- a 1 2 3 4 5
+15
+cargo run --example multi -- s 1 2 3 4 5
+-13
+```
+ */
 fn main() {
 	let _ = root_command().run_from_args(std::env::args().collect());
 }

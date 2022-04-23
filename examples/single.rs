@@ -1,6 +1,17 @@
 use combu::{ActionError, ActionResult, Command, Context, Flag, FlagValue};
 use std::env;
 
+/*
+single command example.
+We can run as follows:
+```bash
+$ cargo run --example single a b c d e
+abcde
+$ cargo run --example single a b c d e -r
+edcba
+```
+ */
+
 fn main() {
 	let _ = Command::with_name("single")
 		.action(act)

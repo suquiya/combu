@@ -28,7 +28,6 @@ combu(com + 昆布)は柔軟に CLI を組み上げられることを目標と�
 # Installation to your project
 
 Combu exists on crates.io.
-
 You can use(or import) this crate like other crate that exists on crates.io.
 
 ## Edit cargo.toml manually
@@ -52,26 +51,35 @@ cargo add combu
 # Quick Start
 
 ```rust
-use combu::{ActionError, ActionResult, Command, Context, Flag, FlagValue};
+use combu::command::presets::func::{help, help_tablize_with_alias_dedup};
+use combu::{action_result, check_help, done, preset_root, Command};
+use combu::{Context, Flag};
 use std::env;
 
 fn main() {
-	Command::new()
-		.name(env!("CARGO_PKG_NAME"))
-		.authors(env!("CARGO_PKG_AUTHORS"))
-		.version(env!("CARGO_PKG_VERSION"))
+	let _r = preset_root!(act)
 		.usage(env!("CARGO_PKG_NAME").to_string() + " [args]")
-		.common_flag(Flag::new_bool("help").short_alias('h'))
-		.action(act)
-		.run_from_args(env::args().collect())
+		.common_flag(
+			Flag::new_bool("help")
+				.short_alias('h')
+				.description("show help"),
+		)
+		.local_flag(
+			Flag::new_bool("local")
+				.short_alias('l')
+				//.alias("test")
+				.description("local flag"),
+		)
+		.run_from_args(env::args().collect());
 }
 
-fn act(c: Context) -> Result<ActionResult, ActionError> {
-	if Some(FlagValue::Bool(true)) == c.get_flag_value_of("help") {
-		return Ok(ActionResult::ShowHelpRequest(c));
-	}
+fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
+{
+	check_help!(cmd, c, help_tablize_with_alias_dedup);
 	println!("Hello, combu - {:?}", c.args);
-	Ok(ActionResult::Done)
+
+	done!()
+	// Or use combu::Done and Ok(Done)
 }
 ```
 
@@ -82,208 +90,13 @@ cargo run --example quick_start
 cargo run --example quick_start --help
 ```
 
+More detail of quick_start: See [quick_start.rs](examples/quick_start.rs)
+
 # Example
 
-## Simple (command has flags, but not has subcommand)
+## [Single (command has flags, but not has subcommand)](examples/single.rs)
 
-### Code
-
-```rust
-use combu::{ActionError, ActionResult, Command, Context, Flag, FlagValue};
-use std::env;
-
-fn main() {
-	let _ = Command::with_name("single")
-		.action(act)
-		.local_flag(Flag::new_bool("reverse").short_alias('r'))
-		.single_run(env::args().collect::<Vec<String>>());
-}
-
-fn act(c: Context, cmd: Command) -> Result<ActionResult, ActionError> {
-	let r = c.get_flag_value_of("reverse", &cmd).unwrap();
-
-	println!(
-		"{}",
-		match r {
-			FlagValue::Bool(true) => {
-				c.args
-					.iter()
-					.rev()
-					.fold(String::new(), |concated, arg| concated + arg)
-			}
-			_ => {
-				c.args
-					.iter()
-					.fold(String::new(), |concated, arg| concated + arg)
-			}
-		}
-	);
-	Ok(ActionResult::Done)
-}
-```
-
-### Run
-
-```bash
-$ cargo run --example single a b c d e
-abcde
-$ cargo run --example single a b c d e -r
-edcba
-```
-
-## Multi (Have Sub command)
-
-### Code
-
-```rust
-use combu::{command::presets, done, ActionError, ActionResult, Command, Context, Flag, FlagValue};
-
-fn main() {
-	let _ = root_command().run_from_args(std::env::args().collect());
-}
-
-fn root_command() -> Command {
-	Command::with_name("multi")
-		.common_flag(Flag::new_bool("help").short_alias('h'))
-		.common_flag(Flag::new_bool("reverse").short_alias('r'))
-		.local_flag(Flag::new_bool("by-char").short_alias('c'))
-		.action(print_args)
-		.sub_command(add_command())
-		.sub_command(sub_command())
-}
-fn call_help(c: &Context, cur_cmd: &Command) -> Result<ActionResult, ActionError> {
-	println!("{}", presets::help(c, cur_cmd));
-	done!()
-}
-fn print_args(context: Context, current_command: Command) -> Result<ActionResult, ActionError> {
-	if called_help(&context, &current_command) {
-		return call_help(&context, &current_command);
-	}
-	let r: bool =
-		context.get_flag_value_of("reverse", &current_command) == Some(FlagValue::Bool(true));
-	let c: bool =
-		context.get_flag_value_of("by-char", &current_command) == Some(FlagValue::Bool(true));
-	let str = {
-		let str = if r && !c {
-			context
-				.args
-				.iter()
-				.rev()
-				.fold(String::new(), |c, arg| c + arg)
-		} else {
-			context.args.iter().fold(String::new(), |c, arg| c + arg)
-		};
-		if c {
-			str.chars().rev().collect::<String>()
-		} else {
-			str
-		}
-	};
-
-	println!("{}", str);
-
-	Ok(ActionResult::Done)
-}
-
-fn called_help(c: &Context, cc: &Command) -> bool {
-	Some(FlagValue::Bool(true)) == c.get_flag_value_of("help", cc)
-}
-
-fn add_command() -> Command {
-	Command::new()
-		.name("add")
-		.alias("a")
-		.action(add_action)
-		.local_flag(Flag::new_bool("detail").short_alias('d'))
-}
-
-fn add_action(c: Context, cmd: Command) -> Result<ActionResult, ActionError> {
-	if called_help(&c, &cmd) {
-		return call_help(&c, &cmd);
-	}
-	let f = |(str, sum), num: f64| (format!("{} {} +", str, num), sum + num);
-	let (mut str, sum): (String, f64) =
-		if c.get_flag_value_of("reverse", &cmd) == Some(FlagValue::Bool(true)) {
-			c.args
-				.iter()
-				.rev()
-				.filter_map(|arg| arg.parse().ok())
-				.fold((String::new(), 0.0), f)
-		} else {
-			c.args
-				.iter()
-				.filter_map(|arg| arg.parse().ok())
-				.fold((String::new(), 0.0), f)
-		};
-	str.pop();
-	str.pop();
-
-	if c.get_flag_value_of("detail", &cmd).unwrap().is_bool_true() {
-		println!("{} = {}", str, sum);
-	} else {
-		println!("{}", sum);
-	}
-	Ok(ActionResult::Done)
-}
-
-fn sub_command() -> Command {
-	Command::new()
-		.name("sub")
-		.alias("s")
-		.action(sub_action)
-		.local_flag(Flag::new_bool("sort").short_alias('s'))
-}
-
-fn sub_action(c: Context, cmd: Command) -> Result<ActionResult, ActionError> {
-	if called_help(&c, &cmd) {
-		return call_help(&c, &cmd);
-	}
-	let f = |(str, sum), (index, num): (usize, f64)| {
-		(
-			format!("{} {} -", str, num),
-			if index < 1 { num } else { sum - num },
-		)
-	};
-	let filter_map_f = |arg: &String| arg.parse().ok();
-	let (mut str, result): (String, f64) =
-		if c.get_flag_value_of("reverse", &cmd) == Some(FlagValue::Bool(true)) {
-			c.args
-				.iter()
-				.rev()
-				.filter_map(filter_map_f)
-				.enumerate()
-				.fold((String::new(), 0.0), f)
-		} else if c.get_flag_value_of("sort", &cmd).unwrap().is_bool_true() {
-			let mut fvec = c.args.iter().filter_map(filter_map_f).collect::<Vec<f64>>();
-			fvec.sort_by(|a, b| a.partial_cmp(b).unwrap());
-			fvec
-				.iter_mut()
-				.enumerate()
-				.fold((String::new(), 0.0), |s, (index, fl)| f(s, (index, *fl)))
-		} else {
-			c.args
-				.iter()
-				.filter_map(filter_map_f)
-				.enumerate()
-				.fold((String::new(), 0.0), f)
-		};
-	str.pop();
-	str.pop();
-
-	println!("{} = {}", str, result);
-
-	Ok(ActionResult::Done)
-}
-```
-
-### Run
-
-```bash
-cargo run --example multi -- a 1 2 3 4 5
-15
-cargo run --example multi -- s 1 2 3 4 5
--13
-```
+## [Multi (Have Sub command)](examples/multi.rs)
 
 # Inspired
 
@@ -294,8 +107,12 @@ cargo run --example multi -- s 1 2 3 4 5
 # TODO(or Features to be implemented)
 
 - ドキュメントコメントを分かりやすくする(いつになるかは無期限未定)
-- 必要そうなテストの実装(`command.rs` のフラグ解析テストは実装した)
-- コマンド構築にあたってのプリセット実装
+- 必要そうなテストの実装(`command.rs`は済んでいる、官僚は無期限未定)
+- コマンド構築にあたってのプリセット実装(主だったプリセット実装は済んでいるが、追加の可能性あり)
+
+# CONTRIBUTING
+
+If you want to contribute combu, please read [CONTRIBUTING.md](CONTRIBUTING.md) for checking our code of conduct, and submitting pull requests to us.
 
 # License
 

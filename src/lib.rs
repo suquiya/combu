@@ -22,10 +22,6 @@ pub mod action;
 /// command is a module about command
 pub mod command;
 
-// hook is erased.
-// /// hook for command execution
-// pub mod hook;
-
 mod context;
 /// flag is a module about flag
 pub mod flag;

@@ -624,6 +624,12 @@ macro_rules! action {
 			$($t)*
 		})
 	};
+	($cmd:ident,$ctx:ident,[$($ct:ident),*],{$($t:tt)*})=>{
+		$crate::action!($cmd,$ctx,core,{
+			$($crate::check!($ct);)*
+			$($t)*
+		})
+	};
 	($cmd:ident,$ctx:ident,s,{$($t:tt)*})=>{
 		$crate::action!($cmd,$ctx,{$($t)*})
 	};
@@ -638,6 +644,9 @@ macro_rules! action {
 			$($t)*
 		}
 	};
+	({$($t:tt)*})=>{
+		$crate::action(cmd,ctx,core,{$($t)*})
+	};
 	($($t:tt)*)=>{
 		$crate::action(cmd,ctx,core,{$($t)*})
 	}
@@ -646,7 +655,41 @@ macro_rules! action {
 #[macro_export]
 /// Build helper for action
 macro_rules! def_action_func {
-	($func_name:ident) => {};
+	($func_name:ident,$type:ident,$($t:tt)*)=>{
+		$crate::def_action_func!($func_name,cmd,ctx,$type,$($t)*)
+	};
+	($func_name:ident,$cmd:ident,$ctx:ident,$type:ident,$($t:tt)*) => {
+		$crate::def_action_func!($func_name,$cmd,$ctx,$type,$($t)*)
+	};
+	($func_name:ident,$cmd:ident,$ctx:ident,check_preset_flags,{$($t:tt)*}) => {
+		$crate::def_action_func!($func_name,$cmd,$ctx,core,{
+			check_preset_flags!($cmd,$ctx);
+			$($t)*
+		})
+	};
+	($func_name:ident,$cmd:ident,$ctx:ident,[$($ct:ident),*],{$($t:tt)*}) => {
+		$crate::def_action_func!($func_name,$cmd,$ctx,core,{
+			$($crate::check!($ct);)*
+			$($t)*
+		})
+	};
+	($func_name:ident,$cmd:ident,$ctx:ident,base,{$($t:tt)*}) => {
+		$crate::def_action_func!($func_name,$cmd,$ctx,core,$($t)*)
+	};
+	($func_name:ident,$cmd:ident,$ctx:ident,core,{$($t:tt)*}) => {
+		fn $func_name($cmd:$crate::Command,$ctx:$crate::Context)->$crate::action_result!(){
+			$($t)*
+		}
+	};
+	($func_name:ident,$cmd:ident,$ctx:ident,core,$($t:tt)*) => {
+		$crate::def_action_func!($func_name,$cmd,$ctx,{$($t)*})
+	};
+	($func_name:ident,{$($t:tt)*})=>{
+		$crate::def_action_func($func_name,core,{$($t)*})
+	};
+	($func_name:ident,$($t:tt)*)=>{
+		$crate::def_action_func($func_name,core,{$($t)*})
+	};
 }
 
 #[macro_export]

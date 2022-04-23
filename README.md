@@ -114,10 +114,6 @@ More detail of quick_start: See [quick_start.rs](examples/quick_start.rs)
 
 If you want to contribute combu, please read [CONTRIBUTING.md](CONTRIBUTING.md) for checking our code of conduct, and submitting pull requests to us.
 
-# Code of Conduct
-
-Contribution to the combu crate is organized under the terms of the Contributor Covenant, the maintainer of combu, @suquiya, promises to intervene to uphold that code of conduct.
-
 # Author(s?)
 
 [suquiya](https://github.com/suquiya).

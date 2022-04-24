@@ -284,13 +284,13 @@ pub mod flag {
 	}
 
 	/// A trait for the ability to search flags for three forms.
-	pub trait FlagSearch<T: Default = Flag> {
+	pub trait FlagSearch {
 		/// Finds long frag.
-		fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&T>;
+		fn find_long_flag(&self, name_or_alias: &str) -> LongFound<&Flag>;
 		/// Finds short flag.
-		fn find_short_flag(&self, short_alias: &char) -> Option<&T>;
+		fn find_short_flag(&self, short_alias: &char) -> Option<&Flag>;
 		/// Finds flag that has specidied name.
-		fn find(&self, name: &str) -> Option<&T>;
+		fn find(&self, name: &str) -> Option<&Flag>;
 	}
 
 	impl FlagSearch for Vector<Flag> {

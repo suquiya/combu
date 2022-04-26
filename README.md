@@ -1,5 +1,9 @@
 # combu
 
+![crates.io](https://img.shields.io/crates/v/combu)
+![version](https://img.shields.io/github/v/tag/suquiya/combu)
+![license](https://img.shields.io/github/license/suquiya/combu)
+
 <div align="center">
 	<img src="combu_logo.png"></img>
 </div>

@@ -1,7 +1,7 @@
 # combu
 
 <div align="center">
-![Logo](combu_logo.png)
+	<img src="combu_logo.png"></img>
 </div>
 
 [combu](https://crates.io/crates/combu) is a customizable cli framework.

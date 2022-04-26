@@ -1,6 +1,8 @@
 # combu
 
+<div align="center">
 ![Logo](combu_logo.png)
+</div>
 
 [combu](https://crates.io/crates/combu) is a customizable cli framework.
 The library name "combu" comes from command + 昆布(konbu, it means kelp in japanese).

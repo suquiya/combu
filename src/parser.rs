@@ -1706,12 +1706,9 @@ pub fn gen_error_description(err_info: &ErrorInfo) -> String {
 				l_flag
 			)
 		}
-		(flag_arg, local_error, common_error) => {
+		(flag_arg, _, _) => {
 			//どれでもない状況になったとき
-			format!(
-				"arg: {:?}, error in parse local flag: {:?}, error in parse common flag: {:?}",
-				flag_arg, local_error, common_error
-			)
+			format!("Error occured in parseing arg: {}", flag_arg.name(),)
 		}
 	}
 }

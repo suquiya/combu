@@ -314,7 +314,7 @@ macro_rules! char {
 }
 
 #[macro_export]
-/// Checks context has specified flag.
+/// Checks context macro.
 macro_rules! check {
 	(error)=>{
 		$crate::check_error!();
@@ -354,6 +354,17 @@ macro_rules! check {
 			$($t)*
 		}
 	};
+}
+
+#[macro_export]
+/// List check macro
+macro_rules! checks {
+	 ($cmd:ident,$ctx:ident,[$($ct:ident),*]) => {
+		  $($crate::check!($ct,$cmd,$ctx);)*
+	 };
+	 ([$($ct:ident),*],$cmd:ident,$ctx:ident)=>{
+		 $($crate::check!($ct,$cmd,$ctx);)*
+	 };
 }
 
 #[macro_export]
@@ -460,10 +471,8 @@ macro_rules! check_copyright {
 #[macro_export]
 /// Checks context has values of the preset flags.
 macro_rules! check_preset_flags {
-	($ctx:ident$(,)?$cmd:ident$(,)?) => {
-		$crate::check_help!($cmd,$ctx)
-		$crate::check_authors!($cmd,$ctx)
-		$crate::check_version!($cmd,$ctx)
+	($cmd:ident$(,)?$ctx:ident$(,)?) => {
+		$crate::checks!($cmd, $ctx, [error, help, version, license, authors]);
 	};
 }
 
@@ -710,7 +719,7 @@ macro_rules! def_action_func {
 	};
 	($func_name:ident,$cmd:ident,$ctx:ident,[$($ct:ident),*],{$($t:tt)*}) => {
 		$crate::def_action_func!($func_name,$cmd,$ctx,core,{
-			$($crate::check!($ct,$cmd,$ctx);)*
+			$crate::checks!([$($ct),*],$cmd,$ctx);
 			$($t)*
 		});
 	};

@@ -311,6 +311,26 @@ impl Context {
 	pub fn depth(&self) -> usize {
 		self.common_flags.len()
 	}
+
+	/// Returns true is self has no error in error_info_list
+	pub fn has_no_error(&self) -> bool {
+		self.error_info_list.is_empty()
+	}
+
+	/// Returns error info list's length
+	pub fn num_of_error(&self) -> usize {
+		self.error_info_list.len()
+	}
+
+	/// Returns true if error info list's length is more than one.
+	pub fn has_error(&self) -> bool {
+		self.error_info_list.has_at_least_one()
+	}
+
+	/// Returns info of first parse error, or None if it does not exist.
+	pub fn first_error(&self) -> Option<&ErrorInfo> {
+		self.error_info_list.first()
+	}
 }
 
 impl<'a> From<Vec<String>> for Context {

@@ -39,7 +39,7 @@ fn main() {
 		.run_from_args(env::args().collect());
 }
 
-def_action_func!(act, cmd, c, [help], {
+def_action_func!(act, cmd, c, [help, error], {
 	println!("Hello, combu - {:?}", c.args);
 	println!("{:?}", c);
 	done!()
@@ -53,7 +53,6 @@ fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionRes
 	println!("{:?}", c);
 
 	done!()
-	// Or use combu::Done and Ok(Done)
 }
 */
 

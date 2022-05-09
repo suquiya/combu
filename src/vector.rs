@@ -214,6 +214,30 @@ impl<T> Vector<T> {
 			Vector(None) => panic!("This vector's inner is None."),
 		}
 	}
+
+	/// Returns true if inner is None or has no elements.
+	pub fn is_empty(&self) -> bool {
+		match self {
+			Vector(None) => true,
+			Vector(Some(vec)) => vec.len() < 1,
+		}
+	}
+
+	/// Returns first element of self or None if self is empty.
+	pub fn first(&self) -> Option<&T> {
+		match self {
+			Vector(Some(vec)) => vec.first(),
+			Vector(None) => None,
+		}
+	}
+
+	/// Returns first element of self. If Self is Vector(NOne), error occured.
+	pub fn first_unwrap(&self) -> &T {
+		match self {
+			Vector(Some(vec)) => vec.first().unwrap(),
+			Vector(None) => panic!(),
+		}
+	}
 }
 
 impl<T> From<Vector<T>> for Vector<Vector<T>> {

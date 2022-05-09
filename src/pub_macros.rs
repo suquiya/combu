@@ -316,6 +316,12 @@ macro_rules! char {
 #[macro_export]
 /// Checks context has specified flag.
 macro_rules! check {
+	(error)=>{
+		$crate::check_error!();
+	};
+	(error, $($t:tt)*)=>{
+		$crate::check_error!($($t)*);
+	};
 	(help, $cmd:ident, $ctx:ident)=>{
 		$crate::check!(help,$cmd,$ctx,combu::command::presets::func::help_tablize_with_alias_dedup);
 	};
@@ -348,11 +354,40 @@ macro_rules! check {
 			$($t)*
 		}
 	};
-	($member:ident,$ctx:ident,$cmd:ident,$($t:tt)*)=>{
-		if($ctx.is_flag_true(stringify!($member),&$cmd)){
+}
+
+#[macro_export]
+/// Macro for parse error check
+macro_rules! check_error {
+	($ctx:ident)=>{
+		$crate::check_error!($ctx,{
+			println!("{}", combu::parser::preset::gen_error_description(error_info));
+			return $crate::done!();
+		})
+	};
+	($cmd:ident,$ctx:ident)=>{
+		$crate::check_error!($cmd,$ctx,>error_info,{
+			println!("{}", combu::parser::preset::gen_error_description(error_info));
+			println!("{}",combu::command::presets::func::help_tablize_with_alias_dedup(&$cmd,&$ctx));
+			return $crate::done!();
+		})
+	};
+	($ctx:ident,{$($t:tt)*})=>{
+		$crate::check_error!($ctx,>error_info,{$($t)*})
+	};
+	($cmd:ident,$ctx:ident,{$($t:tt)*})=>{
+		$crate::check_error!($cmd,$ctx,>error_info,{$($t)*})
+	};
+	($ctx:ident, >$error_info:ident, {$($t:tt)*}) => {
+		if let Some($error_info) = $ctx.first_error() {
 			$($t)*
 		}
 	};
+	($cmd:ident, $ctx:ident,>$error_info:ident,{$($t:tt)*})=>{
+		if let Some($error_info) = $ctx.first_error(){
+			$($t)*
+		}
+	}
 }
 
 #[macro_export]

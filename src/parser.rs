@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 pub struct Parser {
 	/// flag_pattern. Default is '-'.
 	pub flag_pattern: char,
-	/// Long-flag prefix. Default is "--".
+	/// Long-flag pre&&fix. Default is "--".
 	pub long_flag_prefix: String,
 	/// equal symbol. Default is "="
 	pub eq: char,
@@ -1656,59 +1656,95 @@ pub enum ParseError {
 /// Type of error information
 pub type ErrorInfo = (MiddleArg, ParseError, ParseError);
 
-/// Generates error description.
-pub fn gen_error_description(err_info: &ErrorInfo) -> String {
-	match err_info {
-		(flag_arg, ParseError::NoExistShort(i), ParseError::NoExistShort(_)) => {
-			let name = flag_arg.name();
-			format!(
-				"The short flag {} in {} is an unknown short flag.",
-				name.chars().nth(*i).unwrap(),
-				name
-			)
+/// Presets for output Error info
+pub mod preset {
+	use super::{ErrorInfo, MiddleArg, ParseError};
+
+	/// Generates error description.
+	pub fn gen_error_description(err_info: &ErrorInfo) -> String {
+		let mut description = String::from("Error occured in parseing ");
+		match &err_info.0 {
+			MiddleArg::Normal(name) => {
+				description.push_str("arg:");
+				description.push_str(&name);
+			}
+			MiddleArg::LongFlag(name, _) => {
+				description.push_str("flag: --");
+				description.push_str(&name)
+			}
+			MiddleArg::ShortFlag(name, _) => {
+				description.push_str("short flag: -");
+				description.push_str(&name);
+			}
 		}
-		(flag_arg, ParseError::NoExistLong, ParseError::NoExistLong) => {
-			format!("The flag {} is an unknown flag.", flag_arg.name())
-		}
-		(flag_arg, ParseError::NoExistShort(_), ParseError::InvalidShort(i, c_flag)) => {
-			let (name, val) = flag_arg.inner_if_string_val().unwrap();
-			format!(
-				"The value of short flag {} in {} - {} is not valid for a common flag {}.",
-				name.chars().nth(*i).unwrap(),
-				name,
-				val,
-				c_flag
-			)
-		}
-		(flag_arg, ParseError::NoExistLong, ParseError::InvalidLong(chit)) => {
-			let (name, val) = flag_arg.inner_if_string_val().unwrap();
-			format!(
-				"The flag {} matches a common flag {}. But its value {} is invalid for {}.",
-				name,
-				chit,
-				val,
-				flag_arg.get_flag_type_str()
-			)
-		}
-		(flag_arg, ParseError::InvalidShort(i, l_flag), _) => {
-			let (name, val) = flag_arg.inner_if_string_val().unwrap();
-			format!(
-				"The flag {}{}'s value {} is not valid for a local flag {}.",
-				name.chars().nth(*i).unwrap(),
-				{
-					if name.chars().count() < 2 {
-						""
-					} else {
-						name
-					}
-				},
-				val,
-				l_flag
-			)
-		}
-		(flag_arg, _, _) => {
-			//どれでもない状況になったとき
-			format!("Error occured in parseing arg: {}", flag_arg.name(),)
-		}
+		description.push_str(".\n");
+		match err_info {
+			(flag_arg, ParseError::NoExistShort(i), ParseError::NoExistShort(_)) => {
+				let name = flag_arg.name();
+				description = format!(
+					"{}The short flag {} is an unknown short flag.",
+					description,
+					match name.len() {
+						1 => {
+							let mut s = String::from("-");
+							s.push(name.chars().nth(*i).unwrap());
+							s
+						}
+						_ => {
+							let mut s = String::from("\"");
+							s.push(name.chars().nth(*i).unwrap());
+							s.push('"');
+							s.push_str(" in ");
+							s.push_str(name);
+							s
+						}
+					},
+				);
+			}
+			(flag_arg, ParseError::NoExistLong, ParseError::NoExistLong) => {
+				format!("The flag --{} is an unknown flag.", flag_arg.name());
+			}
+			(flag_arg, ParseError::NoExistShort(_), ParseError::InvalidShort(i, c_flag)) => {
+				let (name, val) = flag_arg.inner_if_string_val().unwrap();
+				description = format!(
+					"{}The value of short flag {} in {} - {} is not valid for a common flag {}.",
+					description,
+					name.chars().nth(*i).unwrap(),
+					name,
+					val,
+					c_flag
+				);
+			}
+			(flag_arg, ParseError::NoExistLong, ParseError::InvalidLong(chit)) => {
+				let (name, val) = flag_arg.inner_if_string_val().unwrap();
+				description = format!(
+					"{}The flag {} matches a common flag {}. But its value {} is invalid for {}.",
+					description,
+					name,
+					chit,
+					val,
+					flag_arg.get_flag_type_str()
+				);
+			}
+			(flag_arg, ParseError::InvalidShort(i, l_flag), _) => {
+				let (name, val) = flag_arg.inner_if_string_val().unwrap();
+				description = format!(
+					"{}The flag {}{}'s value {} is not valid for a local flag {}.",
+					description,
+					name.chars().nth(*i).unwrap(),
+					{
+						if name.chars().count() < 2 {
+							""
+						} else {
+							name
+						}
+					},
+					val,
+					l_flag
+				);
+			}
+			(_, _, _) => {}
+		};
+		description
 	}
 }

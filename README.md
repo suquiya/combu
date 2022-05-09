@@ -16,7 +16,7 @@ Crate.io's page is [here](https://crates.io/crates/combu).
 
 combu(com + 昆布)は柔軟に CLI を組み上げられることを目標とした、カスタマイズ可能な CLI フレームワークです（一時クレートの名前が cmb だったこともありましたが、現在は combu です）。
 
-# Features
+# Features (特徴)
 
 - flag parsing in Unix format (Unix 形式でのフラグパース)
 - Nestable sub commmands (サブコマンド（多重可能）)
@@ -33,12 +33,14 @@ combu(com + 昆布)は柔軟に CLI を組み上げられることを目標と�
 
 [Here](https://docs.rs/combu/)
 
-# Installation to your project
+# Installation to your project (プロジェクトでの使用方法)
 
 Combu exists on crates.io.
 You can use(or import) this crate like other crate that exists on crates.io.
 
-## Edit cargo.toml manually
+combu は crates.io に登録してありますので、他の crates.io 上のクレートと同じように使用（インポート）することが可能です。
+
+## Edit cargo.toml manually (手動での cargo.toml への追加)
 
 Add
 
@@ -48,13 +50,17 @@ combu="[version you want to use]"
 
 to cargo.toml.
 
-## Use cargo-edit (Recommended)
+上記コードでバージョンを指定して、cargo.toml に追加してください。
+
+## Use cargo-edit (Recommended) (cargo-edit でプロジェクトに追加する(推奨))
 
 If you installed cargo-edit, exec below command under the target project:
 
 ```bash
 cargo add combu
 ```
+
+cargo-edit をインストールしてある場合は、上記のコマンドを実行することで使用可能です。
 
 # Quick Start
 

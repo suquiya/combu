@@ -135,7 +135,7 @@ README Contribute: [ksk001100](https://github.com/ksk001100) contributed on [thi
 
 # License
 
-This is licensed under [MIT LICENSE](https://github.com/suquiya/combu/blob/master/LICENSE)
+This is licensed under [MIT LICENSE](https://github.com/suquiya/combu/blob/main/LICENSE)
 
 # Information about construct for this README.md
 

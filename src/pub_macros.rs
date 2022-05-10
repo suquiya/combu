@@ -3085,7 +3085,7 @@ macro_rules! string_fn {
 		|_: &$crate::Command, _: &$crate::Context| -> String { $string }
 	};
 	(file_path=>$file_path:expr) => {
-		$crate::string_fn!(include_str!($file_path))
+		$crate::string_fn!(include_str!($file_path).to_owned())
 	};
 }
 

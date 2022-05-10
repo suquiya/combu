@@ -65,8 +65,8 @@ cargo-edit をインストールしてある場合は、上記のコマンドを
 # Quick Start
 
 ```rust
-use combu::command::presets::func::{help, help_tablize_with_alias_dedup};
-use combu::{action_result, check_help, done, preset_root, Command};
+use combu::command::presets::func::help_tablize_with_alias_dedup;
+use combu::{action_result, check_error, check_help, done, preset_root, Command};
 use combu::{Context, Flag};
 use std::env;
 
@@ -81,19 +81,18 @@ fn main() {
 		.local_flag(
 			Flag::new_bool("local")
 				.short_alias('l')
-				//.alias("test")
 				.description("local flag"),
 		)
 		.run_from_args(env::args().collect());
 }
 
-fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
+fn act(cmd: Command, c: Context) -> action_result!()
 {
+	check_error!(cmd, c);
 	check_help!(cmd, c, help_tablize_with_alias_dedup);
 	println!("Hello, combu - {:?}", c.args);
 
 	done!()
-	// Or use combu::Done and Ok(Done)
 }
 ```
 
@@ -104,7 +103,7 @@ cargo run --example quick_start
 cargo run --example quick_start --help
 ```
 
-More detail of quick_start: See [quick_start.rs](examples/quick_start.rs)
+More detail: See [quick_start.rs](examples/quick_start.rs)
 
 # Example
 

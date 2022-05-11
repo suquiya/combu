@@ -881,8 +881,8 @@ macro_rules! _preset_flag_constructor {
 			$description,
 			$crate::default_value!(flag.$ident.short.alias),
 			$crate::vector![None;:String],
-			crate::FlagType::Bool,
-			crate::FlagValue::Bool(false)
+			$crate::FlagType::Bool,
+			$crate::FlagValue::Bool(false)
 		)
 	};
 }
@@ -1721,7 +1721,7 @@ macro_rules! copyright {
 /// Helps for creating flag*s*.
 macro_rules! flags {
 	()=>{
-		flags!(None)
+		$crate::flags!(None)
 	};
 	(None)=>{
 		$crate::vector!(None;:Flag)

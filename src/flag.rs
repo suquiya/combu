@@ -420,11 +420,11 @@ pub mod presets {
 
 	/// Creates preset help flag
 	pub fn help_flag() -> Flag {
-		crate::help_flag!()
+		super::super::help_flag!()
 	}
 	/// Creates preset help flag with arg descripton.
 	pub fn help_flag_with_description<T: Into<String>>(description: T) -> Flag {
-		crate::help_flag!(->description.into())
+		super::super::help_flag!(->description.into())
 	}
 
 	/// Creates preset version flag

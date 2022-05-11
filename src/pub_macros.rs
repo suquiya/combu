@@ -2010,8 +2010,29 @@ macro_rules! _flag_basic_constructor {
 #[doc(hidden)]
 // inner for first parse name and tify little after name.
 macro_rules! _ffp {
-	(>$expr:expr)=>{
+	(=$(>)*$expr:expr)=>{
 		$expr
+	};
+	($(>)+$expr:expr)=>{
+		$expr
+	};
+	(help)=>{
+		$crate::help_flag!()
+	};
+	(version)=>{
+		$crate::version_flag!()
+	};
+	(authors)=>{
+		$crate::authors_flag!()
+	};
+	(license)=>{
+		$crate::license_flag!()
+	};
+	(yes)=>{
+		$crate::yes_flag!()
+	};
+	(no)=>{
+		$crate::no_flag!()
 	};
 	(->$name:ident$t:tt)=>{
  		$crate::_fsp!(->$name=>$t)

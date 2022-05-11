@@ -2010,6 +2010,9 @@ macro_rules! _flag_basic_constructor {
 #[doc(hidden)]
 // inner for first parse name and tify little after name.
 macro_rules! _ffp {
+	(>$expr:expr)=>{
+		$expr
+	};
 	(->$name:ident$t:tt)=>{
  		$crate::_fsp!(->$name=>$t)
  	};

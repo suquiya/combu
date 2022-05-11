@@ -2140,7 +2140,7 @@ macro_rules! _ftp{
 		$crate::_ftp![->$name=>[$($t)*]]
 	};
 	(->$name:expr=>[]) => {
-		$crate::_ftp!(->$name=>[=String::default(),s~Vector::default(),l~Vector::default(),>FlagType::default(),?$crate::flag_value!(bool)])
+		$crate::_ftp!(->$name=>[=String::default(),s~$crate::Vector::default(),l~$crate::Vector::default(),>$crate::FlagType::default(),?$crate::flag_value!(bool)])
 	};
 	(->$name:expr=>[$i:ident])=>{
 		$crate::_fp_ident_ft_assigner!(->$name=>[$i],_ftp,=)

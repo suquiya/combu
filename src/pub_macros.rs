@@ -2010,10 +2010,19 @@ macro_rules! _flag_basic_constructor {
 #[doc(hidden)]
 // inner for first parse name and tify little after name.
 macro_rules! _ffp {
+	([$($t:tt)+])=>{
+		$crate::_ffp!($($t)*)
+	};
+	({$($t:tt)+})=>{
+		$crate::_ffp!($($t)*)
+	};
+	(($($t:tt)+))=>{
+		$crate::_ffp!($($t)*)
+	};
 	(=$(>)*$expr:expr)=>{
 		$expr
 	};
-	($(>)+$expr:expr)=>{
+	(>$(>)*$expr:expr)=>{
 		$expr
 	};
 	(help)=>{
@@ -2099,7 +2108,7 @@ macro_rules! _ffp {
 	};
 	(->$name:expr)=>{
 		$crate::_fsp!(->$name)
-	}
+	};
 }
 
 #[macro_export]
@@ -3406,7 +3415,7 @@ mod tests {
 					FlagType::Bool,
 					FlagValue::Bool(false)
 				]
-			)
+			),
 		);
 		let _f = String::from("test_flag");
 		assert_eqs!(
@@ -3528,12 +3537,12 @@ mod tests {
 				--[long,long2],
 				bool?false
 			]),
-			flag!(test_flag=>[
+			flag!([test_flag=>[
 				=_t,
 				s~Vector(Some(vec!['s', 'f'])),
 				--[long, long2],
 				>bool?false
-			]),
+			]]),
 			flag!(test_flag[
 				=_t,
 				s~[s f],
@@ -3572,6 +3581,12 @@ mod tests {
 				-s,f,a,
 				--[long, long2],
 				?false]),
+			flag!([test_flag=>[
+				>bool,
+				_t,
+				-s,f,a,
+				--[long, long2],
+				?false]]),
 		);
 		assert_eqs!(
 			{

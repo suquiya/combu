@@ -333,7 +333,7 @@ macro_rules! check {
 	};
 	(license,$cmd:ident,$ctx:ident)=>{
 		$crate::check!(license,$cmd,$ctx,{
-			println!($cmd.license.output().unwrap());
+			println!("{}",$cmd.license.output().unwrap());
 			return $crate::done!();
 		})
 	};

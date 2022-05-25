@@ -333,7 +333,7 @@ macro_rules! check {
 	};
 	(license,$cmd:ident,$ctx:ident)=>{
 		$crate::check!(license,$cmd,$ctx,{
-			println!("{}",$cmd.license.output().unwrap());
+			println!("{}",$cmd.license.output(&$cmd,&$ctx).unwrap());
 			return $crate::done!();
 		})
 	};
@@ -359,10 +359,10 @@ macro_rules! check {
 #[macro_export]
 /// List check macro
 macro_rules! checks {
-	 ($cmd:ident,$ctx:ident,[$($ct:ident),*]) => {
+	 ($cmd:ident,$ctx:ident,[$($ct:ident),*$(,)?]) => {
 		  $($crate::check!($ct,$cmd,$ctx);)*
 	 };
-	 ([$($ct:ident),*],$cmd:ident,$ctx:ident)=>{
+	 ([$($ct:ident),*$(,)?],$cmd:ident,$ctx:ident)=>{
 		 $($crate::check!($ct,$cmd,$ctx);)*
 	 };
 }

@@ -1730,10 +1730,10 @@ macro_rules! flags {
 		$expr
 	};
 	($($flag_arg:tt);* $(;)?) => {
-		$crate::vector![$($crate::flag!$flag_arg),*]
+		$crate::vector![$($crate::flag![$flag_arg]),*]
 	};
 	($($flag_arg:tt),* $(,)?) => {
-		$crate::vector![$($crate::flag!$flag_arg),*]
+		$crate::vector![$($crate::flag![$flag_arg]),*]
 	};
 	($($flag_name:ident$sep:tt$flag_arg:tt),* $(,)?)=>{
 		$crate::flags!($([$flag_name=>$flag_arg]),*);
@@ -3837,6 +3837,10 @@ mod tests {
 				test_flag3[>bool ="test3" -e ?false],
 			)
 		);
+
+		let _r = vector!(help_flag!());
+		assert_eq!(_r.clone(), flags!([help]));
+		assert_eq!(_r.clone(), flags!(help));
 	}
 
 	fn get_context_for_test() -> Context {

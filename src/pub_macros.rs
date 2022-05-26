@@ -2974,25 +2974,25 @@ macro_rules! flag_value {
 		$crate::flag_value!(bool, $val)
 	};
 	(true) => {
-		flag_value!(bool, true)
+		$crate::flag_value!(bool, true)
 	};
 	(false) => {
-		flag_value!(bool, false)
+		$crate::flag_value!(bool, false)
 	};
 	(int, $val:expr) => {
 		$crate::FlagValue::Int($val)
 	};
 	(i, $val:expr) => {
-		flag_value!(int, $val)
+		$crate::flag_value!(int, $val)
 	};
 	(Int, $val:expr) => {
-		flag_value!(int, $val)
+		$crate::flag_value!(int, $val)
 	};
 	(Integer, $val:expr) => {
-		flag_value!(int, $val)
+		$crate::flag_value!(int, $val)
 	};
 	(integer, $val:expr) => {
-		flag_value!(int, $val)
+		$crate::flag_value!(int, $val)
 	};
 	(float, $val:expr) => {
 		$crate::FlagValue::Float($val)
@@ -3013,19 +3013,19 @@ macro_rules! flag_value {
 		$crate::FlagValue::String($val)
 	};
 	(s,$val:expr) => {
-		flag_value!(str, $val)
+		$crate::flag_value!(str, $val)
 	};
 	(S,$val:expr) => {
-		flag_value!(str, $val)
+		$crate::flag_value!(str, $val)
 	};
 	(Str, $val:expr) => {
-		flag_value!(str, $val)
+		$crate::flag_value!(str, $val)
 	};
 	(String, $val:expr) => {
-		flag_value!(str, $val)
+		$crate::flag_value!(str, $val)
 	};
 	(string, $val:expr) => {
-		flag_value!(str, $val)
+		$crate::flag_value!(str, $val)
 	};
 	($i:ident$(,)?) => {
 		$crate::flag_value!($i, $crate::type_default_value!($i))
@@ -3126,7 +3126,7 @@ macro_rules! string_fn {
 /// create license helper
 macro_rules! license {
 	()=>{
-		license!(None)
+		$crate::license!(None)
 	};
 	(none) => {
 		$crate::command::License(None)
@@ -3150,7 +3150,7 @@ macro_rules! license {
 		$crate::license!($expr,fp:$file_path)
 	};
 	($expr:expr,outputter=>$fn:expr)=>{
-		license!($expr,$fn)
+		$crate::license!($expr,$fn)
 	};
 	($expr:expr, ->$content_result:literal)=>{
 		$crate::license!($expr,$crate::string_fn!($content_result))
@@ -3165,19 +3165,19 @@ macro_rules! license {
 		$crate::license!($expr, $crate::string_fn!($content))
 	};
 	($expr:expr, file_path=>$file_path:expr) => {
-		license!($expr, $crate::string_fn!(file_path=>$file_path))
+		$crate::license!($expr, $crate::string_fn!(file_path=>$file_path))
 	};
 	($expr:expr, $c:expr$(,)?)=>{
-		license!($expr,$c)
+		$crate::license!($expr,$c)
 	};
 	($expr:expr, $i:ident=>$c:expr$(,)?)=>{
-		license!($expr,$i=>$c)
+		$crate::license!($expr,$i=>$c)
 	};
 	(expr=>$expr:expr, $c:expr$(,)?)=>{
-		license!($expr,$c)
+		$crate::license!($expr,$c)
 	};
 	(expr=>$expr:expr, $i:ident=>$c:expr$(,)?)=>{
-		license!($expr,$i=>$c)
+		$crate::license!($expr,$i=>$c)
 	};
 	(->$license:expr)=>{
 		$license

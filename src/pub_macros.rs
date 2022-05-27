@@ -493,6 +493,14 @@ macro_rules! done {
 }
 
 #[macro_export]
+/// alias of Ok(ActionResult::Result(cmd, ctx))
+macro_rules! result {
+	($cmd:expr, $ctx:expr) => {
+		Ok($crate::ActionResult::Result($cmd, $ctx))
+	};
+}
+
+#[macro_export]
 /// Gets crate name from cargo.toml.
 macro_rules! crate_name {
 	() => {

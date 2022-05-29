@@ -186,11 +186,35 @@ impl FlagValue {
 		matches!(self, FlagValue::Bool(true))
 	}
 
+	/// Returns inner bool value. If self is not FlagValue::Bool(val), returns None.
+	pub fn get_bool(&self) -> Option<bool> {
+		match self {
+			FlagValue::Bool(val) => Some(*val),
+			_ => None,
+		}
+	}
+
 	/// Returns inner bool value. If self is not FlagValue::Bool(val), panic will occur.
-	pub fn get_bool(&self) -> bool {
+	pub fn get_bool_unwrap(&self) -> bool {
 		match self {
 			FlagValue::Bool(val) => *val,
-			_ => panic!("get_bool mut use against FlagValue::Bool"),
+			_ => panic!("get_bool must use against FlagValue::Bool"),
+		}
+	}
+
+	/// Returns inner isize value. If self is not FlagValue::Bool(val), returns None.
+	pub fn get_int(&self) -> Option<isize> {
+		match self {
+			FlagValue::Int(val) => Some(*val),
+			_ => None,
+		}
+	}
+
+	/// Returns inner isize value. If self is not FlagValue::Bool(val), panic will occur.
+	pub fn get_int_unwrap(&self) -> isize {
+		match self {
+			FlagValue::Int(val) => *val,
+			_ => panic!("get_int must use against FlagValue::Int"),
 		}
 	}
 }

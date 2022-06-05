@@ -217,6 +217,14 @@ impl FlagValue {
 			_ => panic!("get_int must use against FlagValue::Int"),
 		}
 	}
+
+	/// Returns inner float value. If self is not FlagValue::Float(val), returns None.
+	pub fn get_float(&self) -> Option<f64> {
+		match self {
+			FlagValue::Float(val) => Some(*val),
+			_ => None,
+		}
+	}
 }
 
 impl Default for Flag {

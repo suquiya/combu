@@ -3047,7 +3047,7 @@ pub mod presets {
 						append_to = add_type_suffix(append_to, &f.flag_type);
 						let nl_len = append_to.len() - prev_help_len;
 						append_to = append_to
-							+ &sp.repeat(nl_col_width - nl_len + gap_width)
+							+ &sp.repeat(nl_col_width + gap_width - nl_len)
 							+ &f.description + suffix;
 					}
 				} else {

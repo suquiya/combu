@@ -121,7 +121,7 @@ More detail: See [quick_start.rs](examples/quick_start.rs)
 # TODO(or Features to be implemented)
 
 - ドキュメントコメントを分かりやすくする(いつになるかは無期限未定)
-- 必要そうなテストの実装(`command.rs`は済んでいる、官僚は無期限未定)
+- 必要そうなテストの実装(`command.rs`は済んでいる、完了は無期限未定)
 - コマンド構築にあたってのプリセット実装(主だったプリセット実装は済んでいるが、追加の可能性あり)
 
 # CONTRIBUTING

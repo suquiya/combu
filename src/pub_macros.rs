@@ -323,7 +323,7 @@ macro_rules! check {
 		$crate::check_error!($($t)*);
 	};
 	(help, $cmd:ident, $ctx:ident)=>{
-		$crate::check!(help,$cmd,$ctx,combu::command::presets::func::help_tablize_with_alias_dedup);
+		$crate::check!(help,$cmd,$ctx,$crate::command::presets::func::help_tablize_with_alias_dedup);
 	};
 	(help,$cmd:ident,$ctx:ident,$func:path)=>{
 		$crate::check!(help,$cmd,$ctx,{
@@ -372,14 +372,14 @@ macro_rules! checks {
 macro_rules! check_error {
 	($ctx:ident)=>{
 		$crate::check_error!($ctx,{
-			println!("{}", combu::parser::preset::gen_error_description(error_info));
+			println!("{}", $crate::parser::preset::gen_error_description(error_info));
 			return $crate::done!();
 		})
 	};
 	($cmd:ident,$ctx:ident)=>{
 		$crate::check_error!($cmd,$ctx,>error_info,{
-			println!("{}", combu::parser::preset::gen_error_description(error_info));
-			println!("{}",combu::command::presets::func::help_tablize_with_alias_dedup(&$cmd,&$ctx));
+			println!("{}", $crate::parser::preset::gen_error_description(error_info));
+			println!("{}",$crate::command::presets::func::help_tablize_with_alias_dedup(&$cmd,&$ctx));
 			return $crate::done!();
 		})
 	};
@@ -4296,5 +4296,50 @@ mod tests {
 			default_value!(name.flag.help),
 			default_name!(flag.help)
 		);
+	}
+
+	#[test]
+	fn preset_help_check_test() {
+		let act = |cmd: Command, ctx: Context| -> action_result!() {
+			checks!(cmd, ctx, [error, help, version, license]);
+			println!("check passed!");
+			done!()
+		};
+		let _r = Command::with_all_field(
+			crate_name!().into(),
+			Some(act),
+			crate_authors!().into(),
+			copyright!(from_crate, 2022),
+			license!("MIT License",file_path=>"../LICENSE"),
+			Some(crate_description!().into()),
+			"exam [OPTIONS]".into(),
+			flags![
+				 [
+					  [length]=>[>int?20,="password length option. default: 20",-l]
+				 ],
+				 [
+					  [number]=>[>int?7,="password number option. default: 7",-n]
+				 ],
+				 [
+					  [include]=>[>String,="chooses chars indicate type password include. Types are alphabet(a),number(n),symbol(s) and default(d). You can specify multiple chars(ex: an). default=ans",-i,?"d"]
+				 ],
+				 [
+					  [exclude]=>[
+							>String?"",
+							="Password will generate without chars that is specidied by this flag",-e
+					  ]
+				 ],
+				 [
+					  [custom]=>[
+							>String?"",
+							="Password will generate with only chars that is specidied by this flag. this option is inputted, include option is disabled. default: disable",-c,-m,--cstm
+					  ]
+				 ]
+			],
+			flags!(help, version, license),
+			alias!(),
+			crate_version!().into(),
+			commands!(),
+		).run_from_args(vec!["help".to_owned(),"--help".to_owned()]);
 	}
 }

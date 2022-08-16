@@ -3107,6 +3107,7 @@ pub mod presets {
 							}
 							nl_list.append(&mut la);
 						}
+						nl_width += flag_type_suffix_len(&f.flag_type);
 						nl_col_width = max(nl_width, nl_col_width);
 						nl_columns.push_back(nl_list.clone());
 						if let Vector(Some(sa)) = &f.short_alias {

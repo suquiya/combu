@@ -3215,6 +3215,32 @@ macro_rules! preset_help_command {
 	};
 }
 
+/// Print preset help shortcut
+#[macro_export]
+macro_rules! output_help {
+	() => {
+		$crate::output_help!(cmd, ctx)
+	};
+	(false) => {
+		$crate::output_help!(cmd, ctx, false)
+	};
+	($cmd:expr,$ctx:expr,false) => {
+		$crate::output_help!(help_tablize_with_alias_dedup, $cmd, $ctx, false)
+	};
+	($cmd:expr,$ctx:expr) => {
+		$crate::output_help!(help_tablize_with_alias_dedup, $cmd, $ctx)
+	};
+	($func:ident,$cmd:expr,$ctx:expr) => {
+		$crate::output_help!($func, $cmd, $ctx, true)
+	};
+	($func:ident,$cmd:expr,$ctx:expr, true) => {
+		println!("{}", $crate::command::presets::func::$func($cmd, $ctx));
+	};
+	($func:ident,$cmd:expr,$ctx:expr, false) => {
+		$crate::command::presets::func::$func($cmd, $ctx)
+	};
+}
+
 #[cfg(test)]
 mod tests {
 	use std::collections::VecDeque;

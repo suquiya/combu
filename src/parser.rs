@@ -1662,7 +1662,7 @@ pub mod preset {
 
 	/// Generates error description.
 	pub fn gen_error_description(err_info: &ErrorInfo) -> String {
-		let mut description = String::from("Error occured in parseing ");
+		let mut description = String::from("Parse error: ");
 		match &err_info.0 {
 			MiddleArg::Normal(name) => {
 				description.push_str("arg:");

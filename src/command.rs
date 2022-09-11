@@ -10,7 +10,7 @@ use std::{collections::VecDeque, fmt::Debug};
 
 ///The struct for command information store and command execution
 ///This can be root and edge
-///コマンドの情報格納＆実行用構造体
+///コマンドの情報格納＆実行用構造体です。root（根）にもedge（葉）にもなりえます。
 #[derive(Clone, Default, Debug)]
 pub struct Command {
 	///Command name

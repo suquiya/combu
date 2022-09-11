@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 /// Storage information for command execution.
 /// This storage raw args, non-flag args, flag values, and etc.
 /// コマンドからrunを通ってactionにたどり着くまでの情報およびパース結果を格納する構造体。
-/// フラグの値、たどってきたルートなどを保管。
+/// フラグの値、たどってきたルートなどを保管しています。
 #[derive(Debug, Clone)]
 pub struct Context {
 	/// raw args
@@ -279,7 +279,7 @@ impl Context {
 	}
 
 	/// Gets the flag value of the local flag matches flag_name if inputted. If it is not defined or not inputted, returns None.
-	/// flag_nameとnameが一致するローカルフラグがあり、それがユーザからコマンド引数で指定されていた場合、その値のクローンをSomeで包んで返す。flag_nameと一致するnameをどのローカルフラグも持たないか、ユーザがコマンド引数で指定していない場合はNoneを返す。
+	/// flag_nameとnameが一致するローカルフラグがあり、それがユーザからコマンド引数で指定されていた場合、その値のクローンをSomeで包んで返す。flag_nameと一致するnameを持たない場合はローカルフラグ値として保存されていないためNoneを返し、ユーザがコマンド引数で指定していない場合もNoneを返す。
 	pub fn get_inputted_local_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match &self.local_flags_values {
 			Vector(None) => None,
@@ -291,7 +291,7 @@ impl Context {
 	}
 
 	/// Gets the flag value of the common flag whose name matches flag_name. If it is not defined or not inputted, returns None.
-	/// flag_nameとnameが一致するコモンフラグがあり、それがユーザからコマンド引数で指定されていた場合、その値のクローンをSomeで包んで返す。flag_nameと一致するnameをどのコモンフラグも持たないか、ユーザがコマンド引数で指定していない場合はNoneを返す。
+	/// flag_nameとnameが一致するコモンフラグがあり、それがユーザからコマンド引数で指定されていた場合、その値のクローンをSomeで包んで返す。flag_nameと一致するnameをどのコモンフラグも持たない場合はコモンフラグ値としてそのフラグ値は保存されないためNoneを返し、ユーザがコマンド引数で指定していない場合もNoneを返す。
 	pub fn get_inputted_common_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match &self.common_flags_values {
 			Vector(None) => None,

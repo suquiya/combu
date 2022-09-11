@@ -1,6 +1,7 @@
 use crate::{flag_type, flag_value, Vector};
 
 /// Struct for Flag setting's information
+/// フラグ（オプション）情報格納のための構造体です。
 #[derive(Clone, Debug, PartialEq)]
 pub struct Flag {
 	/// This flag's name
@@ -18,21 +19,26 @@ pub struct Flag {
 }
 
 /// Enum shows FlagType
+/// フラグの型を示すEnumです。
 #[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum FlagType {
 	/// Variant shows bool
+	/// Bool型用Variant
 	Bool,
 	/// Variant shows string
+	/// String型用Variant
 	String,
 	/// Variant shows int
+	/// Int型用Variant
 	Int,
 	/// Variant shows float
+	/// float型用Variant
 	Float,
-	//Unknown,
 }
 
 impl FlagType {
 	/// Get this FlagType variant's name as str
+	/// &str型の形でFlagType名を取得します。
 	pub fn name<'a>(&self) -> &'a str {
 		match self {
 			FlagType::Bool => "Bool",
@@ -42,6 +48,7 @@ impl FlagType {
 		}
 	}
 	/// Get this FlagType variant's default value
+	/// FlagTypeのデフォルト値を取得
 	pub fn default_flag_value(&self) -> FlagValue {
 		match self {
 			FlagType::Bool => FlagValue::Bool(bool::default()),
@@ -89,6 +96,16 @@ impl FlagType {
 		*self == FlagType::String
 	}
 
+	/// Returns true if &self equals FlagType::Int
+	pub fn is_int(&self) -> bool {
+		*self == FlagType::Int
+	}
+
+	/// Returns true if &self equals FlagType::Float
+	pub fn is_float(&self) -> bool {
+		*self == FlagType::Float
+	}
+
 	/// Returns true if &self equals FlagType::Bool
 	pub fn is_bool(&self) -> bool {
 		*self == FlagType::Bool
@@ -102,19 +119,26 @@ impl Default for FlagType {
 }
 
 /// Enum for storage FlagValue
+/// フラグの値を保持するためのEnum
 #[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum FlagValue {
 	/// Variant shows bool flag value
+	/// Bool値保存用
 	Bool(bool),
 	/// Variant shows string flag value
+	/// String値保存用
 	String(String),
 	/// Variant shows int flag value
+	/// Int値保存用
 	Int(isize),
 	/// Variant for float flag value
+	/// Float値保存用
 	Float(f64),
 	/// Variant for invalid flag value
+	/// 間違った値が指定されていた時にString値で指定されたフラグ値の保存用
 	Invalid(String),
 	/// Variant for no flag value
+	/// None表現用
 	None,
 }
 

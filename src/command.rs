@@ -2946,6 +2946,8 @@ pub mod presets {
 						}
 						$s_col_width = max(dedup_s.len(), $s_col_width);
 						$s_columns.push_back(dedup_s);
+					} else {
+						$s_columns.push_back(vec![]);
 					}
 					let mut dedup_nl = Vec::<&String>::new();
 					let mut nl_width;
@@ -3324,6 +3326,41 @@ pub mod presets {
 			}
 
 			root_string
+		}
+
+		#[cfg(test)]
+		mod test {
+			use super::super::Command;
+			use super::help_tablize_with_alias_dedup;
+			use crate::{
+				action_result, checks, copyright, crate_authors, crate_license, crate_version, done,
+				flags, license, preset_help_command, vector, Context, Flag,
+			};
+
+			#[test]
+			fn presets_help_func_test() {
+				let act = |cmd: Command, ctx: Context| -> action_result!() {
+					checks!(cmd, ctx, [error, help, version, license]);
+					println!("check passed!");
+					done!()
+				};
+				let raw_args = vec!["help".to_owned(), "--help".to_owned()];
+				let _r = Command::with_all_field(
+					"root".to_owned(),
+					Some(act),
+					crate_authors!().to_owned(),
+					copyright!(2022, suquiya),
+					license!(crate_license!().to_owned(),file_path=>"../LICENSE"),
+					Some(crate_authors!().to_owned()),
+					"root [subcommand] [options]".to_owned(),
+					flags!(),
+					flags!(help, license, authors, copyright, version),
+					vector![],
+					crate_version!().to_owned(),
+					vector![preset_help_command!(help_tablize_with_alias_dedup)],
+				)
+				.run_from_args(raw_args);
+			}
 		}
 	}
 }

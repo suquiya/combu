@@ -831,10 +831,13 @@ macro_rules! default_flag_short_alias {
 		$crate::short_alias![v]
 	};
 	(authors) => {
-		$crate::short_alias![a]
+		$crate::short_alias![A]
 	};
 	(license) => {
-		$crate::short_alias![l]
+		$crate::short_alias![L]
+	};
+	(copyright) => {
+		$crate::short_alias![C]
 	};
 	(yes) => {
 		$crate::short_alias![y]
@@ -858,6 +861,9 @@ macro_rules! default_description {
 	};
 	(flag.license) => {
 		"Prints license information"
+	};
+	(flag.copyright) => {
+		"Prints copyright information"
 	};
 	(flag.yes) => {
 		"Assumes as yes choosed in all prompts"
@@ -940,6 +946,14 @@ macro_rules! yes_flag {
 macro_rules! no_flag {
 	($($($description:tt)+)?)=>{
 		$crate::_preset_flag_constructor!(no$(,$($description)+)?)
+	};
+}
+
+#[macro_export]
+/// Macro for preset copyright flag.
+macro_rules! copyright_flag{
+	($($($description:tt)+)?)=>{
+		$crate::_preset_flag_constructor!(copyright$(,$($description)+)?)
 	};
 }
 
@@ -2044,6 +2058,9 @@ macro_rules! _ffp {
 	};
 	(license)=>{
 		$crate::license_flag!()
+	};
+	(copyright)=>{
+		$crate::copyright_flag!()
 	};
 	(yes)=>{
 		$crate::yes_flag!()

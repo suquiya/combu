@@ -108,6 +108,8 @@ impl Error for ActionError {}
 
 /// bundle is a helper for processing in action.
 pub mod bundle {
+	use std::collections::VecDeque;
+
 	use crate::{Command, Context, FlagValue};
 
 	/// New-type for help processing in action. Inner is simple tuple - (Context,Command)
@@ -228,6 +230,16 @@ pub mod bundle {
 		/// Returns depth of command - root:0
 		pub fn depth(&self) -> usize {
 			self.0.common_flags.len()
+		}
+
+		/// Returns reference of args
+		pub fn args(&self) -> &VecDeque<String> {
+			&self.0.args
+		}
+
+		/// Returns n'th arg
+		pub fn arg(&self, index: usize) -> Option<&String> {
+			self.0.args.get(index)
 		}
 	}
 }

@@ -1702,7 +1702,7 @@ pub mod preset {
 				);
 			}
 			(flag_arg, ParseError::NoExistLong, ParseError::NoExistLong) => {
-				format!("The flag --{} is an unknown flag.", flag_arg.name());
+				description = format!("The flag --{} is an unknown flag.", flag_arg.name());
 			}
 			(flag_arg, ParseError::NoExistShort(_), ParseError::InvalidShort(i, c_flag)) => {
 				let (name, val) = flag_arg.inner_if_string_val().unwrap();

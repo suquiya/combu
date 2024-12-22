@@ -1,5 +1,6 @@
 /// struct Vector is a new type pattern of Option<Vec<T>>
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
+#[cfg_attr(feature = "vector_serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Vector<T>(pub Option<Vec<T>>);
 
 impl<T> Default for Vector<T> {

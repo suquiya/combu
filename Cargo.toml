@@ -16,7 +16,7 @@ keywords = ["argument", "arg", "cli", "command-line", "parser"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["main"]
+default = []
 vector_serde = ["serde"]
 
 [dependencies]

@@ -193,8 +193,8 @@ impl FlagValue {
 		}
 	}
 
-	/// Gets string from self
-	pub fn get_string(self) -> String {
+	/// Gets string from self corresponding FlagValue
+	pub fn get_string_value(self) -> String {
 		match self {
 			FlagValue::String(val) => val,
 			FlagValue::Bool(b) => b.to_string(),
@@ -202,6 +202,14 @@ impl FlagValue {
 			FlagValue::Float(f) => f.to_string(),
 			FlagValue::Invalid(val) => val,
 			FlagValue::None => String::default(),
+		}
+	}
+
+	/// Return String if self is FlagValue::String(val), otherwise returns None.
+	pub fn get_string(&self) -> Option<String> {
+		match self {
+			FlagValue::String(val) => Some(val.to_owned()),
+			_ => None,
 		}
 	}
 

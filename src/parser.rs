@@ -1615,7 +1615,7 @@ impl MiddleArg {
 				self
 			}
 			MiddleArg::Normal(ref mut val) => {
-				(*val) = value.get_string();
+				(*val) = value.get_string_value();
 				self
 			}
 		}

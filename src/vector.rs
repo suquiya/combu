@@ -3,6 +3,8 @@
 #[cfg_attr(feature = "vector_serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Vector<T>(pub Option<Vec<T>>);
 
+/// Default implementation of Vector
+/// Default of Vector is Vector(None)
 impl<T> Default for Vector<T> {
 	fn default() -> Self {
 		Vector(None)
@@ -70,7 +72,7 @@ impl<T> Vector<T> {
 			Vector(None) => {
 				*self = Vector(Some(vec![push]));
 			}
-			Vector(Some(ref mut v)) => (*v).push(push),
+			Vector(Some(v)) => (*v).push(push),
 		}
 	}
 
@@ -91,7 +93,7 @@ impl<T> Vector<T> {
 	pub fn append_vec(&mut self, mut other: Vec<T>) {
 		match self {
 			Vector(None) => *self = Vector(Some(other)),
-			Vector(Some(ref mut vec)) => (*vec).append(&mut other),
+			Vector(Some(vec)) => (*vec).append(&mut other),
 		}
 	}
 
@@ -99,7 +101,7 @@ impl<T> Vector<T> {
 	pub fn prepend_vec(&mut self, mut other: Vec<T>) {
 		match self {
 			Vector(None) => *self = Vector(Some(other)),
-			Vector(Some(ref mut vec)) => {
+			Vector(Some(vec)) => {
 				other.append(vec);
 				*vec = other;
 			}
@@ -110,7 +112,7 @@ impl<T> Vector<T> {
 	pub fn insert(&mut self, index: usize, insert: T) {
 		match self {
 			Vector(None) => *self = Vector(Some(vec![insert])),
-			Vector(Some(ref mut vec)) => (*vec).insert(index, insert),
+			Vector(Some(vec)) => (*vec).insert(index, insert),
 		}
 	}
 
@@ -120,7 +122,7 @@ impl<T> Vector<T> {
 			Vector(None) => {
 				*self = other;
 			}
-			Vector(Some(ref mut vec)) => {
+			Vector(Some(vec)) => {
 				if let Vector(Some(ref mut o_vec)) = other {
 					//
 					(*vec).append(o_vec);
@@ -148,7 +150,7 @@ impl<T> Vector<T> {
 	pub fn clear(&mut self) {
 		match self {
 			Vector(None) => {}
-			Vector(Some(ref mut inner)) => (*inner).clear(),
+			Vector(Some(inner)) => (*inner).clear(),
 		}
 	}
 
@@ -444,6 +446,8 @@ pub mod flag {
 
 #[cfg(test)]
 mod tests {
+	use std::vec;
+
 	use super::Vector;
 
 	#[test]
@@ -461,5 +465,86 @@ mod tests {
 			]),
 			main
 		);
+	}
+
+	#[test]
+	fn append_test() {
+		let mut main: Vector<String> = vec!["a".to_string(), "b".to_string(), "c".to_string()].into();
+		let other = vec!["test".to_string(), "test2".to_string()];
+		main.append_vec(other);
+		assert_eq!(
+			Vector::from(vec![
+				"a".to_string(),
+				"b".to_string(),
+				"c".to_string(),
+				"test".to_string(),
+				"test2".to_string()
+			]),
+			main
+		);
+	}
+
+	#[test]
+	fn first_unwrap_test() {
+		let main: Vector<String> = vec!["a".to_string(), "b".to_string(), "c".to_string()].into();
+		assert_eq!(&"a".to_string(), main.first_unwrap());
+	}
+
+	#[test]
+	fn push_test() {
+		let mut main: Vector<String> = vec!["a".to_string(), "b".to_string(), "c".to_string()].into();
+		main.push("test".to_string());
+		assert_eq!(
+			Vector::from(vec![
+				"a".to_string(),
+				"b".to_string(),
+				"c".to_string(),
+				"test".to_string()
+			]),
+			main
+		);
+	}
+
+	#[test]
+	fn pop_test() {
+		let mut main: Vector<String> = vec!["a".to_string(), "b".to_string(), "c".to_string()].into();
+		main.pop();
+		assert_eq!(Vector::from(vec!["a".to_string(), "b".to_string()]), main);
+	}
+
+	#[test]
+	fn new_test() {
+		assert_eq!(Vector::<String>::new().is_none(), true);
+	}
+
+	#[test]
+	fn len_test() {
+		let main: Vector<String> = vec!["a".to_string(), "b".to_string(), "c".to_string()].into();
+		assert_eq!(main.len(), 3);
+	}
+
+	#[test]
+	fn with_inner_test() {
+		let main: Vector<String> =
+			Vector::with_inner(vec!["a".to_string(), "b".to_string(), "c".to_string()]);
+		assert_eq!(main.len(), 3);
+		assert_eq!(
+			main,
+			Vector(Some(vec![
+				"a".to_string(),
+				"b".to_string(),
+				"c".to_string()
+			]))
+		);
+	}
+
+	#[test]
+	fn init_test() {
+		let option_vec: Option<Vec<String>> =
+			Some(vec!["a".to_string(), "b".to_string(), "c".to_string()]);
+		let mut main = Vector::default();
+		main.init(option_vec.clone());
+		assert_eq!(main.len(), 3);
+		assert_eq!(main, Vector(option_vec));
 	}
 }

@@ -21,8 +21,3 @@ vector_serde = ["serde"]
 
 [dependencies]
 serde = { version = "1.0.216", optional = true }
-
-[alias]
-wt = "make watch"
-dev = "wt"
-et = "make et"

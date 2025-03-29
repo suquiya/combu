@@ -1,6 +1,6 @@
 use crate::{
-	vector::flag::{FlagSearch, LongFound},
 	Context, FlagValue,
+	vector::flag::{FlagSearch, LongFound},
 };
 use std::collections::VecDeque;
 
@@ -44,6 +44,7 @@ impl From<(char, char)> for Parser {
 	}
 }
 
+/// Macro for create string from string and char
 macro_rules! str_char {
 	($str:expr, $char:expr) => {{
 		let mut s: String = $str.clone();
@@ -52,6 +53,7 @@ macro_rules! str_char {
 	}};
 }
 
+/// Macro for match arg
 macro_rules! arg_match {
 	($self:ident, $arg:expr,long_flag=>$long_flag:ident{$($lp:tt)*}$(,)?short_flag=>$short_flag:ident{$($sp:tt)*}$(,)?non_flag=>$non_flag:ident{$($nfp:tt)*}$(,)?rest_opt=>$rest_opt:ident{$($ot:tt)*}) =>{
 		match $arg {
@@ -141,6 +143,24 @@ macro_rules! arg_match {
 		}
 	};
 }
+
+/// Result of parse middle flag function
+type ParseMiddleFlagResult = (
+	VecDeque<(String, FlagValue)>,
+	VecDeque<(String, FlagValue)>,
+	VecDeque<ErrorInfo>,
+);
+
+/// Result of parse middle arg function
+type ParseMiddleArgResult = (
+	Context,
+	VecDeque<MiddleArg>,
+	VecDeque<String>,
+	VecDeque<(String, FlagValue)>,
+	VecDeque<(String, FlagValue)>,
+	VecDeque<ErrorInfo>,
+);
+
 impl Parser {
 	/// Creates a new Parser with flag_pattern and long_flag_prefix.
 	pub fn new(flag_pattern: char, long_flag_prefix: &str) -> Parser {
@@ -279,13 +299,7 @@ impl Parser {
 				c.local_flags_values.prepend_vec(l_flags.into());
 				c.common_flags_values.prepend_vec(c_flags.into());
 				c.error_info_list.prepend_vec(e_list.into());
-				(c, {
-					if flag_only {
-						None
-					} else {
-						Some(non_flag_args)
-					}
-				})
+				(c, { if flag_only { None } else { Some(non_flag_args) } })
 			}
 		}
 	}
@@ -301,11 +315,7 @@ impl Parser {
 		mut l_flags: VecDeque<(String, FlagValue)>,
 		mut c_flags: VecDeque<(String, FlagValue)>,
 		mut e_list: VecDeque<ErrorInfo>,
-	) -> (
-		VecDeque<(String, FlagValue)>, //l_flag
-		VecDeque<(String, FlagValue)>, //c_flag
-		VecDeque<ErrorInfo>,           //e_list
-	) {
+	) -> ParseMiddleFlagResult {
 		match local_flags.find_long_flag(&name_or_alias) {
 			LongFound::Name(l_flag) => {
 				match val {
@@ -421,11 +431,7 @@ impl Parser {
 		mut l_flags: VecDeque<(String, FlagValue)>,
 		mut c_flags: VecDeque<(String, FlagValue)>,
 		mut e_list: VecDeque<ErrorInfo>,
-	) -> (
-		VecDeque<(String, FlagValue)>,
-		VecDeque<(String, FlagValue)>,
-		VecDeque<ErrorInfo>,
-	) {
+	) -> ParseMiddleFlagResult {
 		match short_alias.pop() {
 			Some(last) => match local_flags.find_short_flag(&last) {
 				Some(l_flag) => match flag_val {
@@ -507,6 +513,7 @@ impl Parser {
 	}
 
 	/// Parse middle normal arg
+	#[allow(clippy::too_many_arguments)]
 	pub fn parse_middle_normal_arg<T: FlagSearch, S: FlagSearch>(
 		&self,
 		mut inter_mediate_args: VecDeque<MiddleArg>,
@@ -519,14 +526,7 @@ impl Parser {
 		mut c_flags: VecDeque<(String, FlagValue)>,
 		mut e_list: VecDeque<ErrorInfo>,
 		flag_only: bool,
-	) -> (
-		Context,
-		VecDeque<MiddleArg>,
-		VecDeque<String>,
-		VecDeque<(String, FlagValue)>,
-		VecDeque<(String, FlagValue)>,
-		VecDeque<ErrorInfo>,
-	) {
+	) -> ParseMiddleArgResult {
 		match inter_mediate_args.pop_back() {
 			//ロングフラグが前にあり、その値である可能性があるとき
 			Some(MiddleArg::LongFlag(long_flag_name, FlagValue::None)) => {
@@ -838,6 +838,7 @@ impl Parser {
 		}
 	}
 
+	/// If flag_only is true, pushes non-flag arg to Context.error_info_list as ParseError::NotExist and push it to Context.parsing_args as MiddleArg::Normal.
 	fn push_normal_arg_in_flag_only_error(&self, mut c: Context, normal_arg: String) -> Context {
 		let val = MiddleArg::Normal(normal_arg);
 		c.error_info_list
@@ -858,14 +859,7 @@ impl Parser {
 		c_flags: VecDeque<(String, FlagValue)>,
 		e_list: VecDeque<ErrorInfo>,
 		flag_only: bool,
-	) -> (
-		Context,
-		VecDeque<MiddleArg>,           //inter_mediate_args
-		VecDeque<String>,              //non_flag_args
-		VecDeque<(String, FlagValue)>, //l_flags
-		VecDeque<(String, FlagValue)>, //c_flags
-		VecDeque<ErrorInfo>,           //e_list
-	) {
+	) -> ParseMiddleArgResult {
 		match inter_mediate_args.pop_back() {
 			Some(MiddleArg::LongFlag(long_flag, flag_val)) => {
 				let (l_flags, c_flags, e_list) = self.parse_middle_long_flag(
@@ -1293,7 +1287,7 @@ impl Parser {
 									}
 								},
 							}
-							i = i + 1;
+							i += 1;
 						}
 						//最後のフラグと値を処理
 						match local_flags.find_short_flag(&before_eq) {
@@ -1403,7 +1397,7 @@ impl Parser {
 									}
 								},
 							};
-							i = i + 1;
+							i += 1;
 						}
 						//最後の１フラグを処理
 						match local_flags.find_short_flag(&last) {
@@ -1631,6 +1625,7 @@ impl MiddleArg {
 	}
 }
 
+/// Type of ParseError's index
 type Index = usize;
 /// ParseError shows error in parsing
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -1666,15 +1661,15 @@ pub mod preset {
 		match &err_info.0 {
 			MiddleArg::Normal(name) => {
 				description.push_str("arg:");
-				description.push_str(&name);
+				description.push_str(name);
 			}
 			MiddleArg::LongFlag(name, _) => {
 				description.push_str("flag: --");
-				description.push_str(&name)
+				description.push_str(name)
 			}
 			MiddleArg::ShortFlag(name, _) => {
 				description.push_str("short flag: -");
-				description.push_str(&name);
+				description.push_str(name);
 			}
 		}
 		description.push_str(".\n");
@@ -1732,13 +1727,7 @@ pub mod preset {
 					"{}The flag {}{}'s value {} is not valid for a local flag {}.",
 					description,
 					name.chars().nth(*i).unwrap(),
-					{
-						if name.chars().count() < 2 {
-							""
-						} else {
-							name
-						}
-					},
+					{ if name.chars().count() < 2 { "" } else { name } },
 					val,
 					l_flag
 				);

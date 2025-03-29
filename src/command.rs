@@ -1,8 +1,8 @@
 use crate::{
+	Action, Context, Flag, FlagValue, Parser, Vector,
 	action::{ActionError, ActionErrorKind::NoActionRegistered, ActionResult},
 	done,
 	parser::MiddleArg,
-	Action, Context, Flag, FlagValue, Parser, Vector,
 };
 
 use core::mem::swap;
@@ -39,12 +39,13 @@ pub struct Command {
 	pub sub: Vector<Command>,
 }
 
-// Helper inner macros
+/// Helper inner macro
 macro_rules! run_result{
 	()=>{
 		Result<ActionResult,ActionError>
 	}
 }
+/// Helper inner macro
 macro_rules! no_registered_error {
 	($command:expr,$context:expr) => {
 		Err(ActionError::without_related_error(
@@ -55,7 +56,7 @@ macro_rules! no_registered_error {
 		))
 	};
 }
-
+/// Helper inner macro
 macro_rules! check_sub {
 	($sub:expr, $self:expr) => {
 		check_sub_field!($sub, $self, authors);
@@ -64,7 +65,7 @@ macro_rules! check_sub {
 		check_sub_field!($sub, $self, license: License);
 	};
 }
-
+/// Helper inner macro
 macro_rules! check_sub_field {
 	($sub: expr, $self:expr, $field: ident) => {
 		if $sub.$field.is_empty() {
@@ -88,13 +89,8 @@ pub type LicenseFunc = fn(command: &Command, context: &Context) -> String;
 
 #[derive(Clone)]
 /// License shows license information
+#[derive(Default)]
 pub struct License(pub Option<(String, LicenseFunc)>);
-
-impl Default for License {
-	fn default() -> Self {
-		License(None)
-	}
-}
 
 impl Debug for License {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -172,6 +168,7 @@ impl License {
 	}
 }
 
+/// Helper inner macro for context generation
 macro_rules! gen_context_for_self_action {
 	($raw_args:expr) => {{
 		let mut args = VecDeque::from($raw_args.clone());
@@ -196,6 +193,7 @@ macro_rules! gen_context_for_self_action {
 	};
 }
 
+/// Helper inner macro that is about context generation for sub command run
 macro_rules! gen_context_for_sub_run {
 	($self:expr,$raw_args:expr,$args:expr,$exe_path:expr) => {
 		gen_context_for_sub_run!(inner, $self, $raw_args, $args, $exe_path, None)
@@ -308,10 +306,7 @@ impl Command {
 	/// Run command with collecting args automatically
 	pub fn run_with_auto_arg_collect(self) -> run_result!() {
 		match self.sub {
-			Vector(None) => {
-				let r = self.single_run(std::env::args().collect::<Vec<String>>());
-				r
-			}
+			Vector(None) => self.single_run(std::env::args().collect::<Vec<String>>()),
 			_ => self.run(std::env::args().collect::<Vec<String>>()),
 		}
 	}
@@ -450,10 +445,10 @@ impl Command {
 	pub fn take_sub(&mut self, name_or_alias: &str) -> Option<Command> {
 		match self.sub {
 			Vector(None) => None,
-			Vector(Some(ref mut inner)) => match inner.iter().position(|c| c.is(name_or_alias)) {
-				None => None,
-				Some(index) => Some(inner.swap_remove(index)),
-			},
+			Vector(Some(ref mut inner)) => inner
+				.iter()
+				.position(|c| c.is(name_or_alias))
+				.map(|index| inner.swap_remove(index)),
 		}
 	}
 
@@ -846,8 +841,8 @@ impl Command {
 						inter_mediate_args.push_back(last);
 						let c =
 							gen_context_for_sub_run!(self, raw_args, args, exe_path, inter_mediate_args);
-						let r = sub.run(c);
-						r
+
+						sub.run(c)
 					}
 					None => {
 						//一致するサブコマンドがなかった場合
@@ -875,8 +870,8 @@ impl Command {
 												exe_path,
 												inter_mediate_args
 											);
-											let r = sub.run(c);
-											r
+
+											sub.run(c)
 										}
 										None => {
 											//サブコマンドはないのでそのままselfでaction
@@ -1038,7 +1033,7 @@ mod tests {
 			assert_eq!(c.args, expect_args);
 			assert_eq!(c.exe_path, String::from("exe_path"));
 			assert_eq!(c.routes, Vector(None));
-			return done!();
+			done!()
 		});
 
 		let _ = root.single_run(arg.clone());
@@ -2143,8 +2138,8 @@ mod tests {
 /// Presets of Command
 pub mod presets {
 
-	use crate::default_usage;
 	use crate::Vector;
+	use crate::default_usage;
 
 	use super::{Action, Command, License};
 
@@ -2199,7 +2194,7 @@ pub mod presets {
 
 	/// function presets for command construction.
 	pub mod func {
-		use crate::{action_result, FlagType};
+		use crate::{FlagType, action_result};
 
 		use super::super::{Command, Context, Flag, Vector};
 		use std::cmp::max;
@@ -2211,6 +2206,7 @@ pub mod presets {
 			crate::done!()
 		}
 
+		/// macro for help action
 		macro_rules! _add_help_with_flag_dudup {
 			($help:ident,$iter:expr,$nl_list:ident,$s_list:ident,$suffix:ident,$name_and_alias_min_width:ident,$sp:ident,$indent:ident) => {
 				for f in $iter {
@@ -2270,8 +2266,8 @@ pub mod presets {
 			};
 		}
 
-		// Add help for this flag to append_to. name_and_alias_min_width means min width of name and alias' field.
-		// Flagに対するヘルプをappend_toに追加する。nameとalias表示部分のずれをある程度吸収できるようにその部分の最小幅をname_and_alias_min_widthで指定する
+		/// Add help for this flag to append_to. name_and_alias_min_width means min width of name and alias' field.
+		/// Flagに対するヘルプをappend_toに追加する。nameとalias表示部分のずれをある程度吸収できるようにその部分の最小幅をname_and_alias_min_widthで指定する
 		fn flag_help_simple(
 			flag: &Flag,
 			append_to: String,
@@ -2371,7 +2367,7 @@ pub mod presets {
 				// コモンフラグ出力
 				// まず現在のコマンドのコモンフラグ出力
 				if let Vector(Some(c_flags)) = &cmd.c_flags {
-					let suffix = if cmd.sub.len() > 0 {
+					let suffix = if !cmd.sub.is_empty() {
 						format!(
 							"[also available in sub command{} under here]",
 							(if cmd.sub.len() < 2 { "" } else { "s" })
@@ -2482,14 +2478,14 @@ pub mod presets {
 				}
 				let exe_suffix = std::env::consts::EXE_SUFFIX;
 				if !exe_suffix.is_empty() {
-					routes[0].push_str("[");
+					routes[0].push('[');
 					routes[0].push_str(exe_suffix);
-					routes[0].push_str("]")
+					routes[0].push(']')
 				}
 				help = help + &routes.join(" ") + "<subcommand> --help for more information.";
 				help += "\n";
 			}
-			return help;
+			help
 		}
 
 		/// Add type suffix for flag help
@@ -2546,7 +2542,12 @@ pub mod presets {
 			let mut common_head = true;
 			if let Vector(Some(c_flags)) = &cmd.c_flags {
 				if cl_label {
-					help = help + &indent + "[Common" + &format!("(common flags are available in this command and sub command{} under this command)]: \n", (if cmd.sub.len()<2{""}else{"s"}));
+					help = help
+						+ &indent + "[Common"
+						+ &format!(
+							"(common flags are available in this command and sub command{} under this command)]: \n",
+							(if cmd.sub.len() < 2 { "" } else { "s" })
+						);
 				}
 
 				for cf in c_flags {
@@ -2703,24 +2704,24 @@ pub mod presets {
 				help += "\n";
 			}
 
-			return help;
+			help
 		}
 
 		/// Preset of flag help function (tablize)
 		pub fn flag_help_tablize(
 			append_to: String,
 			f: &Flag,
-			sp: &String,
+			sp: &str,
 			s_max_num: usize, //最大ショートエイリアス数
 			nl_width: usize,
-			pre_d_space: &String,
+			pre_d_space: &str,
 		) -> String {
 			let mut help = append_to;
 			// short_alias出力
 			help = help + &sp.repeat((s_max_num - f.short_alias.len()) * 4);
 			if let Vector(Some(short_alias)) = &f.short_alias {
 				for s in short_alias {
-					help.push_str("-");
+					help.push('-');
 					help.push(*s);
 					help.push_str(", ");
 				}
@@ -2739,7 +2740,7 @@ pub mod presets {
 			if _nl_width < nl_width {
 				help.push_str(&sp.repeat(nl_width - _nl_width));
 			}
-			help.push_str(&pre_d_space);
+			help.push_str(pre_d_space);
 			help.push_str(&f.description);
 			help.push('\n');
 
@@ -2758,7 +2759,7 @@ pub mod presets {
 			}
 			help = help + "Usage:\n" + &indent + &cmd.usage + "\n\n";
 
-			if &cmd.l_flags.len() + &cmd.c_flags.len() + &ctx.common_flags.sum_of_length() > 0 {
+			if cmd.l_flags.len() + cmd.c_flags.len() + ctx.common_flags.sum_of_length() > 0 {
 				// フラグが存在するとき
 				help.push_str("Flags(If exist flags have same alias and specified by user, inputted value will be interpreted as the former flag's value): \n");
 
@@ -2866,11 +2867,11 @@ pub mod presets {
 			}
 
 			if let Vector(Some(sub_commands)) = &cmd.sub {
-				help = help + "Sub Command";
+				help += "Sub Command";
 				if sub_commands.len() > 1 {
 					help.push('s');
 				}
-				help = help + ": \n";
+				help += ": \n";
 				let mut na_max_width: usize = 10;
 				for sc in sub_commands {
 					match &sc.alias {
@@ -2918,7 +2919,7 @@ pub mod presets {
 					help.push_str(" <subcommand> --help' for more information");
 				} else {
 					let root = if cmd.name.is_empty() {
-						root_str(&ctx.exe_path())
+						root_str(ctx.exe_path())
 					} else {
 						cmd.name.clone()
 					};
@@ -2931,6 +2932,7 @@ pub mod presets {
 			help
 		}
 
+		/// helper macro for flag tablize
 		macro_rules! _flag_tablize_dedup {
 			($iter:expr,$nl_col_width:ident,$s_col_width:ident,$nl_list:ident,$s_list:ident,$s_columns:ident,$nl_columns:ident) => {
 				for f in $iter {
@@ -2991,6 +2993,9 @@ pub mod presets {
 			};
 		}
 
+		/// Add short alias to append_to.
+		/// It is formatted as "-<s>"
+		/// example: "-a, -b"
 		fn add_short_flags_str(append_to: &mut String, s_list: Vec<&char>) {
 			append_to.push('-');
 			let mut si = s_list.into_iter();
@@ -3000,6 +3005,8 @@ pub mod presets {
 				append_to.push(*s);
 			}
 		}
+
+		/// Return flag type suffix length
 		fn flag_type_suffix_len(ft: &FlagType) -> usize {
 			match &ft {
 				FlagType::Bool => 2,
@@ -3009,6 +3016,8 @@ pub mod presets {
 			}
 		}
 
+		/// Add long alias (following prev) to append to.
+		/// example: "--a, --b"
 		fn add_long_flags_str_to_prev_flags(
 			append_to: &mut String,
 			nl_iter: std::vec::IntoIter<&String>,
@@ -3019,15 +3028,30 @@ pub mod presets {
 			}
 		}
 
+		/// Add long alias (main,or formal) to append_to.
 		fn add_long_flags_str(append_to: &mut String, mut nl_iter: std::vec::IntoIter<&String>) {
 			append_to.push_str("--");
 			append_to.push_str(nl_iter.next().unwrap());
 			add_long_flags_str_to_prev_flags(append_to, nl_iter);
 		}
 
+		/// Add all flags' help string to append_to.
+		///
+		/// # Parameters
+		///
+		/// - append_to: The string to which the help string is appended.
+		/// - flags: A vector of Flag whose help string is added.
+		/// - s_columns: A VecDeque of vectors of short aliases.
+		/// - nl_columns: A VecDeque of vectors of long aliases.
+		/// - s_col_width: The width of the short alias column.
+		/// - nl_col_width: The width of the long alias column.
+		/// - gap_width: The width of the gap between the two columns.
+		/// - suffix: The suffix appended to the end of each line.
+		/// - prefix: The prefix appended to the beginning of each line.
+		/// - sp: The string to repeat for filling the gap.
 		fn add_flags_help_str(
 			mut append_to: String,
-			flags: &Vec<Flag>,
+			flags: &[Flag],
 			s_columns: &mut std::collections::VecDeque<Vec<&char>>,
 			nl_columns: &mut std::collections::VecDeque<Vec<&String>>,
 			s_col_width: usize,
@@ -3035,7 +3059,7 @@ pub mod presets {
 			gap_width: usize,
 			suffix: &str,
 			prefix: &str,
-			sp: &String,
+			sp: &str,
 		) -> String {
 			for f in flags.iter().rev() {
 				append_to.push_str(prefix);
@@ -3050,7 +3074,8 @@ pub mod presets {
 						let nl_len = append_to.len() - prev_help_len;
 						append_to = append_to
 							+ &sp.repeat(nl_col_width + gap_width - nl_len)
-							+ &f.description + suffix;
+							+ &f.description
+							+ suffix;
 					}
 				} else {
 					append_to = append_to + &sp.repeat(s_col_width - (s_list.len() * 4));
@@ -3058,7 +3083,8 @@ pub mod presets {
 					if nl_list.is_empty() {
 						append_to = add_type_suffix(append_to, &f.flag_type)
 							+ &sp.repeat(4 + nl_col_width)
-							+ &f.description + suffix;
+							+ &f.description
+							+ suffix;
 					} else {
 						let prev_help_len = append_to.len();
 						add_long_flags_str_to_prev_flags(&mut append_to, nl_list.into_iter());
@@ -3066,7 +3092,8 @@ pub mod presets {
 						let nl_len = append_to.len() - prev_help_len - 2;
 						append_to = append_to
 							+ &sp.repeat(nl_col_width + gap_width - nl_len)
-							+ &f.description + suffix;
+							+ &f.description
+							+ suffix;
 					}
 				}
 			}
@@ -3158,7 +3185,7 @@ pub mod presets {
 				drop(s_list);
 				drop(nl_list);
 				// help出力
-				s_col_width = s_col_width * 4;
+				s_col_width *= 4;
 				let gap_width = 3;
 				if let Vector(Some(l_flags)) = &cmd.l_flags {
 					let suffix = "\n";
@@ -3181,7 +3208,7 @@ pub mod presets {
 						Vector(Some(subs)) if subs.len() > 1 => {
 							" [common: also available in sub commands under here]\n"
 						}
-						Vector(Some(subs)) if subs.len() > 0 => {
+						Vector(Some(subs)) if !subs.is_empty() => {
 							" [common: also available in sub command under here]\n"
 						}
 						_ => "\n",
@@ -3202,7 +3229,7 @@ pub mod presets {
 
 				if let Vector(Some(c_flags_list)) = &ctx.common_flags {
 					let route_without_root = ctx.depth() > ctx.routes.len();
-					for (index, c_flags) in c_flags_list.into_iter().enumerate().rev() {
+					for (index, c_flags) in c_flags_list.iter().enumerate().rev() {
 						if let Vector(Some(c_flags)) = c_flags {
 							let mut suffix = sp.clone() + "[common: inherited from ";
 							if route_without_root {
@@ -3240,11 +3267,11 @@ pub mod presets {
 			}
 
 			if let Vector(Some(sub_commands)) = &cmd.sub {
-				help = help + "\nSub Command";
+				help += "\nSub Command";
 				if sub_commands.len() > 1 {
 					help.push('s');
 				}
-				help = help + ": \n";
+				help += ": \n";
 
 				// サブコマンド名の列挙最大長算出
 				let mut na_max_width: usize = 12;
@@ -3294,7 +3321,7 @@ pub mod presets {
 					help.push_str(&cmd.name);
 				} else {
 					let root = if cmd.name.is_empty() {
-						root_str(&ctx.exe_path())
+						root_str(ctx.exe_path())
 					} else {
 						cmd.name.clone()
 					};
@@ -3333,8 +3360,8 @@ pub mod presets {
 			use super::super::Command;
 			use super::help_tablize_with_alias_dedup;
 			use crate::{
-				action_result, checks, copyright, crate_authors, crate_license, crate_version, done,
-				flags, license, preset_help_command, vector, Context, Flag,
+				Context, Flag, action_result, checks, copyright, crate_authors, crate_license,
+				crate_version, done, flags, license, preset_help_command, vector,
 			};
 
 			#[test]

@@ -1,8 +1,8 @@
-use crate::{flag_type, flag_value, Vector};
+use crate::{Vector, flag_type, flag_value};
 
 /// Struct for Flag setting's information
 /// フラグ（オプション）情報格納のための構造体です。
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct Flag {
 	/// This flag's name
 	pub name: String,
@@ -20,10 +20,11 @@ pub struct Flag {
 
 /// Enum shows FlagType
 /// フラグの型を示すEnumです。
-#[derive(PartialOrd, PartialEq, Clone, Debug)]
+#[derive(PartialOrd, PartialEq, Clone, Debug, Default)]
 pub enum FlagType {
 	/// Variant shows bool
 	/// Bool型用Variant
+	#[default]
 	Bool,
 	/// Variant shows string
 	/// String型用Variant
@@ -69,7 +70,7 @@ impl FlagType {
 	pub fn get_value_from_string(&self, val: String) -> FlagValue {
 		match self {
 			FlagType::Bool => FlagValue::get_bool_value_from_string(val),
-			FlagType::String => FlagValue::String(String::from(val)),
+			FlagType::String => FlagValue::String(val),
 			FlagType::Int => match val.parse::<isize>() {
 				Ok(i) => FlagValue::Int(i),
 				Err(_) => FlagValue::Invalid(val),
@@ -112,15 +113,9 @@ impl FlagType {
 	}
 }
 
-impl Default for FlagType {
-	fn default() -> Self {
-		FlagType::Bool
-	}
-}
-
 /// Enum for storage FlagValue
 /// フラグの値を保持するためのEnum
-#[derive(PartialOrd, PartialEq, Clone, Debug)]
+#[derive(PartialOrd, PartialEq, Clone, Debug, Default)]
 pub enum FlagValue {
 	/// Variant shows bool flag value
 	/// Bool値保存用
@@ -139,13 +134,8 @@ pub enum FlagValue {
 	Invalid(String),
 	/// Variant for no flag value
 	/// None表現用
+	#[default]
 	None,
-}
-
-impl Default for FlagValue {
-	fn default() -> Self {
-		FlagValue::None
-	}
 }
 
 impl From<String> for FlagValue {
@@ -259,19 +249,7 @@ impl FlagValue {
 	}
 }
 
-impl Default for Flag {
-	fn default() -> Flag {
-		Flag {
-			name: String::default(),
-			description: String::default(),
-			short_alias: Vector::default(),
-			long_alias: Vector::default(),
-			flag_type: FlagType::default(),
-			default_value: FlagValue::default(),
-		}
-	}
-}
-
+/// Creates a new instance of Flag
 macro_rules! new_typed_flag {
 	($name:expr, $type:ident) => {
 		Flag::with_all_field(

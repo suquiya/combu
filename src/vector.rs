@@ -78,7 +78,7 @@ impl<T> Vector<T> {
 
 	/// Returns true if has some(n>0) items.
 	pub fn has_at_least_one(&self) -> bool {
-		matches!(self, Vector(Some(inner)) if inner.len()>0)
+		matches!(self, Vector(Some(inner)) if !inner.is_empty())
 	}
 
 	/// Returns this Vector.
@@ -358,7 +358,7 @@ pub mod flag {
 				Vector(None) => LongFound::None,
 				Vector(Some(flags_list)) => {
 					let mut iter = flags_list.iter();
-					return loop {
+					loop {
 						let flags = iter.next_back();
 						if let Some(flags) = flags {
 							match flags.find_long_flag(name_or_alias) {
@@ -370,7 +370,7 @@ pub mod flag {
 						} else {
 							break LongFound::None;
 						}
-					};
+					}
 				}
 			}
 		}
@@ -380,7 +380,7 @@ pub mod flag {
 				Vector(None) => None,
 				Vector(Some(flags_list)) => {
 					let mut iter = flags_list.iter();
-					return loop {
+					loop {
 						let flags = iter.next_back();
 						if let Some(flags) = flags {
 							match flags.find_short_flag(name_or_alias) {
@@ -392,7 +392,7 @@ pub mod flag {
 						} else {
 							break None;
 						}
-					};
+					}
 				}
 			}
 		}
@@ -402,7 +402,7 @@ pub mod flag {
 				Vector(None) => None,
 				Vector(Some(flags_list)) => {
 					let mut iter = flags_list.iter();
-					return loop {
+					loop {
 						let flags = iter.next_back();
 						if let Some(flags) = flags {
 							match flags.find(name) {
@@ -414,7 +414,7 @@ pub mod flag {
 						} else {
 							break None;
 						}
-					};
+					}
 				}
 			}
 		}
@@ -514,7 +514,7 @@ mod tests {
 
 	#[test]
 	fn new_test() {
-		assert_eq!(Vector::<String>::new().is_none(), true);
+		assert!(Vector::<String>::new().is_none());
 	}
 
 	#[test]

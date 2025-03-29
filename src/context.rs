@@ -1,7 +1,7 @@
 use crate::{
+	Command, Flag, FlagValue, Vector,
 	parser::{ErrorInfo, MiddleArg},
 	vector::flag::FlagSearch,
-	Command, Flag, FlagValue, Vector,
 };
 use std::collections::VecDeque;
 
@@ -45,7 +45,7 @@ impl Context {
 			raw_args,
 			args,
 			common_flags: Vector(Some(vec![common_flags])),
-			routes: routes.into(),
+			routes,
 			exe_path,
 			common_flags_values: Vector::default(),
 			local_flags_values: Vector::default(),
@@ -153,10 +153,10 @@ impl Context {
 		current_command: &Command,
 	) -> Option<FlagValue> {
 		match self.take_inputted_common_flag_value_of(flag_name) {
-			None => match current_command.l_flags.find(flag_name) {
-				None => None,
-				Some(f) => Some(f.default_value.clone()),
-			},
+			None => current_command
+				.l_flags
+				.find(flag_name)
+				.map(|f| f.default_value.clone()),
 			val => val,
 		}
 	}
@@ -169,10 +169,9 @@ impl Context {
 		current_command: &Command,
 	) -> Option<FlagValue> {
 		match self.take_inputted_common_flag_value_of(flag_name) {
-			None => match (&current_command.c_flags, &self.common_flags).find(flag_name) {
-				None => None,
-				Some(f) => Some(f.default_value.clone()),
-			},
+			None => (&current_command.c_flags, &self.common_flags)
+				.find(flag_name)
+				.map(|f| f.default_value.clone()),
 			val => val,
 		}
 	}
@@ -243,16 +242,12 @@ impl Context {
 		current_command: &Command,
 	) -> Option<FlagValue> {
 		match self.get_inputted_common_flag_value_of(flag_name) {
-			None => match (&current_command.c_flags, &self.common_flags).find(flag_name) {
-				Some(f) => Some(f.default_value.clone()),
-				None => None,
-			},
-			Some(FlagValue::None) => {
-				match (&current_command.c_flags, &self.common_flags).find(flag_name) {
-					Some(f) => Some(f.derive_flag_value_if_no_value()),
-					None => None,
-				}
-			}
+			None => (&current_command.c_flags, &self.common_flags)
+				.find(flag_name)
+				.map(|f| f.default_value.clone()),
+			Some(FlagValue::None) => (&current_command.c_flags, &self.common_flags)
+				.find(flag_name)
+				.map(|f| f.derive_flag_value_if_no_value()),
 			val => val,
 		}
 	}
@@ -266,14 +261,14 @@ impl Context {
 		current_command: &Command,
 	) -> Option<FlagValue> {
 		match self.get_inputted_local_flag_value_of(flag_name) {
-			None => match current_command.l_flags.find(flag_name) {
-				Some(f) => Some(f.default_value.clone()),
-				None => None,
-			},
-			Some(FlagValue::None) => match current_command.l_flags.find(flag_name) {
-				Some(f) => Some(f.derive_flag_value_if_no_value()),
-				None => None,
-			},
+			None => current_command
+				.l_flags
+				.find(flag_name)
+				.map(|f| f.default_value.clone()),
+			Some(FlagValue::None) => current_command
+				.l_flags
+				.find(flag_name)
+				.map(|f| f.derive_flag_value_if_no_value()),
 			val => val,
 		}
 	}
@@ -283,10 +278,10 @@ impl Context {
 	pub fn get_inputted_local_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match &self.local_flags_values {
 			Vector(None) => None,
-			Vector(Some(local)) => match local.iter().find(|(name, _)| name == flag_name) {
-				None => None,
-				Some((_, flag_val)) => Some(flag_val.to_owned()),
-			},
+			Vector(Some(local)) => local
+				.iter()
+				.find(|(name, _)| name == flag_name)
+				.map(|(_, flag_val)| flag_val.to_owned()),
 		}
 	}
 
@@ -295,10 +290,10 @@ impl Context {
 	pub fn get_inputted_common_flag_value_of(&self, flag_name: &str) -> Option<FlagValue> {
 		match &self.common_flags_values {
 			Vector(None) => None,
-			Vector(Some(common)) => match common.iter().find(|(name, _)| name == flag_name) {
-				None => None,
-				Some((_, flag_val)) => Some(flag_val.to_owned()),
-			},
+			Vector(Some(common)) => common
+				.iter()
+				.find(|(name, _)| name == flag_name)
+				.map(|(_, flag_val)| flag_val.to_owned()),
 		}
 	}
 
@@ -333,10 +328,10 @@ impl Context {
 	}
 }
 
-impl<'a> From<Vec<String>> for Context {
+impl From<Vec<String>> for Context {
 	fn from(raw_args: Vec<String>) -> Context {
 		let args = VecDeque::from(raw_args.clone());
-		let exe_path = match raw_args.get(0) {
+		let exe_path = match raw_args.first() {
 			Some(str) => String::from(str),
 			None => String::new(),
 		};

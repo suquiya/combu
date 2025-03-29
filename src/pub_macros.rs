@@ -634,7 +634,7 @@ macro_rules! define_parent_help_request_action {
 				$help_func(&tail_cmd, &ctx)
 			};
 			println!("{}", help_str);
-			crate::done!()
+			$crate::done!()
 		}
 	};
 }
@@ -3262,7 +3262,7 @@ macro_rules! output_help {
 mod tests {
 	use std::collections::VecDeque;
 
-	use crate::{command::License, Command, Context, Flag, FlagType, FlagValue, Vector};
+	use crate::{Command, Context, Flag, FlagType, FlagValue, Vector, command::License};
 
 	macro_rules! assert_eqs {
 		($left:expr,$($right:expr),+$(,)?) => {

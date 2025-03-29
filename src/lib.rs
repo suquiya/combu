@@ -22,6 +22,7 @@ pub mod action;
 /// command is a module about command
 pub mod command;
 
+/// context is a module about context
 mod context;
 /// flag is a module about flag
 pub mod flag;

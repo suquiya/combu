@@ -20,4 +20,4 @@ default = []
 vector_serde = ["serde"]
 
 [dependencies]
-serde = { version = "1.0.216", optional = true }
+serde = { version = "1.0.216", optional = true, features = ["derive"] }

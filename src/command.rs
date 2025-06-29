@@ -989,7 +989,7 @@ impl Command {
 			}
 			Err(ref mut err) => {
 				if !err.printed {
-					println!("error: {}", err);
+					println!("error: {err}");
 				}
 				err.printed = true;
 				req
@@ -1018,7 +1018,7 @@ mod tests {
 			"test".to_string(),
 		];
 		let root = base_root().action(|_, c| {
-			println!("test_action: {:?}", c);
+			println!("test_action: {c:?}");
 			let raw_args = vec![
 				"exe_path".to_string(),
 				"test".to_string(),
@@ -1044,7 +1044,7 @@ mod tests {
 		arg.insert(1, "--local=L_before".into());
 		let root = Command::with_name("root")
 			.action(|cmd, c| {
-				println!("test_action: {:?}", c);
+				println!("test_action: {c:?}");
 				let raw_args: Vec<String> = vec![
 					"exe_path".to_string(),
 					"--local=L_before".to_string(),
@@ -1103,7 +1103,7 @@ mod tests {
 		];
 		let root = Command::new()
 			.action(|mut cmd, c| {
-				println!("test_action: {:?}", c);
+				println!("test_action: {c:?}");
 				let raw_args = vec![
 					"exe_path".to_string(),
 					"test".to_string(),
@@ -1186,13 +1186,13 @@ mod tests {
 	fn run_root_with_flag_before_normal_arg() {
 		let mut arg = cnv_arg(vec!["exe_path", "--local=test"]);
 		let root = base_root().sub_command(Command::with_name("sub").action(|c, _| {
-			panic!("not root, in sub: {:?}", c);
+			panic!("not root, in sub: {c:?}");
 		}));
 		arg.push("test".into());
 		let _ = root
 			.clone()
 			.action(|cmd, c| {
-				println!("c: {:?}", c);
+				println!("c: {c:?}");
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "test"]),
 					c.raw_args
@@ -1210,7 +1210,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.action(|cur_cmd, c| {
-				println!("c: {:?}", c);
+				println!("c: {c:?}");
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "--common"]),
 					c.raw_args
@@ -1233,7 +1233,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.action(|cc, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					cnv_arg(vec!["exe_path", "--local=test", "--common", "test"]),
 					c.raw_args
@@ -1261,7 +1261,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.action(|cur, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					cnv_arg(vec![
 						"exe_path",
@@ -1308,7 +1308,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.action(|cur_cmd, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1348,7 +1348,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.action(|cmd, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1391,7 +1391,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.action(|cmd, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1438,7 +1438,7 @@ mod tests {
 			"exe_path", "sub", "test", "--common", "test", "--cstr", "strt", "-b", "--local",
 		]);
 		let root = base_root().action(|c, _| {
-			println!("test_action: {:?}", c);
+			println!("test_action: {c:?}");
 			panic!("not sub");
 		});
 		let sub = Command::with_name("sub")
@@ -1446,7 +1446,7 @@ mod tests {
 			.local_flag(Flag::new_string("string").short_alias('s'))
 			.common_flag(Flag::new_bool("cl"))
 			.sub_command(Command::with_name("leaf").action(|c, _| {
-				println!("Context: {:?}", c);
+				println!("Context: {c:?}");
 				panic!("in leaf")
 			}))
 			.authors("sub_authors")
@@ -1459,7 +1459,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|cmd, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				let raw_args = cnv_arg(vec![
 					"exe_path", "sub", "test", "--common", "test", "--cstr", "strt", "-b", "--local",
 				]);
@@ -1489,7 +1489,7 @@ mod tests {
 			.clone()
 			.name("root")
 			.sub_command(sub.clone().action(|cmd, c| {
-				println!("c: {:?}", c);
+				println!("c: {c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec!["exe_path", "--cstr=test", "-b", "sub"])
@@ -1515,7 +1515,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|cmd, c| {
-				println!("c:{:?}", c);
+				println!("c:{c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec!["exe_path", "--cstr", "test", "-b", "sub"])
@@ -1544,7 +1544,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|cmd, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1588,7 +1588,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|cmd, c| {
-				println!("result_c: {:?}", c);
+				println!("result_c: {c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1627,7 +1627,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|cmd, c| {
-				println!("C: {:?}", c);
+				println!("C: {c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1658,7 +1658,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|cmd, c| {
-				println!("C: {:?}", c);
+				println!("C: {c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1714,7 +1714,7 @@ mod tests {
 		let _ = root
 			.clone()
 			.sub_command(sub.clone().action(|cmd, c| {
-				println!("c: {:?}", c);
+				println!("c: {c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1768,7 +1768,7 @@ mod tests {
 		];
 		let root = Command::new()
 			.action(|c, _| {
-				println!("test_action: {:?}", c);
+				println!("test_action: {c:?}");
 				panic!("not sub");
 			})
 			.common_flag(Flag::new("common", FlagType::String, "sample common flag"))
@@ -1777,7 +1777,7 @@ mod tests {
 			.sub_command(
 				Command::with_name("sub")
 					.action(|c, _| {
-						panic!("sub: {:?}", c);
+						panic!("sub: {c:?}");
 					})
 					.version("sub_version")
 					.copyright("sub_copyright")
@@ -1789,7 +1789,7 @@ mod tests {
 					.sub_command(
 						Command::with_name("leaf")
 							.action(|cmd, c| {
-								println!("{:?}", c);
+								println!("{c:?}");
 								let raw_args = vec![
 									"exe_path".to_string(),
 									"sub".to_string(),
@@ -1842,7 +1842,7 @@ mod tests {
 	#[test]
 	fn run_leaf_with_flag_before_normal_flag() {
 		let root = base_root().action(|c, _| {
-			panic!("root action: {:?} - not leaf", c);
+			panic!("root action: {c:?} - not leaf");
 		});
 		let sub = Command::with_name("sub")
 			.local_flag(Flag::new_bool("sub_local"))
@@ -1850,7 +1850,7 @@ mod tests {
 			.common_flag(Flag::new_bool("sub_common"))
 			.local_flag(Flag::new_string("sub_cstr"))
 			.action(|c, _| {
-				panic!("sub action: {:?} - not leaf", c);
+				panic!("sub action: {c:?} - not leaf");
 			});
 		let leaf = Command::with_name("leaf")
 			.common_flag(Flag::new_bool("cbool").short_alias('o'))
@@ -1880,7 +1880,7 @@ mod tests {
 			sub.clone(),
 			leaf.clone(),
 			|cmd, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec!["exe_path", "--lbool", "sub", "--lsbefore", "leaf"])
@@ -1911,7 +1911,7 @@ mod tests {
 			sub.clone(),
 			leaf.clone(),
 			|cmd, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1944,7 +1944,7 @@ mod tests {
 			sub.clone(),
 			leaf.clone(),
 			|cmd, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -1984,7 +1984,7 @@ mod tests {
 			sub.clone(),
 			leaf.clone(),
 			|cmd, c| {
-				println!("{:?}", c);
+				println!("{c:?}");
 				assert_eq!(
 					c.raw_args,
 					cnv_arg(vec![
@@ -2035,7 +2035,7 @@ mod tests {
 
 		let leaf = Command::with_name("leaf")
 			.action(|cmd, c| {
-				println!("sub_action: {:?}", c);
+				println!("sub_action: {c:?}");
 				let raw_args = vec![
 					"exe_path".to_string(),
 					"sub".to_string(),
@@ -2112,7 +2112,7 @@ mod tests {
 			));
 		let root = Command::new()
 			.action(|c, _| {
-				println!("test_action: {:?}", c);
+				println!("test_action: {c:?}");
 				panic!("not sub");
 			})
 			.common_flag(Flag::new(
@@ -2126,7 +2126,7 @@ mod tests {
 			.sub_command(
 				Command::with_name("sub")
 					.action(|c, _| {
-						println!("sub: {:?}", c);
+						println!("sub: {c:?}");
 						panic!("not leaf");
 					})
 					.sub_command(leaf),
@@ -2279,7 +2279,7 @@ pub mod presets {
 			if let Vector(Some(short_alias)) = &flag.short_alias {
 				help = short_alias
 					.iter()
-					.fold(help, |help, s| format!("{}-{},", help, s));
+					.fold(help, |help, s| format!("{help}-{s},"));
 			} else {
 				help += "   ";
 			}
@@ -2287,7 +2287,7 @@ pub mod presets {
 			if let Vector(Some(long_alias)) = &flag.long_alias {
 				help = long_alias.iter().fold(help, |help, l| {
 					//ロングフラグ出力
-					format!("{}, --{}", help, l)
+					format!("{help}, --{l}")
 				})
 			};
 			help = add_type_suffix(help, &flag.flag_type);
@@ -2594,7 +2594,7 @@ pub mod presets {
 									ctx.routes.get(index).unwrap()
 								};
 								if common_head {
-									help += &format!("[inherited from {}]: \n", from)
+									help += &format!("[inherited from {from}]: \n")
 								} else {
 									common_head = false;
 									help += &format!("{}[inherited from {}]: \n", &indent, from)
@@ -2700,7 +2700,7 @@ pub mod presets {
 					}
 				};
 				help =
-					help + "\n" + &format!("{0} <subcommand> --help for more information.", location);
+					help + "\n" + &format!("{location} <subcommand> --help for more information.");
 				help += "\n";
 			}
 

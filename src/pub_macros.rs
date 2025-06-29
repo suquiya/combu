@@ -4034,7 +4034,7 @@ mod tests {
 	#[test]
 	fn cmd_macro_test() {
 		let act = |_, c: Context| -> action_result!() {
-			println!("action!{:?}", c);
+			println!("action!{c:?}");
 			assert_eq!(
 				c.raw_args,
 				vec!["raw".to_owned(), "arg".to_owned(), "test".to_owned()]
@@ -4046,7 +4046,7 @@ mod tests {
 		let _lleaf = license!("test_license_sub2",->"test_license_fn_sub2");
 		let leaf = Command::with_name("leaf")
 			.action(|c, _| {
-				println!("Context: {:?}", c);
+				println!("Context: {c:?}");
 				done!()
 			})
 			.license(_lleaf.clone());

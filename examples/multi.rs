@@ -57,7 +57,7 @@ fn print_args(current_command: Command, context: Context) -> Result<ActionResult
 		}
 	};
 
-	println!("{}", str);
+	println!("{str}");
 
 	Ok(ActionResult::Done)
 }
@@ -78,7 +78,7 @@ fn add_action(cmd: Command, c: Context) -> Result<ActionResult, ActionError> {
 	if called_help(&c, &cmd) {
 		return call_help(&c, &cmd);
 	}
-	let f = |(str, sum), num: f64| (format!("{} {} +", str, num), sum + num);
+	let f = |(str, sum), num: f64| (format!("{str} {num} +"), sum + num);
 	let (mut str, sum): (String, f64) =
 		if c.get_flag_value_of("reverse", &cmd) == Some(FlagValue::Bool(true)) {
 			c.args
@@ -96,9 +96,9 @@ fn add_action(cmd: Command, c: Context) -> Result<ActionResult, ActionError> {
 	str.pop();
 
 	if c.get_flag_value_of("detail", &cmd).unwrap().is_bool_true() {
-		println!("{} = {}", str, sum);
+		println!("{str} = {sum}");
 	} else {
-		println!("{}", sum);
+		println!("{sum}");
 	}
 	Ok(ActionResult::Done)
 }
@@ -117,7 +117,7 @@ fn sub_action(cmd: Command, c: Context) -> Result<ActionResult, ActionError> {
 	}
 	let f = |(str, sum), (index, num): (usize, f64)| {
 		(
-			format!("{} {} -", str, num),
+			format!("{str} {num} -"),
 			if index < 1 { num } else { sum - num },
 		)
 	};
@@ -147,7 +147,7 @@ fn sub_action(cmd: Command, c: Context) -> Result<ActionResult, ActionError> {
 	str.pop();
 	str.pop();
 
-	println!("{} = {}", str, result);
+	println!("{str} = {result}");
 
 	Ok(ActionResult::Done)
 }

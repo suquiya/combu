@@ -1,4 +1,4 @@
-use combu::{command::presets, done, ActionError, ActionResult, Command, Context, Flag, FlagValue};
+use combu::{ActionError, ActionResult, Command, Context, Flag, FlagValue, command::presets, done};
 /*
 multi command example.
 We can run as follows:

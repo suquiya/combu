@@ -2699,8 +2699,7 @@ pub mod presets {
 						}
 					}
 				};
-				help =
-					help + "\n" + &format!("{location} <subcommand> --help for more information.");
+				help = help + "\n" + &format!("{location} <subcommand> --help for more information.");
 				help += "\n";
 			}
 

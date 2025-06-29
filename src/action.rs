@@ -35,9 +35,9 @@ pub struct ActionError {
 	/// ActionError's Kind
 	pub kind: ActionErrorKind,
 	/// command is a field for storing command that error occured
-	pub command: Command,
+	pub command: Box<Command>,
 	/// context is a field for storing context that error occured
-	pub context: Context,
+	pub context: Box<Context>,
 	/// If there is an error which is not ActionError, related_error can stores it.
 	pub related_error: Option<Box<dyn Error>>,
 	/// printed flag. If this is true, this shows error is not printed yet.
@@ -67,8 +67,8 @@ impl ActionError {
 		Self {
 			value: value.into(),
 			kind,
-			command,
-			context,
+			command: Box::new(command),
+			context: Box::new(context),
 			related_error,
 			printed: false,
 		}
@@ -84,8 +84,8 @@ impl ActionError {
 		Self {
 			value,
 			kind,
-			command,
-			context,
+			command: Box::new(command),
+			context: Box::new(context),
 			related_error: None,
 			printed: false,
 		}

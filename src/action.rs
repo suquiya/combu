@@ -13,8 +13,10 @@ pub enum ActionResult {
 	///Done shows that action is done.
 	Done,
 	/// ParentActionRequest shows that action requested to show help.
+	/// It is mainly used for help command.
 	ParentActionRequest(Command, Context),
 	/// Shows return Context, reached Command and Action as result for parse and run.
+	/// By using this, it is possible to get parse result and run action without keeping command instances of tree in memory.
 	Result(Command, Context),
 	/// Custom result(can have Box including dyn Debug).
 	Custom(Box<dyn Debug>),

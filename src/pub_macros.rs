@@ -3981,7 +3981,6 @@ mod tests {
 			(Some(la), Some(ra)) => {
 				assert!(la(left.clone(), c.clone()).unwrap().is_done());
 				assert!(ra(right.clone(), c.clone()).unwrap().is_done());
-				assert_eq!(la, ra);
 				assert_eq!(la as usize, ra as usize);
 			}
 			(None, None) => {}

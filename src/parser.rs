@@ -1485,7 +1485,14 @@ impl Parser {
 									}
 								),
 								_ => {
-									let flag_arg = MiddleArg::ShortFlag(short_flag, FlagValue::None);
+									let flag_arg = MiddleArg::ShortFlag(
+										{
+											short_flag.push(last);
+											short_flag
+										},
+										FlagValue::None,
+									);
+									println!("{:?}", flag_arg);
 									c.error_info_list.push((
 										flag_arg.clone(),
 										ParseError::NoExistShort(i),
@@ -1735,5 +1742,31 @@ pub mod preset {
 			(_, _, _) => {}
 		};
 		description
+	}
+
+	#[cfg(test)]
+	mod tests {
+		use crate::{Command, done, parser::preset::gen_error_description};
+
+		#[test]
+		fn test_error_description() {
+			let arg: Vec<String> = vec![
+				"exe_path".to_string(),
+				"test".to_string(),
+				"test".to_string(),
+				"-d".to_string(),
+				"dir".to_string(),
+			];
+			let test = Command::new().action(|mut _cmd, c| {
+				println!("test_action: {c:?}");
+				if let Some(err) = c.first_error() {
+					let description = gen_error_description(err);
+					println!("{}", description);
+				}
+				done!()
+			});
+			let r = test.run_from_args(arg);
+			assert!(r.is_ok());
+		}
 	}
 }

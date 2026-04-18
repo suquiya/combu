@@ -13,7 +13,7 @@ To know more about this crate, please read README(You can read [file](../README.
 
 combu(com + 昆布)は柔軟に CLI を組み上げられることを目標とした、カスタマイズ可能な CLI フレームワークです（一時クレートの名前が cmb だったこともありましたが、現在は combu です）。
 
-もう少し詳しく知りたい場合、まず初めにREADME(ファイルは[こちら](../README.md)、Githubのページは[こちら](https://github.com/suquiya/combu))をお読みください。
+もう少し詳しく知りたい場合、まず初めに[README](https://github.com/suquiya/combu)をお読みください。
 
  */
 

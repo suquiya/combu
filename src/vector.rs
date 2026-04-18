@@ -1,4 +1,4 @@
-/// struct Vector is a new type pattern of Option<Vec<T>>
+/// struct Vector is a new type pattern of `Option<Vec<T>>`.
 #[derive(Clone, Debug, PartialOrd, PartialEq)]
 #[cfg_attr(feature = "vector_serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Vector<T>(pub Option<Vec<T>>);
@@ -56,7 +56,7 @@ impl<T> Vector<T> {
 		Vector(Some(inner_vec))
 	}
 
-	/// Initialize this. After initialization, this inner Option<Vec<T>> becomes value.
+	/// Initialize this. After initialization, this inner `Option<Vec<T>>` becomes value.
 	pub fn init(&mut self, value: Option<Vec<T>>) {
 		*self = Vector(value);
 	}
@@ -89,7 +89,7 @@ impl<T> Vector<T> {
 		}
 	}
 
-	/// Append other(Vec<T>) to this inner.
+	/// Append other(`Vec<T>`) to this inner.
 	pub fn append_vec(&mut self, mut other: Vec<T>) {
 		match self {
 			Vector(None) => *self = Vector(Some(other)),
@@ -97,7 +97,7 @@ impl<T> Vector<T> {
 		}
 	}
 
-	/// Prepend other(Vec<T>) to this inner.
+	/// Prepend other(`Vec<T>`) to this inner.
 	pub fn prepend_vec(&mut self, mut other: Vec<T>) {
 		match self {
 			Vector(None) => *self = Vector(Some(other)),
@@ -136,7 +136,7 @@ impl<T> Vector<T> {
 		matches!(self, Vector(None))
 	}
 
-	/// Returns true if this has inner vec(as Some(Vec<T>)).
+	/// Returns true if this has inner vec(as Some(`Vec<T>`)).
 	pub fn has_inner_vec(&self) -> bool {
 		matches!(self, Vector(Some(_)))
 	}

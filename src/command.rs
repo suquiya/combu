@@ -84,11 +84,11 @@ macro_rules! check_sub_field {
 	};
 }
 
-/// LicenseFunc shows type alias for license function
+/// `LicenseFunc` shows type alias for license function
 pub type LicenseFunc = fn(command: &Command, context: &Context) -> String;
 
 #[derive(Clone)]
-/// License shows license information
+/// `License` shows license information
 #[derive(Default)]
 pub struct License(pub Option<(String, LicenseFunc)>);
 
@@ -103,7 +103,7 @@ impl Debug for License {
 }
 
 impl License {
-	/// Creates new License information.
+	/// Creates new license information.
 	pub fn new(inner: Option<(String, LicenseFunc)>) -> Self {
 		License(inner)
 	}
@@ -119,14 +119,14 @@ impl License {
 	pub fn take(&mut self) -> Self {
 		core::mem::take(self)
 	}
-	/// Returns (short) expression of license. If no license information(self is License(None)), returns None.
+	/// Returns (short) expression of license. If no license information(self is `License(None)`, returns None.
 	pub fn expr(&self) -> Option<String> {
 		match self {
 			License(Some((expr, _))) => Some(expr.into()),
 			License(None) => None,
 		}
 	}
-	/// Returns (short) expression of license. If no license information(self is License(None)), this function may panic.
+	/// Returns (short) expression of license. If no license information(self is `License(None)`, this function may panic.
 	pub fn expr_unwrap(&self) -> String {
 		match self {
 			License(Some((expr, _))) => expr.clone(),
@@ -140,7 +140,7 @@ impl License {
 			License(None) => None,
 		}
 	}
-	/// Returns (long) expression - detail of license. If self is License(None), this function may panic.
+	/// Returns (long) expression - detail of license. If self is `License(None)`, this function may panic.
 	pub fn output_unwrap(&self, cmd: &Command, ctx: &Context) -> String {
 		match self {
 			License(Some((_, outputter))) => outputter(cmd, ctx),

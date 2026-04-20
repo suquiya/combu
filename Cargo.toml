@@ -21,3 +21,6 @@ vector_serde = ["serde"]
 
 [dependencies]
 serde = { version = "1.0.216", optional = true, features = ["derive"] }
+
+[lints.clippy]
+doc_markdown = "warn"

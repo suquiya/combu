@@ -1,9 +1,6 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 #![warn(rust_2018_idioms)]
-#![allow(clippy::must_use_candidate)]
-#![allow(clippy::return_self_not_must_use)]
-
 /*! [combu](https://crates.io/crates/combu) is a customizable cli framework crate.
 The library name "combu" comes from command + 昆布(konbu, it means kelp in japanese).
 

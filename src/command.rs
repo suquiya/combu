@@ -427,8 +427,8 @@ impl Command {
 		self
 	}
 
-	/// Returns true if name_or_alias matches command's name or one of alias at least
-	/// name_or_aliasがコマンド名かエイリアスのうち少なくとも一つにマッチした場合trueを返す
+	/// Returns true if `name_or_alias` matches command's name or one of alias at least
+	/// `name_or_alias`がコマンド名かエイリアスのうち少なくとも一つにマッチした場合trueを返す
 	pub fn is(&self, name_or_alias: &str) -> bool {
 		if name_or_alias == self.name {
 			true
@@ -440,8 +440,8 @@ impl Command {
 		}
 	}
 
-	/// Take sub command matches name_or_alias.
-	/// name_or_aliasに一致するサブコマンドがある場合、保持しているVectorからswap_removeで取り出して返す
+	/// Take sub command matches `name_or_alias`.
+	/// `name_or_alias`に一致するサブコマンドがある場合、保持している`Vector`から`swap_remove`で取り出して返す
 	pub fn take_sub(&mut self, name_or_alias: &str) -> Option<Command> {
 		match self.sub {
 			Vector(None) => None,
@@ -452,7 +452,7 @@ impl Command {
 		}
 	}
 
-	/// Gets sub command mutable reference matches name_or_alias.
+	/// Gets sub command mutable reference matches `name_or_alias`.
 	pub fn get_mut_sub(&mut self, name_or_alias: &str) -> Option<&mut Command> {
 		match self.sub {
 			Vector(None) => None,
@@ -516,7 +516,7 @@ impl Run<Context> for Command {
 }
 
 impl Command {
-	/// Run commands with raw_args
+	/// Run commands with `raw_args`
 	pub fn run_from_args(mut self, raw_args: Vec<String>) -> run_result!() {
 		if self.sub.is_none() {
 			return self.single_run(raw_args);
@@ -820,7 +820,7 @@ impl Command {
 	}
 
 	/// Assign subcomannd's run or command's own action with no context
-	/// コンテキストが生成されていないときに、run_from_args内で第一引数からサブコマンドかそうでないか分からなかった時に再帰処理を行って割り当てを行う関数
+	/// コンテキストが生成されていないときに、`run_from_args`内で第一引数からサブコマンドかそうでないか分からなかった時に再帰処理を行って割り当てを行う関数
 	pub fn assign_run(
 		mut self,
 		mut args: VecDeque<String>,
@@ -969,9 +969,9 @@ impl Command {
 		}
 	}
 
-	/// Handle sub action's result (Result<ActionResult, ActionError>).
-	///Implemented: at ParentActionRequest and Err
-	/// アクションの結果であるResult<ActionResult, ActionError>をハンドルする関数。現在はParentActionRequestのハンドリング、もしくはエラー表示のみ
+	/// Handle sub action's result (`Result<ActionResult, ActionError>`).
+	/// Implemented: at `ParentActionRequest` and Err
+	/// アクションの結果である`Result<ActionResult, ActionError>`をハンドルする関数。現在は`ParentActionRequest`のハンドリング、もしくはエラー表示のみ
 	pub fn handle_sub_result(mut self, mut req: Result<ActionResult, ActionError>) -> run_result!() {
 		match req {
 			done!() => {
@@ -2266,8 +2266,8 @@ pub mod presets {
 			};
 		}
 
-		/// Add help for this flag to append_to. name_and_alias_min_width means min width of name and alias' field.
-		/// Flagに対するヘルプをappend_toに追加する。nameとalias表示部分のずれをある程度吸収できるようにその部分の最小幅をname_and_alias_min_widthで指定する
+		/// Add help for this flag to `append_to`. `name_and_alias_min_width` means min width of name and alias' field.
+		/// `Flag`に対するヘルプを`append_to`に追加する。nameとalias表示部分のずれをある程度吸収できるようにその部分の最小幅を`name_and_alias_min_width`で指定する
 		fn flag_help_simple(
 			flag: &Flag,
 			append_to: String,
@@ -2992,7 +2992,7 @@ pub mod presets {
 			};
 		}
 
-		/// Add short alias to append_to.
+		/// Add short alias to `append_to`.
 		/// It is formatted as "-<s>"
 		/// example: "-a, -b"
 		fn add_short_flags_str(append_to: &mut String, s_list: Vec<&char>) {
@@ -3027,24 +3027,24 @@ pub mod presets {
 			}
 		}
 
-		/// Add long alias (main,or formal) to append_to.
+		/// Add long alias (main,or formal) to `append_to`.
 		fn add_long_flags_str(append_to: &mut String, mut nl_iter: std::vec::IntoIter<&String>) {
 			append_to.push_str("--");
 			append_to.push_str(nl_iter.next().unwrap());
 			add_long_flags_str_to_prev_flags(append_to, nl_iter);
 		}
 
-		/// Add all flags' help string to append_to.
+		/// Add all flags' help string to `append_to`.
 		///
 		/// # Parameters
 		///
-		/// - append_to: The string to which the help string is appended.
+		/// - `append_to`: The string to which the help string is appended.
 		/// - flags: A vector of Flag whose help string is added.
-		/// - s_columns: A VecDeque of vectors of short aliases.
-		/// - nl_columns: A VecDeque of vectors of long aliases.
-		/// - s_col_width: The width of the short alias column.
-		/// - nl_col_width: The width of the long alias column.
-		/// - gap_width: The width of the gap between the two columns.
+		/// - `s_columns`: A `VecDeque` of vectors of short aliases.
+		/// - `nl_columns`: A `VecDeque` of vectors of long aliases.
+		/// - `s_col_width`: The width of the short alias column.
+		/// - `nl_col_width`: The width of the long alias column.
+		/// - `gap_width`: The width of the gap between the two columns.
 		/// - suffix: The suffix appended to the end of each line.
 		/// - prefix: The prefix appended to the beginning of each line.
 		/// - sp: The string to repeat for filling the gap.

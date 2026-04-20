@@ -14,23 +14,23 @@ pub struct Flag {
 	pub long_alias: Vector<String>,
 	/// This flag's default value
 	pub default_value: FlagValue,
-	/// This flag's flag_type
+	/// This flag's `flag_type`
 	pub flag_type: FlagType,
 }
 
-/// Enum shows FlagType
+/// Enum shows `FlagType`
 /// フラグの型を示すEnumです。
 #[derive(PartialOrd, PartialEq, Clone, Debug, Default)]
 pub enum FlagType {
 	/// Variant shows bool
-	/// Bool型用Variant
+	/// `Bool型用Variant`
 	#[default]
 	Bool,
 	/// Variant shows string
-	/// String型用Variant
+	/// `String型用Variant`
 	String,
 	/// Variant shows int
-	/// Int型用Variant
+	/// `Int型用Variant`
 	Int,
 	/// Variant shows float
 	/// float型用Variant
@@ -38,7 +38,7 @@ pub enum FlagType {
 }
 
 impl FlagType {
-	/// Get this FlagType variant's name as str
+	/// Get this `FlagType` variant's name as str
 	/// &str型の形でFlagType名を取得します。
 	pub fn name<'a>(&self) -> &'a str {
 		match self {
@@ -48,8 +48,8 @@ impl FlagType {
 			FlagType::Float => "Float",
 		}
 	}
-	/// Get this FlagType variant's default value
-	/// FlagTypeのデフォルト値を取得
+	/// Get this `FlagType` variant's default value
+	/// `FlagType`のデフォルト値を取得
 	pub fn default_flag_value(&self) -> FlagValue {
 		match self {
 			FlagType::Bool => FlagValue::Bool(bool::default()),
@@ -65,7 +65,7 @@ impl FlagType {
 		Some(self) == val.get_type()
 	}
 
-	/// Get FlagValue from val as &self type.
+	/// Get `FlagValue` from val as &self type.
 	/// valを&self型とした場合のFlagValueを取得する
 	pub fn get_value_from_string(&self, val: String) -> FlagValue {
 		match self {
@@ -92,28 +92,28 @@ impl FlagType {
 		}
 	}
 
-	/// Returns true if &self equals FlagType::String
+	/// Returns true if &self equals `FlagType::String`
 	pub fn is_string(&self) -> bool {
 		*self == FlagType::String
 	}
 
-	/// Returns true if &self equals FlagType::Int
+	/// Returns true if &self equals `FlagType::Int`
 	pub fn is_int(&self) -> bool {
 		*self == FlagType::Int
 	}
 
-	/// Returns true if &self equals FlagType::Float
+	/// Returns true if &self equals `FlagType::Float`
 	pub fn is_float(&self) -> bool {
 		*self == FlagType::Float
 	}
 
-	/// Returns true if &self equals FlagType::Bool
+	/// Returns true if &self equals `FlagType::Bool`
 	pub fn is_bool(&self) -> bool {
 		*self == FlagType::Bool
 	}
 }
 
-/// Enum for storage FlagValue
+/// Enum for storage `FlagValue`
 /// フラグの値を保持するためのEnum
 #[derive(PartialOrd, PartialEq, Clone, Debug, Default)]
 pub enum FlagValue {
@@ -151,8 +151,8 @@ impl From<&str> for FlagValue {
 }
 
 impl FlagValue {
-	/// Get &self's corresponding type of FlagType. Returns None if  &self is a invalid flag value.
-	/// FlagValueに対応するFlagTypeを取得する
+	/// Get &self's corresponding type of `FlagType`. Returns None if  &self is a invalid flag value.
+	/// `FlagValue`に対応する`FlagType`を取得する。無効なフラグ値の場合はNoneを返す。
 	pub fn get_type(&self) -> Option<&FlagType> {
 		match self {
 			FlagValue::Bool(_) => Some(&FlagType::Bool),
@@ -163,7 +163,7 @@ impl FlagValue {
 		}
 	}
 
-	/// Returns true if &self's FlagType is flag_type.
+	/// Returns true if &self's `FlagType` is `flag_type`.
 	pub fn is_type(&self, flag_type: &FlagType) -> bool {
 		match self {
 			FlagValue::Bool(_) => &FlagType::Bool == flag_type,
@@ -174,7 +174,7 @@ impl FlagValue {
 		}
 	}
 
-	/// Gets bool FlagValue from string
+	/// Gets bool `FlagValue` from string
 	pub fn get_bool_value_from_string(val: String) -> FlagValue {
 		match val.as_str() {
 			"true" => FlagValue::Bool(true),
@@ -183,7 +183,7 @@ impl FlagValue {
 		}
 	}
 
-	/// Gets string from self corresponding FlagValue
+	/// Gets string from self corresponding `FlagValue`
 	pub fn get_string_value(self) -> String {
 		match self {
 			FlagValue::String(val) => val,
@@ -195,7 +195,7 @@ impl FlagValue {
 		}
 	}
 
-	/// Return String if self is FlagValue::String(val), otherwise returns None.
+	/// Return String if self is `FlagValue::String(val)`, otherwise returns None.
 	pub fn get_string(&self) -> Option<String> {
 		match self {
 			FlagValue::String(val) => Some(val.to_owned()),
@@ -203,12 +203,12 @@ impl FlagValue {
 		}
 	}
 
-	/// Returns true if self is FlagValue::Bool(true)
+	/// Returns true if self is `FlagValue::Bool(true)`
 	pub fn is_bool_true(&self) -> bool {
 		matches!(self, FlagValue::Bool(true))
 	}
 
-	/// Returns inner bool value. If self is not FlagValue::Bool(val), returns None.
+	/// Returns inner bool value. If self is not `FlagValue::Bool(val)`, returns None.
 	pub fn get_bool(&self) -> Option<bool> {
 		match self {
 			FlagValue::Bool(val) => Some(*val),
@@ -216,7 +216,7 @@ impl FlagValue {
 		}
 	}
 
-	/// Returns inner bool value. If self is not FlagValue::Bool(val), panic will occur.
+	/// Returns inner bool value. If self is not `FlagValue::Bool(val)`, panic will occur.
 	pub fn get_bool_unwrap(&self) -> bool {
 		match self {
 			FlagValue::Bool(val) => *val,
@@ -224,7 +224,7 @@ impl FlagValue {
 		}
 	}
 
-	/// Returns inner isize value. If self is not FlagValue::Bool(val), returns None.
+	/// Returns inner isize value. If self is not `FlagValue::Bool(val)`, returns None.
 	pub fn get_int(&self) -> Option<isize> {
 		match self {
 			FlagValue::Int(val) => Some(*val),
@@ -232,7 +232,7 @@ impl FlagValue {
 		}
 	}
 
-	/// Returns inner isize value. If self is not FlagValue::Bool(val), panic will occur.
+	/// Returns inner isize value. If self is not `FlagValue::Bool(val)`, panic will occur.
 	pub fn get_int_unwrap(&self) -> isize {
 		match self {
 			FlagValue::Int(val) => *val,
@@ -240,7 +240,7 @@ impl FlagValue {
 		}
 	}
 
-	/// Returns inner float value. If self is not FlagValue::Float(val), returns None.
+	/// Returns inner float value. If self is not `FlagValue::Float(val)`, returns None.
 	pub fn get_float(&self) -> Option<f64> {
 		match self {
 			FlagValue::Float(val) => Some(*val),
@@ -415,14 +415,14 @@ impl Flag {
 	}
 
 	/// Derives this Flag's value from arg
-	/// Alias of self.flag_type.get_value_from_string(arg)
+	/// Alias of `self.flag_type.get_value_from_string(arg)`
 	#[inline]
 	pub fn derive_flag_value_from_string(&self, arg: String) -> FlagValue {
 		self.flag_type.get_value_from_string(arg)
 	}
 
 	/// Derives this Flag's value in case of no value
-	/// Alias of self.flag_type.get_value_if_no_value()
+	/// Alias of `self.flag_type.get_value_if_no_value()`
 	#[inline]
 	pub fn derive_flag_value_if_no_value(&self) -> FlagValue {
 		self.flag_type.get_value_if_no_value()

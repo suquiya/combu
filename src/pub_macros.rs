@@ -402,7 +402,7 @@ macro_rules! check_error {
 }
 
 #[macro_export]
-/// Checks context has help flag. If the context has help flag, return ShowHelpRequest.
+/// Checks context has help flag. If the context has help flag, return `ShowHelpRequest`.
 macro_rules! check_help {
 	($($t:tt)*)=>{
 		$crate::check!(help,$($t)*);
@@ -450,7 +450,7 @@ macro_rules! include_license_file {
 }
 
 #[macro_export]
-/// Checks context has license flag. If the context has license flag, exec $license_func and return done.
+/// Checks context has license flag. If the context has license flag, exec $`license_func` and return done.
 macro_rules! check_license {
 	($ctx:ident,$cmd:ident) => {
 		$crate::ckeck!(license, $ctx, $cmd)
@@ -477,7 +477,7 @@ macro_rules! check_preset_flags {
 }
 
 #[macro_export]
-/// action_result type annotation
+/// `action_result` type annotation
 macro_rules! action_result {
 	() => {
 		Result<$crate::ActionResult,$crate::ActionError>
@@ -493,7 +493,7 @@ macro_rules! done {
 }
 
 #[macro_export]
-/// alias of Ok(ActionResult::Result(cmd, ctx))
+/// alias of `Ok(ActionResult::Result(cmd`, ctx))
 macro_rules! result {
 	($cmd:expr, $ctx:expr) => {
 		Ok($crate::ActionResult::Result($cmd, $ctx))
@@ -1923,7 +1923,7 @@ macro_rules! commands{
 }
 
 #[macro_export]
-/// string_from macro. based on Strong::from, but no arg can generate String::new()
+/// `string_from` macro. based on `Strong::from`, but no arg can generate `String::new()`
 macro_rules! string_from {
 	() => {
 		String::new()
@@ -1952,7 +1952,7 @@ macro_rules! string_from {
 }
 
 #[macro_export]
-/// option_string_from macro
+/// `option_string_from` macro
 macro_rules! option_string_from {
 	() => {
 		None
@@ -2554,7 +2554,7 @@ macro_rules! _ftp_t {
 }
 
 #[macro_export]
-/// short_alias_expander
+/// `short_alias_expander`
 macro_rules! short_alias {
 	() => {
 		$crate::short_alias!(None)
@@ -2616,7 +2616,7 @@ macro_rules! short_alias {
 }
 
 #[macro_export]
-/// long_alias_expander
+/// `long_alias_expander`
 macro_rules! long_alias {
 	()=>{
 		$crate::long_alias!(None)
@@ -2933,7 +2933,7 @@ macro_rules! _fp_ident_ft_assigner {
 }
 
 #[macro_export]
-/// Gets FlagType from keyword
+/// Gets `FlagType` from keyword
 macro_rules! flag_type {
 	(bool) => {
 		$crate::flag_type!(Bool)
@@ -2989,7 +2989,7 @@ macro_rules! flag_type {
 }
 
 #[macro_export]
-/// Creates flag_value
+/// Creates `flag_value`
 macro_rules! flag_value {
 	(bool,$val:expr) => {
 		$crate::FlagValue::Bool($val)
@@ -3060,7 +3060,7 @@ macro_rules! flag_value {
 }
 
 #[macro_export]
-/// Creates default_flag_value
+/// Creates `default_flag_value`
 macro_rules! default_flag_value {
 	($type:ident) => {
 		$crate::flag_value!($type, $crate::type_default_value!($type))

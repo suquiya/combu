@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 
 /// Struct of information for parse
 pub struct Parser {
-	/// flag_pattern. Default is '-'.
+	/// `flag_pattern`. Default is '-'.
 	pub flag_pattern: char,
 	/// Long-flag pre&&fix. Default is "--".
 	pub long_flag_prefix: String,
@@ -162,7 +162,7 @@ type ParseMiddleArgResult = (
 );
 
 impl Parser {
-	/// Creates a new Parser with flag_pattern and long_flag_prefix.
+	/// Creates a new Parser with `flag_pattern` and `long_flag_prefix`.
 	pub fn new(flag_pattern: char, long_flag_prefix: &str) -> Parser {
 		Parser {
 			flag_pattern,
@@ -205,7 +205,7 @@ impl Parser {
 		arg.split_off(1)
 	}
 
-	/// Parses args and convert into MiddileArgs
+	/// Parses args and convert into `MiddileArgs`
 	pub fn middle_parse(
 		&self,
 		mut args: VecDeque<String>,
@@ -238,7 +238,7 @@ impl Parser {
 		}
 	}
 
-	/// Converts long_flag to MiddleArg::LongFlag.
+	/// Converts `long_flag` to `MiddleArg::LongFlag`.
 	pub fn long_middle(&self, mut long_flag: String) -> MiddleArg {
 		match &long_flag.find(self.eq) {
 			Some(index) => {
@@ -253,7 +253,7 @@ impl Parser {
 		}
 	}
 
-	/// Converts short_flag to MiddleArg::ShortFlag.
+	/// Converts `short_flag` to `MiddleArg::ShortFlag`.
 	pub fn short_middle(&self, mut short_flag: String) -> MiddleArg {
 		match &short_flag.find(self.eq) {
 			Some(index) => {
@@ -268,7 +268,7 @@ impl Parser {
 		}
 	}
 
-	/// Parses c's parsing_args (call inter mediate args in parsing).
+	/// Parses c's `parsing_args` (call inter mediate args in parsing).
 	pub fn parse_inter_mediate_args<T: FlagSearch, S: FlagSearch>(
 		&self,
 		local_flags: &T,
@@ -838,7 +838,7 @@ impl Parser {
 		}
 	}
 
-	/// If flag_only is true, pushes non-flag arg to Context.error_info_list as ParseError::NotExist and push it to Context.parsing_args as MiddleArg::Normal.
+	/// If `flag_only` is true, pushes non-flag arg to `Context.error_info_list` as `ParseError::NotExist` and push it to `Context.parsing_args` as `MiddleArg::Normal`.
 	fn push_normal_arg_in_flag_only_error(&self, mut c: Context, normal_arg: String) -> Context {
 		let val = MiddleArg::Normal(normal_arg);
 		c.error_info_list
@@ -1576,7 +1576,7 @@ impl MiddleArg {
 		}
 	}
 
-	/// Gets flag value storaged in &self if FlagValue::String
+	/// Gets flag value storaged in &self if `FlagValue::String`
 	pub fn val_if_string(&self) -> Option<&String> {
 		match self {
 			MiddleArg::LongFlag(_, FlagValue::String(val)) => Some(val),
@@ -1604,7 +1604,7 @@ impl MiddleArg {
 		}
 	}
 
-	/// Sets value to MiddileArg self.
+	/// Sets value to `MiddileArg` self.
 	pub fn set_val(mut self, value: FlagValue) -> Self {
 		match self {
 			MiddleArg::LongFlag(_, ref mut val) => {
@@ -1622,7 +1622,7 @@ impl MiddleArg {
 		}
 	}
 
-	/// Gets the form of MiddleArg as str value.
+	/// Gets the form of `MiddleArg` as str value.
 	pub fn get_flag_type_str<'a>(&self) -> &'a str {
 		match self {
 			MiddleArg::LongFlag(_, _) => "long",
@@ -1632,9 +1632,9 @@ impl MiddleArg {
 	}
 }
 
-/// Type of ParseError's index
+/// Type of `ParseError`'s index
 type Index = usize;
-/// ParseError shows error in parsing
+/// `ParseError` shows error in parsing
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum ParseError {
 	/// Variant shows that corresponding long flag do not exist.

@@ -1,7 +1,7 @@
 use combu::command::presets::func::{help, help_tablize_with_alias_dedup};
-use combu::{action_result, check_help, done, preset_root, Command};
-use combu::{def_action_func, define_help_command_action, help_command_action};
+use combu::{Command, action_result, check_help, done, preset_root};
 use combu::{Context, Flag};
+use combu::{def_action_func, define_help_command_action, help_command_action};
 use std::env;
 
 fn main() {

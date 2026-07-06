@@ -2309,7 +2309,7 @@ pub mod presets {
 				help.push_str(description);
 				help.push_str("\n\n");
 			}
-			help += &format!("Usage:\n{}{}\n", &indent, cmd.usage);
+			help.push_str(&format!("Usage:\n{}{}\n", &indent, cmd.usage));
 			let name_and_alias_min_width = 12;
 			let routes = ctx.routes.clone();
 			let mut routes: Vec<String> = if routes.len() < ctx.depth() {
@@ -2508,7 +2508,7 @@ pub mod presets {
 				help.push_str(description);
 				help.push_str("\n\n");
 			}
-			help += &format!("Usage:\n{}{}\n\n", &indent, cmd.usage);
+			help.push_str(&format!("Usage:\n{}{}\n\n", &indent, cmd.usage));
 
 			//フラグ処理
 			let l_flags: &Vector<Flag> = &cmd.l_flags;

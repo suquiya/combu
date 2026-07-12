@@ -4,6 +4,7 @@ use std::error::Error;
 pub type Action = Result<ActionResult, ActionError>;
 
 /// `ActionResult` is the result of a command action.
+#[derive(Debug)]
 pub enum ActionResult {
 	/// Done shows that action is entirely done and not return any value
 	Done,
@@ -42,5 +43,24 @@ impl std::fmt::Display for ActionError {
 impl Error for ActionError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		self.source.as_ref().map(|e| e.as_ref())
+	}
+}
+
+impl ActionError {
+	/// Creates new `ActionError` with the given message and kind.
+	pub fn new(message: String, kind: ActionErrorKind) -> Self {
+		Self {
+			message,
+			kind,
+			source: None,
+		}
+	}
+	/// Creates new `ActionError` with the given message and kind, and source error.
+	pub fn with_source(message: String, kind: ActionErrorKind, source: Box<dyn Error>) -> Self {
+		Self {
+			message,
+			kind,
+			source: Some(source),
+		}
 	}
 }

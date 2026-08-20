@@ -2,14 +2,19 @@ use std::fmt::Debug;
 
 use crate::{
 	Action,
-	flag::{DefaultFlagValue, Flag, ParsableFlagValue},
+	context::Context,
+	opt::{Opt, OptValue, ParsableOpt, ParseValueError},
 };
 
 /// The struct for command information store and command execution
 /// This can be root and edge
 /// コマンドの情報格納＆実行用構造体です。root（根）にもedge（葉）にもなりえます。
 #[derive(Default, Debug)]
-pub struct Command<FlagValue: ParsableFlagValue = DefaultFlagValue> {
+pub struct Command<OptVal = OptValue, OptErr = ParseValueError, OptionItem = Opt<OptVal, OptErr>>
+where
+	OptionItem: ParsableOpt<OptVal, OptErr>,
+	OptErr: std::error::Error,
+{
 	///Command name
 	pub name: String,
 	///Command action
@@ -24,16 +29,18 @@ pub struct Command<FlagValue: ParsableFlagValue = DefaultFlagValue> {
 	pub description: Option<String>,
 	///Command usage
 	pub usage: String,
-	///local flags of command
-	pub l_flags: Vec<Flag<FlagValue>>,
-	///common flags of command
-	pub c_flags: Vec<Flag<FlagValue>>,
+	///local options of command
+	pub l_options: Vec<OptionItem>,
+	///common options of command
+	pub c_options: Vec<OptionItem>,
 	///alias for command
 	pub alias: Vec<String>,
 	///Command version
 	pub version: String,
 	///container of sub-command
-	pub sub: Vec<Command>,
+	pub sub: Vec<Self>,
+
+	_marker_v: std::marker::PhantomData<(OptVal, OptErr)>,
 }
 
 /// `LicenseFunc` shows type alias for license function
@@ -47,7 +54,7 @@ pub struct License(pub Option<(String, LicenseFunc)>);
 impl Debug for License {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		if let License(Some(val)) = self {
-			write!(f, "Some({},Func for Output)", val.0)
+			write!(f, "Some({}, LicenseFunc)", val.0)
 		} else {
 			write!(f, "None")
 		}

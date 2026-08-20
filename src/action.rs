@@ -1,7 +1,9 @@
 use std::error::Error;
 
-/// `Action` is type for command action. It returns `Result<ActionResult, ActionError>`
-pub type Action = Result<ActionResult, ActionError>;
+use crate::{command::Command, context::Context};
+
+/// `Action` is type for command action (function). It returns `Result<ActionResult, ActionError>`
+pub type Action = fn(Command, Context) -> Result<ActionResult, ActionError>;
 
 /// `ActionResult` is the result of a command action.
 #[derive(Debug)]

@@ -20,19 +20,19 @@ pub mod action;
 /// command is a module about command
 pub mod command;
 
+/// args is a module about args
+pub mod args;
 /// context is a module about context
 mod context;
-/// flag is a module about flag
-pub mod flag;
+/// opt is a module about argparse option
+pub mod opt;
 /// parser is a module about command args parser
 pub mod parser;
-/// vector is a moudle about vector
-pub mod vector;
 
 pub use action::Action;
 // pub use command::Command;
 // pub use context::Context;
-// pub use flag::{Flag, FlagType, FlagValue};
+// pub use option::{option, optionType, optionValue};
 // pub use hook::Hook;
 // pub use parser::Parser;
 // pub use vector::Vector;

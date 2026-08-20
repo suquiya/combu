@@ -20,6 +20,7 @@ where
 	_marker_fv: std::marker::PhantomData<ValueParseError>,
 }
 
+/// Trait for option settings (can be parsed from strings).
 pub trait ParsableOpt<OptValue, ParseError: std::error::Error> {
 	/// Returns option's name.
 	fn name(&self) -> &str;
@@ -33,7 +34,7 @@ pub trait ParsableOpt<OptValue, ParseError: std::error::Error> {
 	fn default_with_type(&self) -> &OptValue;
 
 	/// Parses the option value from a string.
-	fn parse(&self, value: &str) -> Result<OptValue, ()>;
+	fn parse(&self, value: &str) -> Option<OptValue>;
 
 	/// Parses the option value from a string with error handling.
 	fn parse_with_error(&self, value: &str) -> Result<OptValue, ParseError>;
@@ -68,7 +69,7 @@ impl<OptValue: ParsableOptValue<ParseError>, ParseError: std::error::Error>
 		&self.description
 	}
 
-	fn parse(&self, value: &str) -> Result<OptValue, ()> {
+	fn parse(&self, value: &str) -> Option<OptValue> {
 		self.default_with_type.parse(value)
 	}
 
@@ -139,27 +140,36 @@ impl Default for OptValue {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Errors that can occur when parsing an option value from a string.
 pub enum ParseValueError {
+	/// Error parsing a boolean value.
 	BoolError(std::str::ParseBoolError),
+	/// Error parsing an integer value.
 	IntError(std::num::ParseIntError),
+	/// Error parsing a float value.
 	FloatError(std::num::ParseFloatError),
+	/// Error parsing a string value.
 	StringError(std::string::ParseError),
 }
 
 impl ParseValueError {
-	fn from_bool_error(e: std::str::ParseBoolError) -> Self {
+	/// Creates a `ParseValueError` from a `std::str::ParseBoolError`.
+	pub fn from_bool_error(e: std::str::ParseBoolError) -> Self {
 		Self::BoolError(e)
 	}
 
-	fn from_int_error(e: std::num::ParseIntError) -> Self {
+	/// Creates a `ParseValueError` from a `std::num::ParseIntError`.
+	pub fn from_int_error(e: std::num::ParseIntError) -> Self {
 		Self::IntError(e)
 	}
 
-	fn from_float_error(e: std::num::ParseFloatError) -> Self {
+	/// Creates a `ParseValueError` from a `std::num::ParseFloatError`.
+	pub fn from_float_error(e: std::num::ParseFloatError) -> Self {
 		Self::FloatError(e)
 	}
 
-	fn from_string_error(e: std::string::ParseError) -> Self {
+	/// Creates a `ParseValueError` from a `std::string::ParseError`.
+	pub fn from_string_error(e: std::string::ParseError) -> Self {
 		Self::StringError(e)
 	}
 }
@@ -187,12 +197,12 @@ impl std::error::Error for ParseValueError {
 }
 
 impl ParsableOptValue<ParseValueError> for OptValue {
-	fn parse(&self, value: &str) -> Result<Self, ()> {
+	fn parse(&self, value: &str) -> Option<Self> {
 		match self {
-			OptValue::Bool(_) => value.parse::<bool>().map(Self::Bool).map_err(|_| ()),
-			OptValue::Int(_) => value.parse::<i64>().map(Self::Int).map_err(|_| ()),
-			OptValue::Float(_) => value.parse::<f64>().map(Self::Float).map_err(|_| ()),
-			OptValue::String(_) => value.parse::<String>().map(Self::String).map_err(|_| ()),
+			OptValue::Bool(_) => value.parse::<bool>().ok().map(Self::Bool),
+			OptValue::Int(_) => value.parse::<i64>().ok().map(Self::Int),
+			OptValue::Float(_) => value.parse::<f64>().ok().map(Self::Float),
+			OptValue::String(_) => value.parse::<String>().ok().map(Self::String),
 		}
 	}
 
@@ -201,19 +211,19 @@ impl ParsableOptValue<ParseValueError> for OptValue {
 			OptValue::Bool(_) => value
 				.parse::<bool>()
 				.map(Self::Bool)
-				.map_err(|e| ParseValueError::BoolError(e)),
+				.map_err(ParseValueError::BoolError),
 			OptValue::Int(_) => value
 				.parse::<i64>()
 				.map(Self::Int)
-				.map_err(|e| ParseValueError::IntError(e)),
+				.map_err(ParseValueError::IntError),
 			OptValue::Float(_) => value
 				.parse::<f64>()
 				.map(Self::Float)
-				.map_err(|e| ParseValueError::FloatError(e)),
+				.map_err(ParseValueError::FloatError),
 			OptValue::String(_) => value
 				.parse::<String>()
 				.map(Self::String)
-				.map_err(|e| ParseValueError::StringError(e)),
+				.map_err(ParseValueError::StringError),
 		}
 	}
 
@@ -251,7 +261,7 @@ pub trait ParsableOptValue<Error: std::error::Error>:
 	std::marker::Sized + std::default::Default
 {
 	/// Parses a string value into this option value.
-	fn parse(&self, value: &str) -> Result<Self, ()>;
+	fn parse(&self, value: &str) -> Option<Self>;
 
 	/// Parses a string value into this option value. This method should return an error message if the value cannot be parsed.
 	fn parse_with_error(&self, value: &str) -> Result<Self, Error>;

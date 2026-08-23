@@ -21,12 +21,13 @@ combu(com + 昆布)は柔軟に CLI を組み上げられることを目標と�
 
 - flag parsing in Unix format (Unix 形式でのフラグパース)
 - Nestable sub commmands (サブコマンド（多重可能）)
-- No dependencies; combu depends on only std library (標準ライブラリ以外への依存ライブラリなし)
+- No dependencies other than std library; combu depends on only std library (標準ライブラリ以外への依存ライブラリなし)
 - Typed flag: Bool, String, Int and Float, inspired from seahorse（seahorse を参考にした Bool, String, Int, Float の型つきフラグ）
+  - Custom flag types(Please note that you need to implement your own flag type for using custom type)（実装の手間はかかりますが、型付きフラグの独自実装も可能です）
 - common flag, local flag (コモンフラグ、ローカルフラグ両方を設定可能)
 - flag parsing before sub command args(サブコマンド前のフラグの受付)
-- 独自でパース等を行いたい場合に再利用できそうな構造体の設定
-  - 似たような CLI フレームワークを作りたいときに使用できる部品を用意
+- Trait-based extensibility (トレイトベースの拡張性)
+  - Of course, combu has default implementations for most of the traits（勿論デフォルト実装もあるので拡張しなくても使用できます）
 - Useful presets (コマンド、フラグ等のプリセット)
 - Return the result of run as Result<ActionResult, ActionError> (実行結果を Result に込めて実行後返却)
 

@@ -23,7 +23,7 @@ pub mod command;
 /// args is a module about args
 pub mod args;
 /// context is a module about context
-mod context;
+pub mod context;
 /// opt is a module about argparse option
 pub mod opt;
 /// parser is a module about command args parser
@@ -35,7 +35,9 @@ pub use action::Action;
 // pub use option::{option, optionType, optionValue};
 // pub use hook::Hook;
 // pub use parser::Parser;
-// pub use vector::Vector;
+
+/// describer is a module about data expr describer
+pub mod describer;
 
 /// Macros for combu
 pub mod pub_macros;

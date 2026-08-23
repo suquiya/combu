@@ -3,3 +3,6 @@ Cargo.lock
 .idea
 .vscode
 *.svg
+.zed
+.jj
+.git

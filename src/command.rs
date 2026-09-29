@@ -2,8 +2,10 @@ use std::fmt::Debug;
 
 use crate::{
 	Action,
+	action::ActionResult,
 	describer::Describer,
 	opt::{Opt, OptValue, ParsableOpt, ParseValueError},
+	parser::Parser,
 };
 
 /// The struct for command information store and command execution
@@ -127,5 +129,68 @@ impl<OptVal, OptErr: std::error::Error, OptionItem: ParsableOpt<OptVal, OptErr>>
 			sub,
 			_marker_v: std::marker::PhantomData,
 		}
+	}
+}
+
+/// A trait for runnable commands.
+pub trait RunnableCommand: Sized {
+	/// Returns the name of the command.
+	fn name(&self) -> &str;
+
+	/// Returns the alias of the command.
+	fn alias(&self) -> &[String];
+
+	/// Returns the subcommands of the command.
+	fn sub(&self) -> &[Self];
+
+	/// Returns mutable subcommands of the command.
+	fn mut_sub(&mut self) -> &mut Vec<Self>;
+
+	/// Returns subcommand position specified by name or alias.
+	fn index_sub(&self, name: &str) -> Option<usize> {
+		self
+			.sub()
+			.iter()
+			.position(|sub| sub.name() == name || sub.alias().contains(&name.to_string()))
+	}
+
+	/// Returns subcommand specified by name or alias.
+	///
+	/// Removes the subcommand from the command and returns it. This uses [`Vec::swap_remove`] internally.
+	fn take_sub_by_index(&mut self, index: usize) -> Option<Self> {
+		Some(self.mut_sub().swap_remove(index))
+	}
+
+	/// Returns subcommand specified by name or alias.
+	fn take_sub(&mut self, name: &str) -> Option<(Self, usize)> {
+		let index = self.index_sub(name)?;
+		Some((self.take_sub_by_index(index)?, index))
+	}
+
+	/// Runs the command with the given arguments. parser is default-parser.
+	fn run_with_args<T: Iterator<Item = String>>(self, args: T) -> ActionResult {
+		self.run_with_parser(args, Parser::default())
+	}
+	/// Runs the command with the given arguments. parser is used to parse the arguments.
+	fn run_with_parser<T: Iterator<Item = String>>(self, args: T, parser: Parser) -> ActionResult {
+		todo!()
+	}
+}
+
+impl RunnableCommand for Command {
+	fn name(&self) -> &str {
+		&self.name
+	}
+
+	fn alias(&self) -> &[String] {
+		&self.alias
+	}
+
+	fn sub(&self) -> &[Self] {
+		&self.sub
+	}
+
+	fn mut_sub(&mut self) -> &mut Vec<Self> {
+		&mut self.sub
 	}
 }

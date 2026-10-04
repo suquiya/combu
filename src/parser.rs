@@ -50,6 +50,16 @@ impl Parser {
 		Self::from(flag_pattern)
 	}
 
+	/// Parse exe path and rest of args from the given iterator. Returns a tuple of exe path and a vector of middle-parsed arguments.
+	pub fn parse_to_exe_path_and_middle_args<T: Iterator<Item = String>>(
+		&self,
+		iter: &mut T,
+	) -> Option<(String, Vec<Arg>)> {
+		let exe_path = iter.next()?;
+		let args = self.args_middle_parse(iter);
+		Some((exe_path, args))
+	}
+
 	/// Parses a sequence of arguments using the `arg_middle_parse` method.
 	pub fn args_middle_parse<T: Iterator<Item = String>>(&self, iter: T) -> Vec<Arg> {
 		iter.map(|arg| self.arg_middle_parse(arg)).collect()

@@ -1,15 +1,20 @@
-use std::error::Error;
+use std::{error::Error, fmt::Debug};
 
-use crate::{command::Command, context::Context};
-
-/// `Action` is type for command action (function). It returns `Result<ActionResult, ActionError>`
-pub type Action = fn(Command, Context) -> Result<ActionResult, ActionError>;
+pub type Action<Cmd, Ctx> = fn(&mut Cmd, &Ctx) -> Result<ActionResult<Cmd, Ctx>, ActionError>;
 
 /// `ActionResult` is the result of a command action.
-#[derive(Debug)]
-pub enum ActionResult {
+pub enum ActionResult<Cmd, Ctx> {
 	/// Done shows that action is entirely done and not return any value
 	Done,
+	/// `ParentActionRequest` shows that action is requesting to return to parent command and run its action.
+	/// It is mainly used for sub-command to return to parent command and run its action.
+	/// For example, `help` command. It returns to parent command and run its action to show help message.
+	ParentActionRequest(Cmd, Ctx),
+	/// Shows return `Context`, reached `Command` and `Action` as result for parse and run.
+	/// By using this, it is possible to get parse result and run action without keeping command instances of tree in memory.
+	Result(Cmd, Ctx),
+	/// Custom result(can have Box including dyn Debug).
+	Custom(Box<dyn Debug>),
 }
 
 /// `ActionError` is the error type for command actions.
@@ -30,8 +35,8 @@ pub enum ActionErrorKind {
 	Unexpected,
 	/// Shows that no action is registered to command
 	NoActionRegistered,
-	/// Shows None
-	None,
+	/// Shows other
+	Other,
 	/// Custom error
 	Custom,
 }

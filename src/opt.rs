@@ -23,9 +23,9 @@ where
 	/// Whether this option is a boolean flag (i.e. does not require a value)
 	pub is_bool_flag: bool,
 	/// Whether this option has a possible short option-like value (ex. -1.0)
-	pub can_have_short_option_like_value: bool,
+	pub possibility_short_option_like_value: bool,
 	/// Whether this option has a possible long option-like value (ex. --1.0)
-	pub can_have_long_option_like_value: bool,
+	pub possibility_long_option_like_value: bool,
 	/// parser function for this option.
 	/// In other words, the guard function for parsing this option's value from a string.
 	pub parser: fn(&Self, &str) -> Option<Value>,
@@ -64,10 +64,10 @@ pub trait ParsableOpt<OptValue, ParseError: std::error::Error> {
 	fn get_true_value(&self) -> &OptValue;
 
 	/// Returns true if this option has a possible short option-like value.
-	fn has_possibility_short_option_like_value(&self) -> bool;
+	fn get_possibility_short_option_like_value(&self) -> bool;
 
 	/// Returns true if this option has a possible long option-like value.
-	fn has_possibility_long_option_like_value(&self) -> bool;
+	fn get_possibility_long_option_like_value(&self) -> bool;
 }
 
 impl<OptValue: ParsableOptValue, ParseError: std::error::Error> ParsableOpt<OptValue, ParseError>
@@ -105,12 +105,12 @@ impl<OptValue: ParsableOptValue, ParseError: std::error::Error> ParsableOpt<OptV
 		&self.default_value
 	}
 
-	fn has_possibility_short_option_like_value(&self) -> bool {
-		self.can_have_short_option_like_value
+	fn get_possibility_short_option_like_value(&self) -> bool {
+		self.possibility_short_option_like_value
 	}
 
-	fn has_possibility_long_option_like_value(&self) -> bool {
-		self.can_have_long_option_like_value
+	fn get_possibility_long_option_like_value(&self) -> bool {
+		self.possibility_long_option_like_value
 	}
 
 	fn short_alias(&self) -> &[char] {
@@ -195,20 +195,25 @@ pub trait ParsableOptValue: std::marker::Sized + std::default::Default {
 	fn get_true_value(&self) -> Self;
 }
 
-from_impl_to_enum!(i64, Int, OptValue);
-from_impl_to_enum!(bool, Bool, OptValue);
-from_impl_to_enum!(f64, Float, OptValue);
-from_impl_to_enum!(String, String, OptValue);
+from_impl_to_enum!(
+	OptValue,
+	[i64, Int],
+	[bool, Bool],
+	[f64, Float],
+	[String, String]
+);
 
 /// Parses a value from a string using the default `std::str::FromStr` implementation.
 pub fn default_parser<O, T: std::str::FromStr, V: From<T>>(_opt: &Opt, value: &str) -> Option<V> {
 	value.parse::<T>().ok().map(|v| V::from(v))
 }
 
-from_impl_to_enum!(std::num::ParseIntError, IntError, ParseValueError);
-from_impl_to_enum!(std::num::ParseFloatError, FloatError, ParseValueError);
-from_impl_to_enum!(std::str::ParseBoolError, BoolError, ParseValueError);
-from_impl_to_enum!(std::string::ParseError, StringError, ParseValueError);
+// from_impl_to_enum!(std::num::ParseIntError, IntError, ParseValueError);
+// from_impl_to_enum!(std::num::ParseFloatError, FloatError, ParseValueError);
+// from_impl_to_enum!(std::str::ParseBoolError, BoolError, ParseValueError);
+// from_impl_to_enum!(std::string::ParseError, StringError, ParseValueError);
+
+from_impl_to_enum!(ParseValueError, [std::num::ParseIntError, IntError]);
 
 /// Parses a value from a string with error using the default `std::str::FromStr` implementation.
 pub fn default_parser_with_error<

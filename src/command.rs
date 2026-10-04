@@ -1,9 +1,10 @@
 use std::fmt::Debug;
 
 use crate::{
-	Action,
-	action::ActionResult,
+	Action, action_result,
+	context::{Context, StorableContext},
 	describer::Describer,
+	done,
 	opt::{Opt, OptValue, ParsableOpt, ParseValueError},
 	parser::Parser,
 };
@@ -15,12 +16,13 @@ use crate::{
 pub struct Command<
 	OptVal = OptValue,
 	OptErr: std::error::Error = ParseValueError,
-	OptionItem: ParsableOpt<OptVal, OptErr> = Opt<OptVal, OptErr>,
+	OptItem: ParsableOpt<OptVal, OptErr> = Opt<OptVal, OptErr>,
+	Ctx: StorableContext<OptVal, OptErr, OptItem> = Context<OptVal, OptErr, OptItem>,
 > {
 	///Command name
 	pub name: String,
 	///Command action
-	pub action: Option<Action>,
+	pub action: Option<Action<Self, Ctx>>,
 	///Command authors
 	pub authors: String,
 	///Command copyright
@@ -32,9 +34,9 @@ pub struct Command<
 	///Command usage
 	pub usage: String,
 	///local options of command
-	pub l_options: Vec<OptionItem>,
+	pub l_options: Vec<OptItem>,
 	///common options of command
-	pub c_options: Vec<OptionItem>,
+	pub c_options: Vec<OptItem>,
 	///alias for command
 	pub alias: Vec<String>,
 	///Command version
@@ -43,11 +45,15 @@ pub struct Command<
 	pub sub: Vec<Self>,
 
 	// Marker for generic type parameters
-	_marker_v: std::marker::PhantomData<(OptVal, OptErr)>,
+	_marker_v: std::marker::PhantomData<(OptVal, OptErr, OptItem, Ctx)>,
 }
 
-impl<OptVal, OptErr: std::error::Error, OptionItem: ParsableOpt<OptVal, OptErr>>
-	Command<OptVal, OptErr, OptionItem>
+impl<
+	OptVal,
+	OptErr: std::error::Error,
+	OptItem: ParsableOpt<OptVal, OptErr>,
+	Ctx: StorableContext<OptVal, OptErr, OptItem>,
+> Command<OptVal, OptErr, OptItem, Ctx>
 {
 	/// Creates a new command with the given name and no action.
 	pub fn new() -> Self {
@@ -79,7 +85,7 @@ impl<OptVal, OptErr: std::error::Error, OptionItem: ParsableOpt<OptVal, OptErr>>
 		authors: T,
 		version: T,
 		description: T,
-		action: Option<Action>,
+		action: Option<Action<Self, Ctx>>,
 	) -> Self {
 		Self {
 			name: name.into(),
@@ -106,11 +112,11 @@ impl<OptVal, OptErr: std::error::Error, OptionItem: ParsableOpt<OptVal, OptErr>>
 		copyright: T,
 		version: T,
 		description: T,
-		action: Option<Action>,
+		action: Option<Action<Self, Ctx>>,
 		usage: T,
 		license: Option<Describer>,
-		l_options: Vec<OptionItem>,
-		c_options: Vec<OptionItem>,
+		l_options: Vec<OptItem>,
+		c_options: Vec<OptItem>,
 		alias: Vec<String>,
 		sub: Vec<Self>,
 	) -> Self {
@@ -133,7 +139,13 @@ impl<OptVal, OptErr: std::error::Error, OptionItem: ParsableOpt<OptVal, OptErr>>
 }
 
 /// A trait for runnable commands.
-pub trait RunnableCommand: Sized {
+pub trait RunnableCommand<
+	OptVal,
+	OptErr: std::error::Error,
+	OptItem: ParsableOpt<OptVal, OptErr>,
+	Ctx: StorableContext<OptVal, OptErr, OptItem>,
+>: Sized
+{
 	/// Returns the name of the command.
 	fn name(&self) -> &str;
 
@@ -143,9 +155,6 @@ pub trait RunnableCommand: Sized {
 	/// Returns the subcommands of the command.
 	fn sub(&self) -> &[Self];
 
-	/// Returns mutable subcommands of the command.
-	fn mut_sub(&mut self) -> &mut Vec<Self>;
-
 	/// Returns subcommand position specified by name or alias.
 	fn index_sub(&self, name: &str) -> Option<usize> {
 		self
@@ -154,12 +163,8 @@ pub trait RunnableCommand: Sized {
 			.position(|sub| sub.name() == name || sub.alias().contains(&name.to_string()))
 	}
 
-	/// Returns subcommand specified by name or alias.
-	///
-	/// Removes the subcommand from the command and returns it. This uses [`Vec::swap_remove`] internally.
-	fn take_sub_by_index(&mut self, index: usize) -> Option<Self> {
-		Some(self.mut_sub().swap_remove(index))
-	}
+	/// Removes the subcommand from the command and returns it.
+	fn take_sub_by_index(&mut self, index: usize) -> Option<Self>;
 
 	/// Returns subcommand specified by name or alias.
 	fn take_sub(&mut self, name: &str) -> Option<(Self, usize)> {
@@ -167,17 +172,52 @@ pub trait RunnableCommand: Sized {
 		Some((self.take_sub_by_index(index)?, index))
 	}
 
+	/// Returns local options of the command.
+	fn local_options(&self) -> &[OptItem];
+
+	/// Takes local options of the command and returns them.
+	fn take_local_options(&mut self) -> Vec<OptItem>;
+
+	/// Returns common options of the command.
+	fn common_options(&self) -> &[OptItem];
+
+	/// Takes common options of the command and returns them.
+	fn take_common_options(&mut self) -> Vec<OptItem>;
+
+	/// Returns the action of the command.
+	fn action(&self) -> Option<&Action<Self, Ctx>>;
+
+	/// Takes the action of the command and returns it.
+	fn take_action(&mut self) -> Option<Action<Self, Ctx>>;
+
 	/// Runs the command with the given arguments. parser is default-parser.
-	fn run_with_args<T: Iterator<Item = String>>(self, args: T) -> ActionResult {
+	fn run_with_args<T: Iterator<Item = String>>(self, args: T) -> action_result!(Self, Ctx) {
 		self.run_with_parser(args, Parser::default())
 	}
 	/// Runs the command with the given arguments. parser is used to parse the arguments.
-	fn run_with_parser<T: Iterator<Item = String>>(self, args: T, parser: Parser) -> ActionResult {
-		todo!()
+	fn run_with_parser<T: Iterator<Item = String>>(
+		self,
+		mut args: T,
+		parser: Parser,
+	) -> action_result!(Self, Ctx) {
+		let (exe_path, middle_args) = parser
+			.parse_to_exe_path_and_middle_args(&mut args)
+			.ok_or_else(|| {
+				let message = "Failed to parse exe path and arguments".to_string();
+				let kind = crate::action::ActionErrorKind::Unexpected;
+				crate::action::ActionError::new(message, kind)
+			})?;
+		done!()
 	}
 }
 
-impl RunnableCommand for Command {
+impl<
+	OptVal,
+	OptErr: std::error::Error,
+	OptItem: ParsableOpt<OptVal, OptErr>,
+	Ctx: StorableContext<OptVal, OptErr, OptItem>,
+> RunnableCommand<OptVal, OptErr, OptItem, Ctx> for Command<OptVal, OptErr, OptItem, Ctx>
+{
 	fn name(&self) -> &str {
 		&self.name
 	}
@@ -190,7 +230,35 @@ impl RunnableCommand for Command {
 		&self.sub
 	}
 
-	fn mut_sub(&mut self) -> &mut Vec<Self> {
-		&mut self.sub
+	fn take_sub_by_index(&mut self, index: usize) -> Option<Self> {
+		if index < self.sub.len() {
+			Some(self.sub.swap_remove(index))
+		} else {
+			None
+		}
+	}
+
+	fn local_options(&self) -> &[OptItem] {
+		&self.l_options
+	}
+
+	fn take_local_options(&mut self) -> Vec<OptItem> {
+		std::mem::take(&mut self.l_options)
+	}
+
+	fn common_options(&self) -> &[OptItem] {
+		&self.c_options
+	}
+
+	fn take_common_options(&mut self) -> Vec<OptItem> {
+		std::mem::take(&mut self.c_options)
+	}
+
+	fn action(&self) -> Option<&Action<Self, Ctx>> {
+		self.action.as_ref()
+	}
+
+	fn take_action(&mut self) -> Option<Action<Self, Ctx>> {
+		self.action.take()
 	}
 }

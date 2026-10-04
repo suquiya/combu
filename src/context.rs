@@ -59,9 +59,17 @@ impl<OptValue, OptError: std::error::Error, OptionItem: ParsableOpt<OptValue, Op
 pub trait StorableContext<
 	OptValue,
 	OptError: std::error::Error,
-	OptionItem: ParsableOpt<OptValue, OptError>,
+	OptItem: ParsableOpt<OptValue, OptError>,
 >
 {
+	/// Creates a new `Context` with the given raw args, exe path, and parsed args.
+	fn with_init_base(
+		raw_args: Vec<Arg>,
+		exe_path: String,
+		args: VecDeque<Arg>,
+		common_flags: Vec<OptItem>,
+		routes: Vec<String>,
+	) -> Self;
 	/// Returns the raw args.
 	fn raw_args(&self) -> &[Arg];
 	/// Returns the parsed args.
@@ -71,16 +79,34 @@ pub trait StorableContext<
 	/// Returns the command name routes.
 	fn routes(&self) -> &[String];
 	/// Returns the common options.
-	fn common_options(&self) -> &[Vec<OptionItem>];
+	fn common_options(&self) -> &[OptItem];
 	/// Returns the parsed options.
 	fn parsed_options(&self) -> &[(String, OptValue)];
 	/// Returns the errors.
 	fn errors(&self) -> &[(Arg, OptError)];
 }
 
-impl<OptValue, OptError: std::error::Error, OptionItem: ParsableOpt<OptValue, OptError>>
-	StorableContext<OptValue, OptError, OptionItem> for Context<OptValue, OptError, OptionItem>
+impl<OptValue, OptError: std::error::Error, OptItem: ParsableOpt<OptValue, OptError>>
+	StorableContext<OptValue, OptError, OptItem> for Context<OptValue, OptError, OptItem>
 {
+	fn with_init_base(
+		raw_args: Vec<Arg>,
+		exe_path: String,
+		args: VecDeque<Arg>,
+		common_flags: Vec<OptItem>,
+		routes: Vec<String>,
+	) -> Self {
+		Self {
+			raw_args,
+			args,
+			exe_path,
+			routes,
+			common_options: vec![common_flags],
+			parsed_options: vec![],
+			errors: vec![],
+		}
+	}
+
 	fn raw_args(&self) -> &[Arg] {
 		&self.raw_args
 	}
@@ -93,7 +119,7 @@ impl<OptValue, OptError: std::error::Error, OptionItem: ParsableOpt<OptValue, Op
 	fn routes(&self) -> &[String] {
 		&self.routes
 	}
-	fn common_options(&self) -> &[Vec<OptionItem>] {
+	fn common_options(&self) -> &[OptItem] {
 		&self.common_options
 	}
 	fn parsed_options(&self) -> &[(String, OptValue)] {

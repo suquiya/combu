@@ -3,6 +3,12 @@ use std::{error::Error, fmt::Debug};
 pub type Action<Cmd, Ctx> = fn(&mut Cmd, &Ctx) -> Result<ActionResult<Cmd, Ctx>, ActionError>;
 
 /// `ActionResult` is the result of a command action.
+///
+/// 簡単のため、CmdとCtxにはトレイトによる制約は設けていません。
+/// 実際には、CmdはRunnableCommandトレイト、CtxはStorageContextトレイトを実装している想定です(少なくともCombu内で使う場合は)。
+/// For simplicity, there are no trait constraints on Cmd and Ctx.
+/// In practice, Cmd is expected to implement the RunnableCommand trait, and Ctx is expected to implement the StorageContext trait (at least within Combu).
+#[derive(Debug)]
 pub enum ActionResult<Cmd, Ctx> {
 	/// Done shows that action is entirely done and not return any value
 	Done,
@@ -35,10 +41,8 @@ pub enum ActionErrorKind {
 	Unexpected,
 	/// Shows that no action is registered to command
 	NoActionRegistered,
-	/// Shows other
+	/// Shows other (includes custom)
 	Other,
-	/// Custom error
-	Custom,
 }
 
 impl std::fmt::Display for ActionError {

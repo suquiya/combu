@@ -67,7 +67,7 @@ pub trait StorableContext<
 		raw_args: Vec<Arg>,
 		exe_path: String,
 		args: VecDeque<Arg>,
-		common_flags: Vec<OptItem>,
+		init_common_options: Vec<OptItem>,
 		routes: Vec<String>,
 	) -> Self;
 	/// Returns the raw args.
@@ -79,7 +79,7 @@ pub trait StorableContext<
 	/// Returns the command name routes.
 	fn routes(&self) -> &[String];
 	/// Returns the common options.
-	fn common_options(&self) -> &[OptItem];
+	fn common_options(&self) -> &[Vec<OptItem>];
 	/// Returns the parsed options.
 	fn parsed_options(&self) -> &[(String, OptValue)];
 	/// Returns the errors.
@@ -119,7 +119,7 @@ impl<OptValue, OptError: std::error::Error, OptItem: ParsableOpt<OptValue, OptEr
 	fn routes(&self) -> &[String] {
 		&self.routes
 	}
-	fn common_options(&self) -> &[OptItem] {
+	fn common_options(&self) -> &[Vec<OptItem>] {
 		&self.common_options
 	}
 	fn parsed_options(&self) -> &[(String, OptValue)] {

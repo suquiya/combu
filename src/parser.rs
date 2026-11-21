@@ -1,4 +1,4 @@
-use crate::args::Arg;
+use crate::{args::Arg, command::RunnableCommand, context::StorableContext, opt::ParsableOpt};
 
 /// Struct for parsing command args
 /// 引数をパースするための構造体、フラグパターンを格納している
@@ -68,47 +68,49 @@ impl Parser {
 	/// Parses a single argument string into an `Arg` enum variant.
 	pub fn arg_middle_parse(&self, arg: String) -> Arg {
 		if let Some(stripped) = arg.strip_prefix(&self.long_flag_prefix) {
-			stripped.split_once(self.equal_symbol).map_or_else(
-				|| Arg::LongOnly(stripped.to_owned()),
-				|(key, value)| Arg::HasValueLong(key.to_string(), value.to_string()),
-			)
+			if stripped.is_empty() {
+				Arg::Normal(arg)
+			} else {
+				stripped.split_once(self.equal_symbol).map_or_else(
+					|| Arg::LongOnly(stripped.to_owned()),
+					|(key, value)| Arg::HasValueLong(key.to_string(), value.to_string()),
+				)
+			}
 		} else if let Some(stripped) = arg.strip_prefix(&self.flag_pattern.to_string()) {
-			stripped.split_once(self.equal_symbol).map_or_else(
-				|| Arg::ShortOnly(stripped.to_owned()),
-				|(key, value)| Arg::HasValueShort(key.to_string(), value.to_string()),
-			)
+			if stripped.is_empty() {
+				Arg::Normal(arg)
+			} else {
+				stripped.split_once(self.equal_symbol).map_or_else(
+					|| Arg::ShortOnly(stripped.to_owned()),
+					|(key, value)| Arg::HasValueShort(key.to_string(), value.to_string()),
+				)
+			}
 		} else {
 			Arg::Normal(arg)
 		}
 	}
 
-	/// Restores a parsed `Arg` enum variant back to its original string form.
-	pub fn arg_middle_parse_restore(&self, arg: Arg) -> String {
-		match arg {
-			Arg::Normal(arg) => arg,
-			Arg::LongOnly(arg) => {
-				let mut s = self.long_flag_prefix.clone();
-				s.push_str(&arg);
-				s
-			}
-			Arg::HasValueLong(key, value) => {
-				let mut s = self.long_flag_prefix.clone();
-				s.push_str(&key);
-				s.push(self.equal_symbol);
-				s.push_str(&value);
-				s
-			}
-			Arg::ShortOnly(arg) => {
-				let mut s = self.flag_pattern.to_string();
-				s.push_str(&arg);
-				s
-			}
-			Arg::HasValueShort(key, value) => {
-				let mut s = self.flag_pattern.to_string();
-				s.push_str(&key);
-				s.push(self.equal_symbol);
-				s.push_str(&value);
-				s
+	pub fn parse_args<
+		Cmd: RunnableCommand<OptVal, OptErr, OptItem, Ctx>,
+		Ctx: StorableContext<OptVal, OptErr, OptItem>,
+		OptVal,
+		OptErr: std::error::Error,
+		OptItem: ParsableOpt<OptVal, OptErr>,
+	>(
+		&self,
+		_cmd: Cmd,
+		ctx: Ctx,
+	) {
+		let (mut ctx, mut args) = ctx.take_args();
+		let mut narg = args.next();
+		while let Some(arg) = narg {
+			narg = args.next();
+			match arg {
+				Arg::Normal(_) => ctx.push_arg(arg),
+				Arg::HasValueLong(_, _) => todo!(),
+				Arg::HasValueShort(_, _) => todo!(),
+				Arg::LongOnly(_) => todo!(),
+				Arg::ShortOnly(_) => todo!(),
 			}
 		}
 	}

@@ -1,66 +1,68 @@
-use combu::command::presets::func::{help, help_tablize_with_alias_dedup};
-use combu::{Command, action_result, check_help, done, preset_root};
-use combu::{Context, Flag};
-use combu::{def_action_func, define_help_command_action, help_command_action};
-use std::env;
-
 fn main() {
-	let _r = preset_root!(act)
-		.usage(env!("CARGO_PKG_NAME").to_string() + " [args]")
-		.common_flag(
-			Flag::new_bool("help")
-				.short_alias('h')
-				.description("show help"),
-		)
-		.local_flag(
-			Flag::new_bool("local")
-				.short_alias('l')
-				//.alias("test")
-				.description("local flag"),
-		)
-		.sub_command(
-			Command::with_name("sub")
-				.description("sub description")
-				.action(sub_act)
-				.usage("sub usage")
-				.local_flag(Flag::new_bool("sflag").description("sub local flag"))
-				.sub_command(Command::with_name("leaf").description("leaf description")),
-		)
-		.sub_command(
-			Command::with_name("help")
-				.description("show help")
-				.action(help_action),
-		)
-		.sub_command(
-			Command::with_name("help2")
-				.description("show help2")
-				.action(help_command_action!(help_tablize_with_alias_dedup)),
-		)
-		.run_from_args(env::args().collect());
+	println!("example for test")
 }
+// use combu::command::presets::func::{help, help_tablize_with_alias_dedup};
+// use combu::{Command, action_result, check_help, done, preset_root};
+// use combu::{Context, Flag};
+// use combu::{def_action_func, define_help_command_action, help_command_action};
+// use std::env;
 
-def_action_func!(act, cmd, c, [help, error], {
-	println!("Hello, combu - {:?}", c.args);
-	println!("{:?}", c);
-	done!()
-});
+// fn main() {
+// 	let _r = preset_root!(act)
+// 		.usage(env!("CARGO_PKG_NAME").to_string() + " [args]")
+// 		.common_flag(
+// 			Flag::new_bool("help")
+// 				.short_alias('h')
+// 				.description("show help"),
+// 		)
+// 		.local_flag(
+// 			Flag::new_bool("local")
+// 				.short_alias('l')
+// 				//.alias("test")
+// 				.description("local flag"),
+// 		)
+// 		.sub_command(
+// 			Command::with_name("sub")
+// 				.description("sub description")
+// 				.action(sub_act)
+// 				.usage("sub usage")
+// 				.local_flag(Flag::new_bool("sflag").description("sub local flag"))
+// 				.sub_command(Command::with_name("leaf").description("leaf description")),
+// 		)
+// 		.sub_command(
+// 			Command::with_name("help")
+// 				.description("show help")
+// 				.action(help_action),
+// 		)
+// 		.sub_command(
+// 			Command::with_name("help2")
+// 				.description("show help2")
+// 				.action(help_command_action!(help_tablize_with_alias_dedup)),
+// 		)
+// 		.run_from_args(env::args().collect());
+// }
 
-/*
-fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
-{
-	check_help!(cmd, c, help_tablize_with_alias_dedup);
-	println!("Hello, combu - {:?}", c.args);
-	println!("{:?}", c);
+// def_action_func!(act, cmd, c, [help, error], {
+// 	println!("Hello, combu - {:?}", c.args);
+// 	println!("{:?}", c);
+// 	done!()
+// });
 
-	done!()
-}
-*/
+// /*
+// fn act(cmd: Command, c: Context) -> action_result!() // Or use combu::{ActionResult,ActionError} and Result<ActionResult,ActionError>
+// {
+// 	check_help!(cmd, c, help_tablize_with_alias_dedup);
+// 	println!("Hello, combu - {:?}", c.args);
+// 	println!("{:?}", c);
 
-#[allow(dead_code)]
-fn sub_act(cmd: Command, c: Context) -> action_result!() {
-	check_help!(cmd, c, help);
-	println!("sub hello, combu - {:?}", c.args);
-	done!()
-}
+// 	done!()
+// }
+// */
+// #[allow(dead_code)]
+// fn sub_act(cmd: Command, c: Context) -> action_result!() {
+// 	check_help!(cmd, c, help);
+// 	println!("sub hello, combu - {:?}", c.args);
+// 	done!()
+// }
 
-define_help_command_action!(help_action, help_req, help_tablize_with_alias_dedup);
+// define_help_command_action!(help_action, help_req, help_tablize_with_alias_dedup);

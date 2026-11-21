@@ -1,16 +1,8 @@
 #[macro_export]
-/// Type alias for `Result<ActionResult, ActionError>`.
-macro_rules! action_result {
-    ($cmd:ty, $ctx:ty) => {
-        Result<$crate::action::ActionResult<$cmd, $ctx>, $crate::action::ActionError>
-    };
-}
-
-#[macro_export]
-/// Short alias for Ok(ActionResult::Done)
+/// Short alias for `Ok(ActionResult::Done)`
 macro_rules! done {
 	() => {
-		Ok($crate::action::ActionResult::Done)
+		Ok($crate::action::ActionOutput::Done)
 	};
 }
 

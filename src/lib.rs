@@ -1,6 +1,6 @@
-#![warn(missing_docs)]
 #![forbid(unsafe_code)]
 #![warn(rust_2018_idioms)]
+
 /*! [combu](https://crates.io/crates/combu) is a customizable cli framework crate.
 The library name "combu" comes from command + 昆布(konbu, it means kelp in japanese).
 
@@ -29,7 +29,7 @@ pub mod opt;
 /// parser is a module about command args parser
 pub mod parser;
 
-pub use action::Action;
+// pub use action::Action;
 // pub use command::Command;
 // pub use context::Context;
 // pub use option::{option, optionType, optionValue};

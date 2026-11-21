@@ -1,15 +1,17 @@
 use std::{error::Error, fmt::Debug};
 
-pub type Action<Cmd, Ctx> = fn(&mut Cmd, &Ctx) -> Result<ActionResult<Cmd, Ctx>, ActionError>;
+pub type ActionResult<Cmd, Ctx> = Result<ActionOutput<Cmd, Ctx>, ActionError>;
+
+pub type Action<Cmd, Ctx> = fn(Cmd, Ctx) -> ActionResult<Cmd, Ctx>;
 
 /// `ActionResult` is the result of a command action.
 ///
 /// 簡単のため、CmdとCtxにはトレイトによる制約は設けていません。
 /// 実際には、CmdはRunnableCommandトレイト、CtxはStorageContextトレイトを実装している想定です(少なくともCombu内で使う場合は)。
 /// For simplicity, there are no trait constraints on Cmd and Ctx.
-/// In practice, Cmd is expected to implement the RunnableCommand trait, and Ctx is expected to implement the StorageContext trait (at least within Combu).
+/// In practice, Cmd is expected to implement the `RunnableCommand` trait, and Ctx is expected to implement the `StorageContext` trait (at least within Combu).
 #[derive(Debug)]
-pub enum ActionResult<Cmd, Ctx> {
+pub enum ActionOutput<Cmd, Ctx> {
 	/// Done shows that action is entirely done and not return any value
 	Done,
 	/// `ParentActionRequest` shows that action is requesting to return to parent command and run its action.
@@ -18,7 +20,7 @@ pub enum ActionResult<Cmd, Ctx> {
 	ParentActionRequest(Cmd, Ctx),
 	/// Shows return `Context`, reached `Command` and `Action` as result for parse and run.
 	/// By using this, it is possible to get parse result and run action without keeping command instances of tree in memory.
-	Result(Cmd, Ctx),
+	CmdCtx(Cmd, Ctx),
 	/// Custom result(can have Box including dyn Debug).
 	Custom(Box<dyn Debug>),
 }

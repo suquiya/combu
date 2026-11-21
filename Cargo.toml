@@ -22,3 +22,4 @@ presets = []
 
 [lints.clippy]
 doc_markdown = "warn"
+missing_docs = "warn"

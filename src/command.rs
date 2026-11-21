@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use crate::{
-	Action, action_result,
+	action::{Action, ActionResult},
 	context::{Context, StorableContext},
 	describer::Describer,
 	done,
@@ -34,9 +34,9 @@ pub struct Command<
 	///Command usage
 	pub usage: String,
 	///local options of command
-	pub l_options: Vec<OptItem>,
+	pub local_options: Vec<OptItem>,
 	///common options of command
-	pub c_options: Vec<OptItem>,
+	pub common_options: Vec<OptItem>,
 	///alias for command
 	pub alias: Vec<String>,
 	///Command version
@@ -70,8 +70,8 @@ impl<
 			license: None,
 			description: None,
 			usage: String::new(),
-			l_options: Vec::new(),
-			c_options: Vec::new(),
+			local_options: Vec::new(),
+			common_options: Vec::new(),
 			alias: Vec::new(),
 			version: String::new(),
 			sub: Vec::new(),
@@ -96,8 +96,8 @@ impl<
 			action,
 			usage: String::new(),
 			license: None,
-			l_options: Vec::new(),
-			c_options: Vec::new(),
+			local_options: Vec::new(),
+			common_options: Vec::new(),
 			alias: Vec::new(),
 			sub: Vec::new(),
 			_marker_v: std::marker::PhantomData,
@@ -115,8 +115,8 @@ impl<
 		action: Option<Action<Self, Ctx>>,
 		usage: T,
 		license: Option<Describer>,
-		l_options: Vec<OptItem>,
-		c_options: Vec<OptItem>,
+		local_options: Vec<OptItem>,
+		common_options: Vec<OptItem>,
 		alias: Vec<String>,
 		sub: Vec<Self>,
 	) -> Self {
@@ -129,8 +129,8 @@ impl<
 			action,
 			usage: usage.into(),
 			license,
-			l_options,
-			c_options,
+			local_options,
+			common_options,
 			alias,
 			sub,
 			_marker_v: std::marker::PhantomData,
@@ -175,23 +175,14 @@ pub trait RunnableCommand<
 	/// Returns local options of the command.
 	fn local_options(&self) -> &[OptItem];
 
-	/// Takes local options of the command and returns them.
-	fn take_local_options(&mut self) -> Vec<OptItem>;
-
 	/// Returns common options of the command.
 	fn common_options(&self) -> &[OptItem];
 
 	/// Takes common options of the command and returns them.
 	fn take_common_options(&mut self) -> Vec<OptItem>;
 
-	/// Returns the action of the command.
-	fn action(&self) -> Option<&Action<Self, Ctx>>;
-
-	/// Takes the action of the command and returns it.
-	fn take_action(&mut self) -> Option<Action<Self, Ctx>>;
-
 	/// Runs the command with the given arguments. parser is default-parser.
-	fn run_with_args<T: Iterator<Item = String>>(self, args: T) -> action_result!(Self, Ctx) {
+	fn run_with_args<T: Iterator<Item = String>>(self, args: T) -> ActionResult<Self, Ctx> {
 		self.run_with_parser(args, Parser::default())
 	}
 	/// Runs the command with the given arguments. parser is used to parse the arguments.
@@ -199,7 +190,7 @@ pub trait RunnableCommand<
 		self,
 		mut args: T,
 		parser: Parser,
-	) -> action_result!(Self, Ctx) {
+	) -> ActionResult<Self, Ctx> {
 		let (exe_path, middle_args) = parser
 			.parse_to_exe_path_and_middle_args(&mut args)
 			.ok_or_else(|| {
@@ -207,7 +198,61 @@ pub trait RunnableCommand<
 				let kind = crate::action::ActionErrorKind::Unexpected;
 				crate::action::ActionError::new(message, kind)
 			})?;
-		done!()
+		// Create a new context with the parsed arguments and exe path.
+		// Self has common_options and name, so we don't pass them to the context (run_with_context also has self).
+		// コンテキストを作成する。selfにcommon_optionsとnameがあるので、contextに渡さない(`run_with_context`もselfもちであるので)で処理する
+		self.run_with_context(Ctx::with_init_base(middle_args, exe_path, vec![], vec![]))
+	}
+
+	/// Runs the command with the given context.
+	fn run_with_context(self, context: Ctx) -> ActionResult<Self, Ctx> {
+		if self.sub().is_empty() {
+			// If there are no subcommands, parse the options and run the action of the current command.
+			self.run_action(context)
+		} else {
+			todo!()
+			// // If there are subcommands, check if the first argument matches a subcommand.
+			// if let Some(arg) = context.args().next() {
+			// 	if let Some((subcommand, _)) = self.take_sub(arg) {
+			// 		// If a matching subcommand is found, run it with the remaining arguments.
+			// 		let mut new_context = context;
+			// 		new_context.pop_front_arg();
+			// 		subcommand.run_with_context(new_context)
+			// 	} else {
+			// 		// If no matching subcommand is found, run the action of the current command.
+			// 		if let Some(action) = self.action() {
+			// 			action(self, context)
+			// 		} else {
+			// 			done!()
+			// 		}
+			// 	}
+			// } else {
+			// 	// If there are no arguments left, run the action of the current command.
+			// 	if let Some(action) = self.action() {
+			// 		action(self, context)
+			// 	} else {
+			// 		done!()
+			// 	}
+			// }
+		}
+	}
+
+	fn action(&self) -> Option<Action<Self, Ctx>>;
+
+	fn create_no_action_error(cmd: &Self) -> crate::action::ActionError {
+		crate::action::ActionError::new(
+			"No action registered for ".to_string() + cmd.name(),
+			crate::action::ActionErrorKind::NoActionRegistered,
+		)
+	}
+
+	/// Runs the command action with the given context.
+	fn run_action(self, context: Ctx) -> ActionResult<Self, Ctx> {
+		if let Some(action) = self.action() {
+			action(self, context)
+		} else {
+			Err(Self::create_no_action_error(&self))
+		}
 	}
 }
 
@@ -239,26 +284,18 @@ impl<
 	}
 
 	fn local_options(&self) -> &[OptItem] {
-		&self.l_options
-	}
-
-	fn take_local_options(&mut self) -> Vec<OptItem> {
-		std::mem::take(&mut self.l_options)
+		&self.local_options
 	}
 
 	fn common_options(&self) -> &[OptItem] {
-		&self.c_options
+		&self.common_options
 	}
 
 	fn take_common_options(&mut self) -> Vec<OptItem> {
-		std::mem::take(&mut self.c_options)
+		std::mem::take(&mut self.common_options)
 	}
 
-	fn action(&self) -> Option<&Action<Self, Ctx>> {
-		self.action.as_ref()
-	}
-
-	fn take_action(&mut self) -> Option<Action<Self, Ctx>> {
-		self.action.take()
+	fn action(&self) -> Option<Action<Self, Ctx>> {
+		self.action
 	}
 }

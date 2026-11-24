@@ -4,7 +4,6 @@ use crate::{
 	action::{Action, ActionResult},
 	context::{Context, StorableContext},
 	describer::Describer,
-	done,
 	opt::{Opt, OptValue, ParsableOpt, ParseValueError},
 	parser::Parser,
 };
@@ -172,11 +171,36 @@ pub trait RunnableCommand<
 		Some((self.take_sub_by_index(index)?, index))
 	}
 
-	/// Returns local options of the command.
-	fn local_options(&self) -> &[OptItem];
+	/// Get match local option for long command name or long alias. Returns `None` if no match found.
+	fn get_local_option_by_name_or_long_alias(&self, long_option: &str) -> Option<&OptItem>;
 
-	/// Returns common options of the command.
-	fn common_options(&self) -> &[OptItem];
+	/// Get match local option for short alias. Returns `None` if no match found.
+	/// If you want to match short name, you should use `get_local_option_by_name_or_long_alias` instead or implement your own this method.
+	fn get_local_option_by_short_alias(&self, short_option: char) -> Option<&OptItem>;
+
+	/// Get match common option for long command name or long alias. Returns `None` if no match found.
+	fn get_common_option_by_name_or_long_alias(&self, long_option: &str) -> Option<&OptItem>;
+
+	/// Get match common option for short alias. Returns `None` if no match found.
+	/// If you want to match short name, you should use `get_common_option_by_name_or_long_alias` instead or implement your own this method.
+	fn get_common_option_by_short_alias(&self, short_option: char) -> Option<&OptItem>;
+
+	/// Get match option for long command name or long alias. Returns `None` if no match found.
+	fn get_option_by_name_or_long_alias(&self, long_option: &str) -> Option<&OptItem> {
+		let opt = self.get_local_option_by_name_or_long_alias(long_option);
+		match opt {
+			Some(_) => opt,
+			None => self.get_common_option_by_name_or_long_alias(long_option),
+		}
+	}
+
+	fn get_option_by_short_alias(&self, short_option: char) -> Option<&OptItem> {
+		let opt = self.get_local_option_by_short_alias(short_option);
+		match opt {
+			Some(_) => opt,
+			None => self.get_common_option_by_short_alias(short_option),
+		}
+	}
 
 	/// Takes common options of the command and returns them.
 	fn take_common_options(&mut self) -> Vec<OptItem>;
@@ -283,19 +307,39 @@ impl<
 		}
 	}
 
-	fn local_options(&self) -> &[OptItem] {
-		&self.local_options
-	}
-
-	fn common_options(&self) -> &[OptItem] {
-		&self.common_options
-	}
-
 	fn take_common_options(&mut self) -> Vec<OptItem> {
 		std::mem::take(&mut self.common_options)
 	}
 
 	fn action(&self) -> Option<Action<Self, Ctx>> {
 		self.action
+	}
+
+	fn get_local_option_by_name_or_long_alias(&self, long_option: &str) -> Option<&OptItem> {
+		self
+			.local_options
+			.iter()
+			.find(|opt| opt.match_long_call(long_option))
+	}
+
+	fn get_local_option_by_short_alias(&self, short_option: char) -> Option<&OptItem> {
+		self
+			.local_options
+			.iter()
+			.find(|opt| opt.match_short_call(short_option))
+	}
+
+	fn get_common_option_by_name_or_long_alias(&self, long_option: &str) -> Option<&OptItem> {
+		self
+			.common_options
+			.iter()
+			.rfind(|opt| opt.match_long_call(long_option))
+	}
+
+	fn get_common_option_by_short_alias(&self, short_option: char) -> Option<&OptItem> {
+		self
+			.common_options
+			.iter()
+			.rfind(|opt| opt.match_short_call(short_option))
 	}
 }

@@ -98,20 +98,41 @@ impl Parser {
 		OptItem: ParsableOpt<OptVal, OptErr>,
 	>(
 		&self,
-		_cmd: Cmd,
+		cmd: Cmd,
 		ctx: Ctx,
-	) {
-		let (mut ctx, mut args) = ctx.take_args();
+	) -> (Cmd, Ctx) {
+		let (mut ctx, args) = ctx.split_args();
+		let mut args = args.into_iter();
+		// let args = ctx.take_args_mut();
+		// let args = args.into_iter();
 		let mut narg = args.next();
 		while let Some(arg) = narg {
 			narg = args.next();
-			match arg {
+			match &arg {
 				Arg::Normal(_) => ctx.push_arg(arg),
-				Arg::HasValueLong(_, _) => todo!(),
-				Arg::HasValueShort(_, _) => todo!(),
+				Arg::HasValueLong(opt_name, opt_value) => {
+					match cmd.get_option_by_name_or_long_alias(opt_name) {
+						Some(opt) => match opt.parse_with_error(opt_value) {
+							Ok(value) => ctx.add_parsed_option(opt.name().to_string(), value),
+							Err(err) => ctx.push_error(arg, err),
+						},
+						None => match ctx.get_common_option_by_name_or_long_alias(opt_name) {
+							Some(opt) => match opt.parse_with_error(opt_value) {
+								Ok(value) => ctx.add_parsed_option(opt.name().to_string(), value),
+								Err(err) => ctx.push_error(arg, err),
+							},
+							None => ctx.push_arg(arg),
+						},
+					}
+				}
+				Arg::HasValueShort(opt_name_str, opt_value) => {
+					let short_opts = opt_name_str.chars();
+					todo!()
+				}
 				Arg::LongOnly(_) => todo!(),
 				Arg::ShortOnly(_) => todo!(),
 			}
 		}
+		(cmd, ctx)
 	}
 }

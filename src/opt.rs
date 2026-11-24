@@ -40,10 +40,10 @@ pub trait ParsableOpt<OptValue, ParseError: std::error::Error> {
 	fn name(&self) -> &str;
 	/// Returns option's description.
 	fn description(&self) -> &str;
-	/// Returns option's short alias.
-	fn short_alias(&self) -> &[char];
-	/// Returns option's long alias.
-	fn long_alias(&self) -> &[String];
+	/// Returns true if option that matches the given short option character.
+	fn match_short_call(&self, short_option: char) -> bool;
+	/// Returns true if option that matches the given long option string.
+	fn match_long_call(&self, target: &str) -> bool;
 
 	/// Parses the option value from a string.
 	fn parse(&self, value: &str) -> Option<OptValue>;
@@ -113,12 +113,12 @@ impl<OptValue: ParsableOptValue, ParseError: std::error::Error> ParsableOpt<OptV
 		self.possibility_long_option_like_value
 	}
 
-	fn short_alias(&self) -> &[char] {
-		&self.short_alias
+	fn match_short_call(&self, short_option: char) -> bool {
+		self.short_alias.contains(&short_option)
 	}
 
-	fn long_alias(&self) -> &[String] {
-		&self.long_alias
+	fn match_long_call(&self, target: &str) -> bool {
+		self.name == target || self.long_alias.contains(&target.to_string())
 	}
 }
 
@@ -213,7 +213,12 @@ pub fn default_parser<O, T: std::str::FromStr, V: From<T>>(_opt: &Opt, value: &s
 // from_impl_to_enum!(std::str::ParseBoolError, BoolError, ParseValueError);
 // from_impl_to_enum!(std::string::ParseError, StringError, ParseValueError);
 
-from_impl_to_enum!(ParseValueError, [std::num::ParseIntError, IntError]);
+from_impl_to_enum!(
+	ParseValueError,
+	[std::num::ParseIntError, IntError],
+	[std::num::ParseFloatError, FloatError],
+	[std::str::ParseBoolError, BoolError]
+);
 
 /// Parses a value from a string with error using the default `std::str::FromStr` implementation.
 pub fn default_parser_with_error<

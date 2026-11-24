@@ -7,7 +7,6 @@ edition = "2024"
 license = "MIT"
 # license-file="LICENSE"
 documentation = "https://docs.rs/combu/"
-homepage = "https://github.com/suquiya/combu"
 repository = "https://github.com/suquiya/combu"
 readme = "README.md"
 categories = ["command-line-interface"]

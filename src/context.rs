@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use crate::{
 	args::Arg,
 	opt::{Opt, ParsableOpt, ParseValueError},
@@ -8,7 +6,7 @@ use crate::{
 /// Storage information for command execution.
 /// This storage raw args, non-flag args, flag values, and etc.
 /// コマンドからrunを通ってactionにたどり着くまでの情報およびパース結果を格納する構造体。
-/// フラグの値、たどってきたルートなどを保管しています。
+/// フラグの値、たどってきたルートなどを保管する。
 pub struct Context<
 	OptValue = crate::opt::OptValue,
 	OptError: std::error::Error = ParseValueError,
@@ -18,7 +16,6 @@ pub struct Context<
 	/// First arg is moved to `exe_path`
 	pub raw_args: Vec<Arg>,
 	/// non-flag args storage
-	/// Note: processing args are stored here in parsing
 	pub args: Vec<Arg>,
 	/// exe path
 	/// This is the first arg of `raw_args`, and is moved to here in parsing
@@ -62,7 +59,7 @@ pub trait StorableContext<
 	OptValue,
 	OptError: std::error::Error,
 	OptItem: ParsableOpt<OptValue, OptError>,
->
+>: Sized
 {
 	/// Creates a new `Context` with the given raw args, exe path, and parsed args.
 	fn with_init_base(
@@ -71,20 +68,25 @@ pub trait StorableContext<
 		init_common_options: Vec<OptItem>,
 		routes: Vec<String>,
 	) -> Self;
-	/// Takes the args from the context. Mainly for parsing.
-	fn take_args(mut self) -> (Self, impl Iterator<Item = Arg>);
-	/// Add arg to args. Mainly for push normal args in parsing.
-	fn push_arg(&mut self, arg: Arg);
+
+	/// Splits the args from the context and returns a tuple of the context and args (implement trait `IntoIterator<Item = Arg>`).
+	fn split_args(self) -> (Self, impl IntoIterator<Item = Arg>);
+
 	/// Returns the exe path.
 	fn exe_path(&self) -> &str;
+	/// Gets the common option by name or long alias. Returns `None` if no match found.
+	fn get_common_option_by_name_or_long_alias(&self, long_option: &str) -> Option<&OptItem>;
+	/// Gets the common option by short alias. Returns `None` if no match found.
+	fn get_common_option_by_short_alias(&self, short_option: char) -> Option<&OptItem>;
+
+	/// Add arg to args. Mainly for push normal args in parsing.
+	fn push_arg(&mut self, arg: Arg);
 	/// Returns the command name routes.
 	fn add_route(&mut self, route_name: String);
-	/// Returns the common options.
-	fn common_options(&self) -> &[Vec<OptItem>];
 	/// Adds the given parsed option to the context.
-	fn add_parsed_option(&mut self, opt: &OptItem, value: OptValue);
-	/// Returns the errors.
-	fn errors(&self) -> &[(Arg, OptError)];
+	fn add_parsed_option(&mut self, opt: String, value: OptValue);
+	/// Pushes the given error to the context.
+	fn push_error(&mut self, arg: Arg, err: OptError);
 }
 
 impl<OptValue, OptError: std::error::Error, OptItem: ParsableOpt<OptValue, OptError>>
@@ -99,9 +101,9 @@ impl<OptValue, OptError: std::error::Error, OptItem: ParsableOpt<OptValue, OptEr
 		Self::new(args, exe_path, init_common_options, routes)
 	}
 
-	fn take_args(mut self) -> (Self, impl Iterator<Item = Arg>) {
+	fn split_args(mut self) -> (Self, impl IntoIterator<Item = Arg>) {
 		let args = std::mem::take(&mut self.args);
-		(self, args.into_iter())
+		(self, args)
 	}
 
 	fn push_arg(&mut self, arg: Arg) {
@@ -116,15 +118,27 @@ impl<OptValue, OptError: std::error::Error, OptItem: ParsableOpt<OptValue, OptEr
 		self.routes.push(route_name);
 	}
 
-	fn common_options(&self) -> &[Vec<OptItem>] {
-		&self.common_options
+	fn push_error(&mut self, arg: Arg, err: OptError) {
+		self.errors.push((arg, err));
 	}
 
-	fn errors(&self) -> &[(Arg, OptError)] {
-		&self.errors
+	fn add_parsed_option(&mut self, opt: String, value: OptValue) {
+		self.parsed_options.push((opt, value));
 	}
 
-	fn add_parsed_option(&mut self, opt: &OptItem, value: OptValue) {
-		self.parsed_options.push((opt.name().to_string(), value));
+	fn get_common_option_by_name_or_long_alias(&self, long_option: &str) -> Option<&OptItem> {
+		self.common_options.iter().rev().find_map(|common_options| {
+			common_options
+				.iter()
+				.rfind(|opt| opt.match_long_call(long_option))
+		})
+	}
+
+	fn get_common_option_by_short_alias(&self, short_option: char) -> Option<&OptItem> {
+		self.common_options.iter().rev().find_map(|common_options| {
+			common_options
+				.iter()
+				.rfind(|opt| opt.match_short_call(short_option))
+		})
 	}
 }
